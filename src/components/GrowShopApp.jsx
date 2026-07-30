@@ -10,7 +10,6 @@ import ShopComponent from './shop/ShopComponent.jsx';
 import ProductDetailComponent from './shop/ProductDetail/ProductDetailComponent.jsx';
 import CreateProductComponent from './admin/CreateProductComponent.jsx';
 import ShoppingCarComponent from './cart/ShoppingCarComponent.jsx';
-import FavoritesComponent from './favorites/FavoritesComponent.jsx';
 
 class GrowShopApp extends Component {
     render() {
@@ -20,7 +19,6 @@ class GrowShopApp extends Component {
         const ProductDetailComponentWithParams = paramsComponent(ProductDetailComponent);
         const CreateProductComponentWithNavigation = navigationComponent(CreateProductComponent);
         const ShoppingCarComponentWithNavigation = navigationComponent(ShoppingCarComponent);
-        const FavoritesComponentWithNavigation = navigationComponent(FavoritesComponent);
         return (
             <div className="App">
                 <BrowserRouter>
@@ -32,7 +30,6 @@ class GrowShopApp extends Component {
                         <Route path="/product/:id" element={<ProductDetailComponentWithParams />} />
                         <Route path="/createProduct" element={<CreateProductComponentWithNavigation />} />
                         <Route path="/cart" element={<ShoppingCarComponentWithNavigation />} />
-                        <Route path="/favorites" element={<FavoritesComponentWithNavigation />} />
                         <Route path="*" element={<ErrorComponent />} />
                     </Routes>
                 </BrowserRouter>
