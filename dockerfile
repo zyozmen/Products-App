@@ -1,19 +1,24 @@
-# --- Etapa 1: Build de Node.js ---
-FROM node:18-alpine AS builder
+# --- Etapa 1: Build de Node.js (Actualizado a Node 20) ---
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 COPY package*.json ./
+
+# Si deseas mayor tolerancia a pequeñas inconsistencias en la instalación,
+# puedes usar 'npm ci || npm install' en lugar de fallar de inmediato.
 RUN npm ci
 
 COPY . .
+
+ARG REACT_APP_API_URL
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
 RUN npm run build
 
 # --- Etapa 2: Servidor Web Nginx ---
 FROM nginx:alpine
 
-# Copiar configuración personalizada de Nginx para escuchar en 4200
 RUN echo 'server { \
     listen 4200; \
     location / { \
@@ -23,7 +28,6 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
-# Copiar los archivos estáticos generados
 COPY --from=builder /app/build /usr/share/nginx/html
 
 EXPOSE 4200
