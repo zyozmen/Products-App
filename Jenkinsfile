@@ -55,7 +55,13 @@ pipeline {
                         credentialsId: 'SSH_DEPLOY_KEY', 
                         keyFileVariable: 'SSH_KEY', 
                         usernameVariable: 'SSH_USER'
-                    )]){
+                    ),
+                    usernamePassword(
+                        credentialsId: 'DOCKER_HUB_CREDENTIALS', 
+                        usernameVariable: 'DOCKER_USER', 
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]){
                         script {
                             def awsIp = "18.224.29.18"
                             sh """
