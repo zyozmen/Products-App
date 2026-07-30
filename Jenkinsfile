@@ -92,13 +92,13 @@ pipeline {
                                     docker rm "\$APP_NAME" || true
                                 fi
 
-                                echo "--> Desplegando contenedor en AWS..."
+                                echo "--> Desplegando contenedor React en AWS..."
                                 docker run -d \\
                                     --name "\$APP_NAME" \\
                                     --restart unless-stopped \\
                                     --network "\$NETWORK_NAME" \\
                                     --env-file "\$ENV_FILE" \\
-                                    -p 8080:8080 \\
+                                    -p 4200:4200 \\
                                     "\$IMAGE_TAG"
 
                                 echo "--> Limpiando imágenes en desuso..."
