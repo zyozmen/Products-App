@@ -111,8 +111,6 @@ EOF
             }
         }
 
-    }
-
     post {
         always {
             cleanWs()
