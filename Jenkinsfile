@@ -23,7 +23,6 @@ pipeline {
 
         stage('Build & Push Docker Image') {
             when {
-                // Solo se empaqueta si estamos en develop, main o master
                 branch pattern: "develop|main|master", comparator: "REGEXP"
             }
             steps {
