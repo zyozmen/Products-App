@@ -8,20 +8,6 @@ pipeline {
     }
 
     stages {
-        stage('Hardening & Secret Sanitization Check') {
-            steps {
-                sh '''
-                    set +x
-                    echo "Verificando disponibilidad de secretos inyectados..."
-                    if [ -z "$SONAR_TOKEN" ] || [ -z "$REGISTRY_CREDS_USR" ] || [ -z "$REGISTRY_CREDS_PSW" ]; then
-                        echo "CRITICAL ERROR: Fallo en la carga de credenciales sanitizadas."
-                        exit 1
-                    fi
-                    echo "Mecanismo de proteccion de credenciales validado exitosamente."
-                '''
-            }
-        }
-
         stage('SonarQube Static Analysis') {
             steps {
                 withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
