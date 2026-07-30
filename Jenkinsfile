@@ -4,6 +4,7 @@ pipeline {
     environment {
         APP_NAME             = 'products-frontend'
         DOCKER_USER          = 'zyozmen'
+        DOCKER_NETWORK_NAME   = 'red-productos'
         APP_VERSION          = "1.0.${BUILD_NUMBER}"
     }
 
@@ -71,7 +72,7 @@ pipeline {
                             DOCKER_PASS='${DOCKER_PASS}' \
                             APP_NAME='${APP_NAME}' \
                             IMAGE_TAG='${fullImageTag}' \
-                            NETWORK_NAME='${MONGO_NETWORK_NAME}' \
+                            NETWORK_NAME='${DOCKER_NETWORK_NAME}' \
                             'bash -s' << 'EOF'
                                 set -e
                                 ENV_FILE="/etc/products-api/.env"
