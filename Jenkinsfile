@@ -70,7 +70,7 @@ pipeline {
                             DOCKER_USER='${DOCKER_USER}' \
                             DOCKER_PASS='${DOCKER_PASS}' \
                             APP_NAME='${APP_NAME}' \
-                            IMAGE_TAG='${fullImageName}:${APP_VERSION}' \
+                            IMAGE_TAG='${fullImageTag}' \
                             NETWORK_NAME='${MONGO_NETWORK_NAME}' \
                             'bash -s' << 'EOF'
                                 set -e
