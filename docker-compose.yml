@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
+      args:
+        DOCKER_GID: ${HOST_DOCKER_GID:-999}
+    container_name: Products_App
+    user: "1000:1000"
+    ports:
+      - "4200:4200"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:

@@ -1,0 +1,54 @@
+.product-categories {
+    padding-left: 0;
+    list-style: none;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.product-categories > li {
+    display: inline-block;
+    margin-right: 18px; /* Slightly more space to account for the new tag head */
+    margin-bottom: 12px;
+}
+
+/* The Main Tag Body */
+.product-categories > li .label-custom {
+    position: relative;
+    background-color: #fdd835; 
+    color: #222;               
+    font-size: 12px;
+    font-weight: 700;          
+    text-transform: uppercase; 
+    letter-spacing: 0.5px;     
+    
+    /* Shape adjustments */
+    padding: 6px 12px 6px 28px; /* Extra padding on the left (28px) to clear the hole */
+    border-radius: 4px 8px 8px 4px; /* Mimics the rounded outer edges of the tag */
+    
+    display: inline-block;
+    transition: all 0.2s ease;
+}
+
+/* The Tag Head & Hanging Hole */
+.product-categories > li .label-custom::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    
+    /* Creates the circular eyelet hole */
+    width: 10px;
+    height: 10px;
+    background-color: #fff; /* Matches your container background to look like a punched hole */
+    border-radius: 50%;
+    
+    /* Creates the plastic/metal reinforcement ring around the hole */
+    box-shadow: 0 0 0 3px #dcb614; 
+}
+
+/* Optional Hover Effect */
+.product-categories > li .label-custom:hover {
+    background-color: #fbc02d;
+    cursor: pointer;
+}
