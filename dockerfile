@@ -7,7 +7,7 @@ COPY package*.json ./
 
 # Si deseas mayor tolerancia a pequeñas inconsistencias en la instalación,
 # puedes usar 'npm ci || npm install' en lugar de fallar de inmediato.
-RUN npm ci
+RUN npm install
 
 COPY . .
 
