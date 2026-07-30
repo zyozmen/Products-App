@@ -22,9 +22,6 @@ pipeline {
         }
 
         stage('Build & Push Docker Image') {
-            when {
-                branch pattern: "develop|main|master", comparator: "REGEXP"
-            }
             steps {
                 script {
                     def gitBranch = env.BRANCH_NAME ?: 'main'
