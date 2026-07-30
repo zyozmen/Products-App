@@ -22,6 +22,16 @@ pipeline {
         }
 
         stage('Build & Push Docker Image') {
+            when {
+                expression {
+                    // Evalúa la rama sin importar el tipo de job en Jenkins
+                    def currentBranch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: ''
+                    echo "Evaluando reglas de empaquetado para la rama: ${currentBranch}"
+                    
+                    // Retorna true si contiene main, master o develop
+                    return currentBranch =~ /(main|master|develop)/
+                }
+            }
             steps {
                 script {
                     def gitBranch = env.BRANCH_NAME ?: 'main'
@@ -44,7 +54,16 @@ pipeline {
         }
 
     stage('SSH Secure Deployment') {
-
+            when {
+                expression {
+                    // Evalúa la rama sin importar el tipo de job en Jenkins
+                    def currentBranch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: ''
+                    echo "Evaluando reglas de empaquetado para la rama: ${currentBranch}"
+                    
+                    // Retorna true si contiene main, master o develop
+                    return currentBranch =~ /(main)/
+                }
+            }
             
             steps {
                  withCredentials([
