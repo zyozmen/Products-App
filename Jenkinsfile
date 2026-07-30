@@ -42,7 +42,6 @@ pipeline {
                 }
             }
         }
-    }
 
     stage('SSH Secure Deployment') {
 
@@ -110,6 +109,7 @@ EOF
                 }
             }
         }
+    }
 
     post {
         always {
