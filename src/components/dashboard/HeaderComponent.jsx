@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import AuthenticationService from '../../services/AuthenticationService.js';
 import cartService from '../../services/CartService.js';
+import DropdownMenu from '../ui/DropdownMenu';
 
 class HeaderComponent extends Component {
     constructor(props) {
@@ -93,66 +94,39 @@ class HeaderComponent extends Component {
                     </div>
                     <div className="col-lg-6 text-center text-lg-right">
                         <div className="d-inline-flex align-items-center">
-                            <div className="btn-group">
-                                <button
-                                    type="button"
-                                    className="btn btn-sm btn-light dropdown-toggle"
-                                    data-toggle="dropdown"
-                                >
-                                    My Account
+                            <DropdownMenu label="My Account">
+                                {!isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleSignIn}>
+                                    Sign in
+                                </button>}
+                                {isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleCreateProduct}>
+                                    Crear Producto
+                                </button>}
+                                {isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleSignOut}>
+                                    Logout
+                                </button>}
+                            </DropdownMenu>
+                            <DropdownMenu label="USD" className="mx-2">
+                                <button className="dropdown-item" type="button">
+                                    EUR
                                 </button>
-                                <div className="dropdown-menu dropdown-menu-right">
-                                    {!isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleSignIn}>
-                                        Sign in
-                                    </button>}
-                                    {isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleCreateProduct}>
-                                        Crear Producto
-                                    </button>}
-                                    {isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleSignOut}>
-                                        Logout
-                                    </button>}
-                                </div>
-                            </div>
-                            <div className="btn-group mx-2">
-                                <button
-                                    type="button"
-                                    className="btn btn-sm btn-light dropdown-toggle"
-                                    data-toggle="dropdown"
-                                >
-                                    USD
+                                <button className="dropdown-item" type="button">
+                                    GBP
                                 </button>
-                                <div className="dropdown-menu dropdown-menu-right">
-                                    <button className="dropdown-item" type="button">
-                                        EUR
-                                    </button>
-                                    <button className="dropdown-item" type="button">
-                                        GBP
-                                    </button>
-                                    <button className="dropdown-item" type="button">
-                                        CAD
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="btn-group">
-                                <button
-                                    type="button"
-                                    className="btn btn-sm btn-light dropdown-toggle"
-                                    data-toggle="dropdown"
-                                >
-                                    EN
+                                <button className="dropdown-item" type="button">
+                                    CAD
                                 </button>
-                                <div className="dropdown-menu dropdown-menu-right">
-                                    <button className="dropdown-item" type="button">
-                                        FR
-                                    </button>
-                                    <button className="dropdown-item" type="button">
-                                        AR
-                                    </button>
-                                    <button className="dropdown-item" type="button">
-                                        RU
-                                    </button>
-                                </div>
-                            </div>
+                            </DropdownMenu>
+                            <DropdownMenu label="EN">
+                                <button className="dropdown-item" type="button">
+                                    FR
+                                </button>
+                                <button className="dropdown-item" type="button">
+                                    AR
+                                </button>
+                                <button className="dropdown-item" type="button">
+                                    RU
+                                </button>
+                            </DropdownMenu>
                         </div>
                         <div className="d-inline-flex align-items-center d-block d-lg-none">
                             <a href="#" className="btn px-0 ml-2">

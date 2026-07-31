@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import SwiperCarousel from '../ui/SwiperCarousel';
 
 class CarrouselComponent extends Component {
     constructor(props) {
@@ -22,53 +23,14 @@ class CarrouselComponent extends Component {
                 <div className="container-fluid mb-3">
                     <div className="row px-xl-5">
                         <div className="col-lg-8">
-                            <div
-                                id="header-carousel"
-                                className="carousel slide carousel-fade mb-30 mb-lg-0"
-                                data-ride="carousel"
-                            >
-
-                                <ol className="carousel-indicators">
-                                    {this.state.carrousel.map((carrousel, index) => (
-                                        <li
-                                            key={carrousel.id}
-                                            data-target="#header-carousel"
-                                            data-slide-to={index}
-                                            className={index === 0 ? 'active' : ''}
-                                        />
-                                    ))}
-                                </ol>
-                                <div className="carousel-inner">
-                                    {this.state.carrousel.map((carrousel, index) => (
-                                        <div
-                                            className={`carousel-item position-relative ${index === 0 ? 'active' : ''}`}
-                                            style={{ height: 430 }}>
-                                            <img
-                                                className="position-absolute w-100 h-100"
-                                                src={`/img/carousel-${index + 1}.jpg`}
-                                                style={{ objectFit: "cover" }}
-                                            />
-                                            <div className="carousel-caption d-flex flex-column align-items-center justify-content-center">
-                                                <div className="p-3" style={{ maxWidth: 700 }}>
-                                                    <h1 className="display-4 text-white mb-3 animate__animated animate__fadeInDown">
-                                                        {carrousel.Description}
-                                                    </h1>
-                                                    <p className="mx-md-5 px-5 animate__animated animate__bounceIn">
-                                                        Lorem rebum magna amet lorem magna erat diam stet. Sadips
-                                                        duo stet amet amet ndiam elitr ipsum diam
-                                                    </p>
-                                                    <a
-                                                        className="btn btn-outline-light py-2 px-4 mt-3 animate__animated animate__fadeInUp"
-                                                        href="#"
-                                                    >
-                                                        Shop Now
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                            <SwiperCarousel
+                                items={this.state.carrousel.map((carrousel, index) => ({
+                                    id: carrousel.id,
+                                    title: carrousel.Description,
+                                    description: 'Lorem rebum magna amet lorem magna erat diam stet. Sadips duo stet amet amet ndiam elitr ipsum diam',
+                                    image: `/img/carousel-${index + 1}.jpg`,
+                                }))}
+                            />
                         </div>
                         <div className="col-lg-4">
                             <div className="product-offer mb-30" style={{ height: 200 }}>
