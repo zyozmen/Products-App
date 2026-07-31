@@ -9,6 +9,13 @@ pipeline {
     }
 
     stages {
+
+        stage('Test & Coverage') {
+            steps {
+                 sh 'docker run --rm -v $(pwd):/app -w /app node:20-alpine npm run test:coverage'
+            }
+        }
+        
         stage('SonarQube Static Analysis') {
             steps {
                 withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
