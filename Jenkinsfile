@@ -19,6 +19,10 @@ pipeline {
                 }
             }
             steps {
+                // 1. Instalar dependencias del proyecto (incluye vitest)
+                sh 'npm ci' 
+                
+                // 2. Ejecutar pruebas
                 sh 'npm run test:coverage'
             }
         }
