@@ -1,6 +1,9 @@
 import { toProductList, toProduct } from '../Interfaces/ProductInterface';
 import BaseRequestService from './BaseRequestService';
 
+const DEFAULT_PRODUCTS_API_URL = 'http://18.227.95.206:8080/api/productos';
+const productsApiUrl = (import.meta.env.VITE_APP_PRODUCTS_API_URL || DEFAULT_PRODUCTS_API_URL).replace(/\/+$/, '');
+
 const toCategory = (raw = {}) => ({
     category_id: String(raw.category_id ?? raw.id ?? '').trim(),
     name: String(raw.name ?? raw.nombre ?? raw.Description ?? '').trim(),
@@ -18,8 +21,8 @@ const toCategoryList = (raw) => {
 class ProductosService extends BaseRequestService {
     constructor() {
         super();
-        this.url = 'http://localhost:8080/api/productos';
-        this.categoriesUrl = 'http://localhost:8080/api/productos/categories';
+        this.url = productsApiUrl;
+        this.categoriesUrl = `${productsApiUrl}/categories`;
         this.listarProductos = this.listarProductos.bind(this);
         this.detalleProducto = this.detalleProducto.bind(this);
         this.crearProducto = this.crearProducto.bind(this);
@@ -144,7 +147,7 @@ class ProductosService extends BaseRequestService {
         } catch (firstError) {
             // Fallback for backends that expose the endpoint in Spanish.
             try {
-                const data = await this.executeGetRequest('http://localhost:8080/api/productos/categories');
+                const data = await this.executeGetRequest(this.categoriesUrl);
                 return toCategoryList(data);
             } catch (fallbackError) {
                 console.error(firstError);
