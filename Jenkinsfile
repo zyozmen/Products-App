@@ -12,7 +12,7 @@ pipeline {
 
         stage('Test & Coverage') {
             steps {
-                 sh 'docker run --rm -v $(pwd):/app -w /app node:20-alpine npm run test:coverage'
+                 sh "docker run --rm -v ${WORKSPACE}:/app -w /app node:20-alpine npm run test:coverage"
             }
         }
         
@@ -44,7 +44,7 @@ pipeline {
                   //  def gitBranch = env.BRANCH_NAME ?: 'main'
                     def fullImageName = "${DOCKER_USER}/${APP_NAME}"
 
-                    echo "Construyendo imagen: ${fullImageName}:${APP_VERSION} para la rama [${currentBranch}]..."
+                    echo "Construyendo imagen: ${fullImageName}:${APP_VERSION} para la rama [${env.BRANCH_NAME ?: env.GIT_BRANCH ?: 'main'}]..."
                     def customImage = docker.build("${fullImageName}:${APP_VERSION}")
 
                     docker.withRegistry("https://index.docker.io/v1/", 'DOCKER_HUB_CREDENTIALS') {
