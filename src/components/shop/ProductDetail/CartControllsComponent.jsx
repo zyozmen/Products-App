@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import cartService from "../../../services/CartService";
+import './CartControllsComponent.css';
 
 class ShareComponent extends Component {
     constructor(props) {
@@ -168,7 +169,7 @@ class ShareComponent extends Component {
                     </form>
                 </div>
                 <div className="d-flex align-items-center mb-4 pt-2">
-                    <div className="input-group quantity mr-3" style={{ width: 130 }}>
+                    <div className="input-group quantity mr-3 quantity-control">
                         <div className="input-group-btn">
                             <button type="button" className="btn btn-primary btn-minus" onClick={this.handleDecrement}>
                                 <i className="fa fa-minus" />

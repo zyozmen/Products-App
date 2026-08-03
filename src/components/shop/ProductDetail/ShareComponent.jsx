@@ -8,18 +8,18 @@ class ShareComponent extends Component {
             <div className="d-flex pt-2">
                 <strong className="text-dark mr-2">Share on:</strong>
                 <div className="d-inline-flex">
-                    <a className="text-dark px-2" href="">
+                    <button type="button" className="btn btn-link text-dark px-2 p-0" aria-label="Compartir en Facebook">
                         <i className="fab fa-facebook-f" />
-                    </a>
-                    <a className="text-dark px-2" href="">
+                    </button>
+                    <button type="button" className="btn btn-link text-dark px-2 p-0" aria-label="Compartir en Twitter">
                         <i className="fab fa-twitter" />
-                    </a>
-                    <a className="text-dark px-2" href="">
+                    </button>
+                    <button type="button" className="btn btn-link text-dark px-2 p-0" aria-label="Compartir en LinkedIn">
                         <i className="fab fa-linkedin-in" />
-                    </a>
-                    <a className="text-dark px-2" href="">
+                    </button>
+                    <button type="button" className="btn btn-link text-dark px-2 p-0" aria-label="Compartir en Pinterest">
                         <i className="fab fa-pinterest" />
-                    </a>
+                    </button>
                 </div>
             </div>
         );

@@ -41,15 +41,15 @@ class FeaturedProducts extends Component {
                             <div className="product-img position-relative overflow-hidden">
                                 <img className="img-fluid w-100" src={`/img/product-${featuredProduct.id}.jpg`} alt={featuredProduct.description || featuredProduct.description} />
                                 <div className="product-action">
-                                    <a className="btn btn-outline-dark btn-square" href="#" onClick={(event) => this.handleAddToCart(event, featuredProduct)}>
+                                    <button type="button" className="btn btn-outline-dark btn-square" onClick={(event) => this.handleAddToCart(event, featuredProduct)} aria-label="Agregar al carrito">
                                         <i className="fa fa-shopping-cart" />
-                                    </a>
-                                    <a className="btn btn-outline-dark btn-square" href="">
+                                    </button>
+                                    <button type="button" className="btn btn-outline-dark btn-square" aria-label="Agregar a favoritos">
                                         <i className="far fa-heart" />
-                                    </a>
-                                    <a className="btn btn-outline-dark btn-square" href="">
+                                    </button>
+                                    <button type="button" className="btn btn-outline-dark btn-square" aria-label="Actualizar producto">
                                         <i className="fa fa-sync-alt" />
-                                    </a>
+                                    </button>
                                     <Link className="btn btn-outline-dark btn-square" to={`/product/${featuredProduct.id}`}>
                                         <i className="fa fa-search" />
                                     </Link>

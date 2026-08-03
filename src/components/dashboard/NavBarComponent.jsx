@@ -3,6 +3,7 @@ import cartService from '../../services/CartService';
 import { NavLink } from 'react-router-dom';
 import DropdownMenu from '../ui/DropdownMenu';
 import CollapseMenu from '../ui/CollapseMenu';
+import './NavBarComponent.css';
 
 class NavBarComponent extends Component {
     constructor(props) {
@@ -35,7 +36,7 @@ class NavBarComponent extends Component {
                         <CollapseMenu
                             className="position-relative"
                             title={(
-                                <div className="btn d-flex align-items-center justify-content-between bg-primary w-100" style={{ height: 65, padding: "0 30px" }}>
+                                <div className="btn d-flex align-items-center justify-content-between bg-primary w-100 navbar-services-trigger">
                                     <h6 className="text-dark m-0">
                                         <i className="fa fa-bars mr-2" />
                                         Servicios
@@ -46,7 +47,7 @@ class NavBarComponent extends Component {
                             triggerClassName="btn border-0 p-0 w-100"
                             contentClassName="position-absolute navbar navbar-vertical navbar-light align-items-start p-0 bg-light"
                         >
-                            <div className="navbar-nav w-100" style={{ width: "calc(100% - 30px)" }}>
+                            <div className="navbar-nav w-100 navbar-services-menu">
                                 <DropdownMenu label="Premium" className="nav-item dropdown dropright w-100">
                                     <NavLink to="" className="dropdown-item">
                                         Armarios Inteligentes
@@ -124,19 +125,13 @@ class NavBarComponent extends Component {
                                 <div className="navbar-nav ml-auto py-0 d-none d-lg-block">
                                     <NavLink to="" className="btn px-0">
                                         <i className="fas fa-heart text-primary" />
-                                        <span
-                                            className="badge text-secondary border border-secondary rounded-circle"
-                                            style={{ paddingBottom: 2 }}
-                                        >
+                                        <span className="badge text-secondary border border-secondary rounded-circle header-badge">
                                             0
                                         </span>
                                     </NavLink>
                                     <NavLink to="/cart" className="btn px-0 ml-3">
                                         <i className="fas fa-shopping-cart text-primary" />
-                                        <span
-                                            className="badge text-secondary border border-secondary rounded-circle"
-                                            style={{ paddingBottom: 2 }}
-                                        >
+                                        <span className="badge text-secondary border border-secondary rounded-circle header-badge">
                                             {cartItemCount}
                                         </span>
                                     </NavLink>

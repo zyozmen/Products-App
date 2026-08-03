@@ -1,0 +1,16 @@
+.dropdown-menu-wrapper {
+  position: relative;
+}
+
+.dropdown-menu-trigger {
+  min-width: 120px;
+}
+
+.dropdown-menu-content {
+  display: block;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1050;
+  min-width: 220px;
+}

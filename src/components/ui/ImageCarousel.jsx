@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import './ImageCarousel.css';
 
 const ImageCarousel = ({ items, altPrefix = 'Slide' }) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (
-    <div className="carousel slide" style={{ position: 'relative' }}>
+    <div className="carousel slide image-carousel">
       <div className="carousel-inner bg-light">
         {items.map((item, index) => (
           <div key={item.id || `${altPrefix}-${index}`} className={`carousel-item ${index === activeIndex ? 'active' : ''}`}>

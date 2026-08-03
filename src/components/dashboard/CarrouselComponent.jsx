@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import SwiperCarousel from '../ui/SwiperCarousel';
+import './CarrouselComponent.css';
 
 class CarrouselComponent extends Component {
     constructor(props) {
@@ -33,24 +34,24 @@ class CarrouselComponent extends Component {
                             />
                         </div>
                         <div className="col-lg-4">
-                            <div className="product-offer mb-30" style={{ height: 200 }}>
+                            <div className="product-offer mb-30 offer-card">
                                 <img className="img-fluid" src="/logo192.png" alt="" />
                                 <div className="offer-text">
                                     <h6 className="text-white text-uppercase">Save 20%</h6>
                                     <h3 className="text-white mb-3">Special Offer</h3>
-                                    <a href="" className="btn btn-primary">
+                                    <button type="button" className="btn btn-primary">
                                         Shop Now
-                                    </a>
+                                    </button>
                                 </div>
                             </div>
-                            <div className="product-offer mb-30" style={{ height: 200 }}>
+                            <div className="product-offer mb-30 offer-card">
                                 <img className="img-fluid" src="/logo512.png" alt="" />
                                 <div className="offer-text">
                                     <h6 className="text-white text-uppercase">Save 20%</h6>
                                     <h3 className="text-white mb-3">Special Offer</h3>
-                                    <a href="" className="btn btn-primary">
+                                    <button type="button" className="btn btn-primary">
                                         Shop Now
-                                    </a>
+                                    </button>
                                 </div>
                             </div>
                         </div>

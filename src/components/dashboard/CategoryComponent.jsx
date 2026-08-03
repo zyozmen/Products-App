@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import './CategoryComponent.css';
 
 class CategoryComponent extends Component {
     constructor(props) {
@@ -24,9 +25,9 @@ class CategoryComponent extends Component {
                     {this.state.category.map(category =>
 
                     <div className="col-lg-3 col-md-4 col-sm-6 pb-1" key={category.id}>
-                        <a className="text-decoration-none" href="">
+                        <button type="button" className="text-decoration-none btn btn-link p-0">
                             <div className="cat-item d-flex align-items-center mb-4">
-                                <div className="overflow-hidden" style={{ width: 100, height: 100 }}>
+                                <div className="overflow-hidden category-image-wrapper">
                                     <img className="img-fluid" src={`/img/cat-${category.id}.jpg`} alt="" />
                                 </div>
                                 <div className="flex-fill pl-3">
@@ -34,7 +35,7 @@ class CategoryComponent extends Component {
                                     <small className="text-body">100 Products</small>
                                 </div>
                             </div>
-                        </a>
+                        </button>
                     </div>
                     )}
                 </div>

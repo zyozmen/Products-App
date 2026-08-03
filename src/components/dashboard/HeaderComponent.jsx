@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import AuthenticationService from '../../services/AuthenticationService.js';
 import cartService from '../../services/CartService.js';
 import DropdownMenu from '../ui/DropdownMenu';
+import './HeaderComponent.css';
 
 class HeaderComponent extends Component {
     constructor(props) {
@@ -78,18 +79,18 @@ class HeaderComponent extends Component {
                 <div className="row bg-secondary py-1 px-xl-5">
                     <div className="col-lg-6 d-none d-lg-block">
                         <div className="d-inline-flex align-items-center h-100">
-                            <a className="text-body mr-3">
+                            <button type="button" className="btn btn-link text-body mr-3 p-0">
                                 About
-                            </a>
-                            <a className="text-body mr-3" href="#">
+                            </button>
+                            <button type="button" className="btn btn-link text-body mr-3 p-0">
                                 Contact
-                            </a>
-                            <a className="text-body mr-3" href="#">
+                            </button>
+                            <button type="button" className="btn btn-link text-body mr-3 p-0">
                                 Help
-                            </a>
-                            <a className="text-body mr-3" href="#">
+                            </button>
+                            <button type="button" className="btn btn-link text-body mr-3 p-0">
                                 FAQs
-                            </a>
+                            </button>
                         </div>
                     </div>
                     <div className="col-lg-6 text-center text-lg-right">
@@ -129,37 +130,31 @@ class HeaderComponent extends Component {
                             </DropdownMenu>
                         </div>
                         <div className="d-inline-flex align-items-center d-block d-lg-none">
-                            <a href="#" className="btn px-0 ml-2">
+                            <button type="button" className="btn px-0 ml-2" aria-label="Ver favoritos">
                                 <i className="fas fa-heart text-dark" />
-                                <span
-                                    className="badge text-dark border border-dark rounded-circle"
-                                    style={{ paddingBottom: 2 }}
-                                >
+                                <span className="badge text-dark border border-dark rounded-circle header-badge">
                                     0
                                 </span>
-                            </a>
-                            <a href="#" className="btn px-0 ml-2" onClick={this.handleCartClick}>
+                            </button>
+                            <button type="button" className="btn px-0 ml-2" onClick={this.handleCartClick} aria-label="Ver carrito">
                                 <i className="fas fa-shopping-cart text-dark" />
-                                <span
-                                    className="badge text-dark border border-dark rounded-circle"
-                                    style={{ paddingBottom: 2 }}
-                                >
+                                <span className="badge text-dark border border-dark rounded-circle header-badge">
                                     {cartItemCount}
                                 </span>
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
                 <div className="row align-items-center bg-light py-3 px-xl-5 d-none d-lg-flex">
                     <div className="col-lg-4">
-                        <a href="" className="text-decoration-none">
+                        <button type="button" className="btn btn-link text-decoration-none p-0">
                             <span className="h1 text-uppercase text-primary bg-dark px-2">
                                 Grow
                             </span>
                             <span className="h1 text-uppercase text-dark bg-primary px-2 ml-n1">
                                 Shop
                             </span>
-                        </a>
+                        </button>
                     </div>
                     <div className="col-lg-4 col-6 text-left">
                         <form onSubmit={this.handleSearchSubmit}>
