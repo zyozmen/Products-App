@@ -22,7 +22,7 @@ FROM nginx:alpine
 RUN echo 'server { \
     listen 4200; \
     location /api/ { \
-        proxy_pass http://3.14.127.28:8080/; \
+        proxy_pass http://3.14.127.28:8080; \
         proxy_http_version 1.1; \
         proxy_set_header Host $host; \
         proxy_set_header X-Real-IP $remote_addr; \
