@@ -2,7 +2,29 @@ import { toProductList, toProduct } from '../Interfaces/ProductInterface';
 import BaseRequestService from './BaseRequestService';
 
 const rawProductsApiUrl = String(import.meta.env.VITE_APP_PRODUCTS_API_URL ?? '').trim();
-const productsApiUrl = (rawProductsApiUrl || '/api/productos').replace(/\/$/, '');
+const nodeEnv = String(import.meta.env.NODE_ENV ?? import.meta.env.PROD ?? '').toLowerCase();
+const isProduction = nodeEnv === 'true' || nodeEnv === 'production';
+
+const normalizeApiUrl = (value) => {
+    const trimmedValue = String(value ?? '').trim();
+
+    if (!trimmedValue) {
+        return '/api/productos';
+    }
+
+    try {
+        const parsedUrl = new URL(trimmedValue, 'http://localhost');
+        if (parsedUrl.origin !== 'http://localhost' && parsedUrl.pathname) {
+            return parsedUrl.pathname.replace(/\/$/, '') || '/';
+        }
+    } catch {
+        // Ignore invalid URLs and fall back to the raw value.
+    }
+
+    return trimmedValue.replace(/\/$/, '');
+};
+
+const productsApiUrl = normalizeApiUrl(isProduction ? '/api/productos' : (rawProductsApiUrl || '/api/productos'));
 
 const toCategory = (raw = {}) => ({
     category_id: String(raw.category_id ?? raw.id ?? '').trim(),
