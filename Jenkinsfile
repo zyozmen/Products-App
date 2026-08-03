@@ -11,11 +11,16 @@ pipeline {
     stages {
 
         stage('Test & Coverage') {
-           steps {
-                docker.image('node:20-alpine').inside {
+           agent {
+                docker {
+                image 'node:20-alpine'
+            // Opcional: reutilizar el usuario o argumentos si hay problemas de permisos
+            // reuseNode true
+                }
+            }
+            steps {
                 sh 'npm run test:coverage'
-        }
-    }
+            }
         }
         
         stage('SonarQube Static Analysis') {
