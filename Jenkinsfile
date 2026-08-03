@@ -97,7 +97,7 @@ pipeline {
                     )
                 ]){
                         script {
-                            def awsIp = "3.20.232.196"
+                            def awsIp = "3.134.115.70"
                             def fullImageTag = "${DOCKER_USER}/${APP_NAME}:${APP_VERSION}"
                             sh """
                             ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no \${SSH_USER}@${awsIp} \
