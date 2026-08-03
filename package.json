@@ -45,7 +45,9 @@
   "devDependencies": {
     "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "^6.0.5",
-    "vite": "^8.2.0"
+    "@vitest/coverage-v8": "^4.1.10",
+    "vite": "^8.2.0",
+    "vitest": "^4.1.10"
   },
   "jest": {
     "collectCoverageFrom": [
