@@ -22,7 +22,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
-    "test:coverage": "vitest run --coverage --watchAll=false --testResultsProcessor=jest-sonar-reporter"
+    "test:coverage": "vitest run --coverage --testResultsProcessor=jest-sonar-reporter"
   },
   "eslintConfig": {
     "extends": [
