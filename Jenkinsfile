@@ -11,9 +11,11 @@ pipeline {
     stages {
 
         stage('Test & Coverage') {
-            steps {
-                 sh "docker run --rm -v ${WORKSPACE}:/app -w /app node:20-alpine npm run test:coverage"
-            }
+           steps {
+                docker.image('node:20-alpine').inside {
+                sh 'npm run test:coverage'
+        }
+    }
         }
         
         stage('SonarQube Static Analysis') {
