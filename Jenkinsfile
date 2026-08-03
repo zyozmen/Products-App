@@ -29,7 +29,7 @@ pipeline {
         }
 
         stage('Build & Push Docker Image') {
-            when {
+         /*    when {
                 expression {
                     // Evalúa la rama sin importar el tipo de job en Jenkins
                     def currentBranch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: ''
@@ -38,39 +38,39 @@ pipeline {
                     // Retorna true si contiene main, master o develop
                     return currentBranch =~ /(main|master|develop)/
                 }
-            }
+            }*/
             steps {
                 script {
-                    def gitBranch = env.BRANCH_NAME ?: 'main'
+                  //  def gitBranch = env.BRANCH_NAME ?: 'main'
                     def fullImageName = "${DOCKER_USER}/${APP_NAME}"
 
-                    echo "Construyendo imagen: ${fullImageName}:${APP_VERSION} para la rama [${gitBranch}]..."
+                    echo "Construyendo imagen: ${fullImageName}:${APP_VERSION} para la rama [${currentBranch}]..."
                     def customImage = docker.build("${fullImageName}:${APP_VERSION}")
 
                     docker.withRegistry("https://index.docker.io/v1/", 'DOCKER_HUB_CREDENTIALS') {
                         echo "Publicando tag de versión: ${APP_VERSION}..."
                         customImage.push(APP_VERSION)
 
-                        if (gitBranch == 'main' || gitBranch == 'master') {
+                      //  if (gitBranch == 'main' || gitBranch == 'master') {
                             echo "Publicando tag: latest para Producción..."
                             customImage.push('latest')
-                        }
+                       // }
                     }
                 }
             }
         }
 
     stage('SSH Secure Deployment') {
-            when {
+          /*   when {
                 expression {
                     // Evalúa la rama sin importar el tipo de job en Jenkins
-                    def currentBranch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: ''
+                 //   def currentBranch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: ''
                     echo "Evaluando reglas de empaquetado para la rama: ${currentBranch}"
                     
                     // Retorna true si contiene main, master o develop
                     return currentBranch =~ /(main)/
                 }
-            }
+            }*/
             
             steps {
                  withCredentials([
