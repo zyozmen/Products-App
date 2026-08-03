@@ -1,8 +1,12 @@
 import { toProductList, toProduct } from '../Interfaces/ProductInterface';
 import BaseRequestService from './BaseRequestService';
 
-const DEFAULT_PRODUCTS_API_URL = 'http://18.227.95.206:8080/api/productos';
-const productsApiUrl = (import.meta.env.VITE_APP_PRODUCTS_API_URL || DEFAULT_PRODUCTS_API_URL).replace(/\/+$/, '');
+const rawProductsApiUrl = String(import.meta.env.VITE_APP_PRODUCTS_API_URL ?? '').trim();
+const productsApiUrl = rawProductsApiUrl.endsWith('/') ? rawProductsApiUrl.slice(0, -1) : rawProductsApiUrl;
+
+if (!productsApiUrl) {
+    throw new Error('Falta configurar VITE_APP_PRODUCTS_API_URL en el archivo .env');
+}
 
 const toCategory = (raw = {}) => ({
     category_id: String(raw.category_id ?? raw.id ?? '').trim(),
