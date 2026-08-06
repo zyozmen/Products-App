@@ -5,39 +5,31 @@ WORKDIR /app
 
 COPY package*.json ./
 
-# Si deseas mayor tolerancia a pequeñas inconsistencias en la instalación,
-# puedes usar 'npm ci || npm install' en lugar de fallar de inmediato.
 RUN npm install
 
 COPY . .
 
-ARG REACT_APP_API_URL
-ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ARG VITE_APP_API_URL=/api
+ENV VITE_APP_API_URL=$VITE_APP_API_URL
+
+ARG VITE_APP_PRODUCTS_API_URL=/api/productos
+ENV VITE_APP_PRODUCTS_API_URL=$VITE_APP_PRODUCTS_API_URL
 
 RUN npm run build
 
 # --- Etapa 2: Servidor Web Nginx ---
 FROM nginx:alpine
 
-RUN echo 'server { \
-    listen 4200; \
-    location /api/ { \
-        proxy_pass http://3.14.127.28:8080; \
-        proxy_http_version 1.1; \
-        proxy_set_header Host $host; \
-        proxy_set_header X-Real-IP $remote_addr; \
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
-        proxy_set_header X-Forwarded-Proto $scheme; \
-        add_header Access-Control-Allow-Origin *; \
-    } \
-    location / { \
-        root /usr/share/nginx/html; \
-        index index.html index.htm; \
-        try_files $uri $uri/ /index.html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+ARG BACKEND_HOST=backend-service
+ARG BACKEND_PORT=8080
+ARG CORS_ALLOWED_ORIGIN=https://example.cloudfront.net
 
-COPY --from=builder /app/build /usr/share/nginx/html
+ENV BACKEND_HOST=$BACKEND_HOST
+ENV BACKEND_PORT=$BACKEND_PORT
+ENV CORS_ALLOWED_ORIGIN=$CORS_ALLOWED_ORIGIN
+
+COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 4200
 
