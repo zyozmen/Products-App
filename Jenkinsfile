@@ -51,8 +51,8 @@ pipeline {
             }
         }
 
-        stage('Build & Push Docker Image') {
-         /*    when {
+        /* stage('Build & Push Docker Image') {
+            when {
                 expression {
                     // Evalúa la rama sin importar el tipo de job en Jenkins
                     def currentBranch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: ''
@@ -61,7 +61,7 @@ pipeline {
                     // Retorna true si contiene main, master o develop
                     return currentBranch =~ /(main|master|develop)/
                 }
-            }*/
+            }
             steps {
                 script {
                   //  def gitBranch = env.BRANCH_NAME ?: 'main'
@@ -81,7 +81,7 @@ pipeline {
                     }
                 }
             }
-        }
+        }*/
 
         stage('Deploy to AWS S3 Versioned') {
             steps {
