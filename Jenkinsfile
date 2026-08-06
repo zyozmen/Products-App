@@ -95,6 +95,10 @@ pipeline {
                         aws s3 sync build/ s3://${env.S3_BUCKET_NAME}/live/ \
                             --region ${env.AWS_REGION} \
                             --delete
+
+                        echo "4. Aplicando Terraform con la nueva Imagen ==="
+                        terraform init
+                        terraform apply -auto-approve -var="app_version=${env.APP_VERSION}"
                     """
                 }
             }
@@ -106,13 +110,15 @@ pipeline {
                     string(credentialsId: env.CRED_AWS_KEY_ID, variable: 'AWS_ACCESS_KEY_ID'),
                     string(credentialsId: env.CRED_AWS_SECRET, variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
-                    echo "Creando invalidación en CloudFront ID: ${env.CLOUDFRONT_DIST_ID}..."
-                    sh """
+                    # Captura el ID directamente desde el estado de Terraform
+                        
+                        DIST_ID=\$(terraform output -raw cloudfront_distribution_id)
+
+                        echo "Creando invalidación en CloudFront ID: \$DIST_ID..."
                         aws cloudfront create-invalidation \
-                            --distribution-id ${env.CLOUDFRONT_DIST_ID} \
+                            --distribution-id \$DIST_ID \
                             --paths "/*" \
                             --region ${env.AWS_REGION}
-                    """
                 }
             }
         }
