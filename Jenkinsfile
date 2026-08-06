@@ -61,16 +61,37 @@ pipeline {
                     string(credentialsId: env.CRED_AWS_KEY_ID, variable: 'AWS_ACCESS_KEY_ID'),
                     string(credentialsId: env.CRED_AWS_SECRET, variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
-                    echo "Desplegando versión ${env.APP_VERSION} en S3 Bucket: ${env.S3_BUCKET_NAME}..."
-
-                    // 1. Historial inmutable por versión
                     sh """
+                        set -e
+
+                        echo "1. Verificando existencia del bucket: ${env.S3_BUCKET_NAME}..."
+                        if aws s3api head-bucket --bucket "${env.S3_BUCKET_NAME}" 2>/dev/null; then
+                            echo "➜ El bucket ya existe."
+                        else
+                            echo "➜ El bucket no existe. Creando bucket en región ${env.AWS_REGION}..."
+                            
+                            if [ "${env.AWS_REGION}" = "us-east-1" ]; then
+                                aws s3api create-bucket \
+                                    --bucket "${env.S3_BUCKET_NAME}" \
+                                    --region "${env.AWS_REGION}"
+                            else
+                                aws s3api create-bucket \
+                                    --bucket "${env.S3_BUCKET_NAME}" \
+                                    --region "${env.AWS_REGION}" \
+                                    --create-bucket-configuration LocationConstraint="${env.AWS_REGION}"
+                            fi
+
+                            echo "➜ Bloqueando acceso público predeterminado en S3..."
+                            aws s3api put-public-access-block \
+                                --bucket "${env.S3_BUCKET_NAME}" \
+                                --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+                        fi
+
+                        echo "2. Desplegando versión ${env.APP_VERSION}..."
                         aws s3 sync build/ s3://${env.S3_BUCKET_NAME}/releases/${env.APP_VERSION}/ \
                             --region ${env.AWS_REGION}
-                    """
 
-                    // 2. Sobrescribe la versión pública activa (Usando build/ en lugar de dist/)
-                    sh """
+                        echo "3. Actualizando versión activa en /live..."
                         aws s3 sync build/ s3://${env.S3_BUCKET_NAME}/live/ \
                             --region ${env.AWS_REGION} \
                             --delete
