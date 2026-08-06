@@ -52,25 +52,6 @@ pipeline {
             }
         }
 
-        stage('Verify & Install Tools') {
-            steps {
-                sh '''
-                    mkdir -p .bin
-                    export PATH="${WORKSPACE}/.bin:${PATH}"
-
-                    # 1. Verificar o instalar AWS CLI v2
-                    if ! command -v aws &> /dev/null; then
-                        echo "➜ AWS CLI no encontrado. Instalando localmente en el workspace..."
-                        curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                        unzip -q -o awscliv2.zip
-                        ./aws/install --bin-dir "${WORKSPACE}/.bin" --install-dir "${WORKSPACE}/.aws-cli" --update
-                        rm -rf awscliv2.zip aws/
-                    else
-                        echo "✓ AWS CLI ya está instalado: $(aws --version)"
-                    fi
-                '''
-            }
-        }
 
         stage('Deploy to AWS S3 Versioned') {
             steps {
