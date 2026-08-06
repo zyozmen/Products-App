@@ -34,6 +34,8 @@ pipeline {
 
                 // 3. Construir el proyecto
                 sh 'npm run build'
+
+                stash includes: 'build/**', name: 'build-artifacts'
             }
         }
         
