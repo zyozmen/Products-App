@@ -5,9 +5,17 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  # Configuración del Backend Remoto Compartido
+  backend "s3" {
+    bucket         = "terraform-state-505231787824"
+    key            = "frontend/products-app/terraform.tfstate"
+    region         = "us-east-2"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
 }
 
-# Región alineada con tu Jenkinsfile (us-east-2)
 provider "aws" {
   region = "us-east-2"
 }
@@ -43,8 +51,6 @@ resource "aws_cloudfront_distribution" "cdn" {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
     origin_id                = "S3-Frontend"
-
-    # [CRÍTICO]: Tu Jenkinsfile sube la versión activa a la carpeta /live
     origin_path              = "/live"
   }
 
@@ -67,8 +73,6 @@ resource "aws_cloudfront_distribution" "cdn" {
     compress               = true
   }
 
-  # Manejo de rutas para SPA (React Router / Vite)
-  # S3 devuelve 403 cuando el archivo no existe en un bucket privado
   custom_error_response {
     error_code         = 403
     response_code      = 200
@@ -117,7 +121,7 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
 
 # --- OUTPUTS ---
 output "cloudfront_distribution_id" {
-  description = "Copia este valor en la variable CLOUDFRONT_DIST_ID de tu Jenkinsfile"
+  description = "ID de la CDN capturado por Jenkins"
   value       = aws_cloudfront_distribution.cdn.id
 }
 
