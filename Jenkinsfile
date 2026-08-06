@@ -110,8 +110,8 @@ pipeline {
                     string(credentialsId: env.CRED_AWS_KEY_ID, variable: 'AWS_ACCESS_KEY_ID'),
                     string(credentialsId: env.CRED_AWS_SECRET, variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
-                    # Captura el ID directamente desde el estado de Terraform
-                        
+                    sh """
+                        # Captura el ID directamente desde el estado de Terraform
                         DIST_ID=\$(terraform output -raw cloudfront_distribution_id)
 
                         echo "Creando invalidación en CloudFront ID: \$DIST_ID..."
@@ -119,6 +119,7 @@ pipeline {
                             --distribution-id \$DIST_ID \
                             --paths "/*" \
                             --region ${env.AWS_REGION}
+                    """
                 }
             }
         }
