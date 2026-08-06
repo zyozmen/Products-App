@@ -10,6 +10,13 @@ pipeline {
 
     stages {
 
+        stage('Checkout') {
+            steps {
+                cleanWs()
+                checkout scm
+            }
+        }
+
         stage('Test & Coverage') {
            agent {
                 docker {
@@ -24,6 +31,9 @@ pipeline {
                 
                 // 2. Ejecutar pruebas
                 sh 'npm run test:coverage'
+
+                // 3. Construir el proyecto
+                sh 'npm run build'
             }
         }
         
@@ -71,89 +81,51 @@ pipeline {
             }
         }
 
-    stage('SSH Secure Deployment') {
-          /*   when {
-                expression {
-                    // Evalúa la rama sin importar el tipo de job en Jenkins
-                 //   def currentBranch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: ''
-                    echo "Evaluando reglas de empaquetado para la rama: ${currentBranch}"
-                    
-                    // Retorna true si contiene main, master o develop
-                    return currentBranch =~ /(main)/
-                }
-            }*/
-            
+        stage('Deploy to AWS S3 Versioned') {
             steps {
-                 withCredentials([
-                    sshUserPrivateKey(
-                        credentialsId: 'SSH_DEPLOY_KEY', 
-                        keyFileVariable: 'SSH_KEY', 
-                        usernameVariable: 'SSH_USER'
-                    ),
-                    usernamePassword(
-                        credentialsId: 'DOCKER_HUB_CREDENTIALS', 
-                        usernameVariable: 'DOCKER_USER', 
-                        passwordVariable: 'DOCKER_PASS'
-                    )
-                ]){
-                        script {
-                            def awsIp = "3.134.115.70"
-                            def fullImageTag = "${DOCKER_USER}/${APP_NAME}:${APP_VERSION}"
-                            sh """
-                            ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no \${SSH_USER}@${awsIp} \
-                            DOCKER_USER='${DOCKER_USER}' \
-                            DOCKER_PASS='${DOCKER_PASS}' \
-                            APP_NAME='${APP_NAME}' \
-                            IMAGE_TAG='${fullImageTag}' \
-                            NETWORK_NAME='${DOCKER_NETWORK_NAME}' \
-                            'bash -s' << 'EOF'
-                                set -e
-                                ENV_FILE="/etc/products-api/.env"
+                unstash 'build-artifacts'
 
-                                echo "--> Autenticando en Docker Hub..."
-                                echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: env.AWS_CREDENTIALS_ID]]) {
+            // 1. Guarda el historial inmutable de la versión
+                    sh """
+                        aws s3 sync dist/ s3://${env.S3_BUCKET_NAME}/releases/${env.APP_VERSION}/ \
+                            --region ${env.AWS_REGION}
+                    """
 
-                                echo "--> Descargando imagen desde Docker Hub: \$IMAGE_TAG"
-                                docker pull "\$IMAGE_TAG"
+            // 2. Sobrescribe la raíz activa que sirve CloudFront
+                    sh """
+                        aws s3 sync dist/ s3://${env.S3_BUCKET_NAME}/live/ \
+                            --region ${env.AWS_REGION} \
+                            --delete
+                    """
+                }
+            }
+        }
 
-                                echo "--> Verificando red aislada..."
-                                docker network inspect "\$NETWORK_NAME" >/dev/null 2>&1 || docker network create "\$NETWORK_NAME"
-
-                                echo "--> Removiendo contenedor anterior..."
-                                if [ \$(docker ps -aq -f name=^\${APP_NAME}\$) ]; then
-                                    docker stop "\$APP_NAME" || true
-                                    docker rm "\$APP_NAME" || true
-                                fi
-
-                                echo "--> Desplegando contenedor React en AWS..."
-                                docker run -d \\
-                                    --name "\$APP_NAME" \\
-                                    --restart unless-stopped \\
-                                    --network "\$NETWORK_NAME" \\
-                                    --env-file "\$ENV_FILE" \\
-                                    -p 4200:4200 \\
-                                    "\$IMAGE_TAG"
-
-                                echo "--> Limpiando imágenes en desuso..."
-                                docker image prune -f
-
-                                echo "--> Verificando estado del contenedor..."
-                                sleep 5
-                                docker ps -f name="\$APP_NAME"
-EOF
-"""
-                    }
+        stage('Invalidate CloudFront Cache') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: env.AWS_CREDENTIALS_ID
+                ]]) {
+                    echo "Creando invalidación en CloudFront ID: ${env.CLOUDFRONT_DIST_ID}..."
+                    sh """
+                        aws cloudfront create-invalidation \
+                            --distribution-id ${env.CLOUDFRONT_DIST_ID} \
+                            --paths "/*" \
+                            --region ${env.AWS_REGION}
+                    """
                 }
             }
         }
     }
 
     post {
-        always {
-            cleanWs()
+        success {
+            echo '¡Despliegue del Frontend completado con éxito en S3 + CloudFront!'
         }
         failure {
-            echo "El pipeline abortó su ejecución para prevenir fugas de contexto o fallos de autenticación."
+            echo 'El pipeline de despliegue ha fallado. Revisa los logs.'
         }
     }
 }
