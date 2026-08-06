@@ -6,6 +6,9 @@ pipeline {
         DOCKER_USER          = 'zyozmen'
         DOCKER_NETWORK_NAME   = 'red-productos'
         APP_VERSION          = "1.0.${BUILD_NUMBER}"
+        AWS_REGION         = 'us-east-2'
+        AWS_ACCOUNT_ID     = '505231787824'
+        S3_BUCKET_NAME     = 'ecommerce-frontend-bucket-prod'
     }
 
     stages {
@@ -87,11 +90,16 @@ pipeline {
             steps {
                 unstash 'build-artifacts'
 
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: env.AWS_CREDENTIALS_ID]]) {
-            // 1. Guarda el historial inmutable de la versión
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    // Al usar los nombres estándar AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY,
+                    // el CLI de AWS los detecta automáticamente sin necesidad de hacer 'export'.
                     sh """
-                        aws s3 sync dist/ s3://${env.S3_BUCKET_NAME}/releases/${env.APP_VERSION}/ \
+                        aws s3 sync build/ s3://${env.S3_BUCKET_NAME}/releases/${env.APP_VERSION}/ \
                             --region ${env.AWS_REGION}
+
                     """
 
             // 2. Sobrescribe la raíz activa que sirve CloudFront
