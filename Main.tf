@@ -49,7 +49,7 @@ resource "aws_cloudfront_distribution" "cdn" {
 
   # Origen 1: S3 para los estáticos del Frontend
   origin {
-    domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
+    domain_name              = "products-api-alb-1106728675.us-east-2.elb.amazonaws.com"
     origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
     origin_id                = "S3-Frontend"
     origin_path              = "/live"
