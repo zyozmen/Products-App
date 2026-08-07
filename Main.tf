@@ -20,6 +20,62 @@ provider "aws" {
   region = "us-east-2"
 }
 
+# 1. Declarar el origen del ALB (Backend) dentro de aws_cloudfront_distribution.cdn
+resource "aws_cloudfront_distribution" "cdn" {
+  enabled             = true
+  default_root_object = "index.html"
+
+  # Origen 1: S3 para el Frontend
+  origin {
+    domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
+    origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
+    origin_id                = "S3-Frontend"
+    origin_path              = "/live"
+  }
+
+  # Origen 2: ALB para la API en ECS
+  origin {
+    domain_name = "dns-de-tu-alb-en-ecs.us-east-2.elb.amazonaws.com" # <--- Reemplaza con tu ALB DNS
+    origin_id   = "ALB-Backend"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only" # o "https-only" según si tu ALB tiene certificado SSL
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  # Comportamiento por defecto (S3)
+  default_cache_behavior {
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "S3-Frontend"
+    # ... tu configuración actual ...
+    viewer_protocol_policy = "redirect-to-https"
+  }
+
+  # NUEVO: Comportamiento para la API (ALB)
+  ordered_cache_behavior {
+    path_pattern     = "/api/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "ALB-Backend"
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Authorization", "Origin", "Accept"]
+      cookies {
+        forward = "all"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 0
+    max_ttl                = 0
+  }
+
 # 1. Bucket S3 Privado para el Frontend
 resource "aws_s3_bucket" "frontend" {
   bucket = "ecommerce-frontend-bucket-prod"
