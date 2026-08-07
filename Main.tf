@@ -6,7 +6,6 @@ terraform {
     }
   }
 
-  # Configuración del Backend Remoto Compartido
   backend "s3" {
     bucket         = "terraform-state-505231787824"
     key            = "frontend/products-app/terraform.tfstate"
@@ -47,18 +46,17 @@ resource "aws_cloudfront_distribution" "cdn" {
   enabled             = true
   default_root_object = "index.html"
 
-  # Origen 1: S3 para los estáticos del Frontend
+  # Origen 1: S3 para los estáticos del Frontend (CORREGIDO)
   origin {
-    domain_name              = "products-api-alb-1106728675.us-east-2.elb.amazonaws.com"
+    domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
     origin_id                = "S3-Frontend"
     origin_path              = "/live"
   }
 
-  # Origen 2: ALB para las llamadas de la API de ECS
+  # Origen 2: ALB para la API de ECS (CORREGIDO CON TU ALB REAL)
   origin {
-    # REEMPLAZA esta línea con el DNS real de tu ALB (output alb_dns_name del backend)
-    domain_name = "products-api-alb-123456789.us-east-2.elb.amazonaws.com" 
+    domain_name = "products-api-alb-1106728675.us-east-2.elb.amazonaws.com" 
     origin_id   = "ALB-Backend"
 
     custom_origin_config {
@@ -69,7 +67,7 @@ resource "aws_cloudfront_distribution" "cdn" {
     }
   }
 
-  # Comportamiento por defecto: todo va a S3 (React)
+  # Comportamiento por defecto: S3 (React)
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD"]
@@ -89,7 +87,7 @@ resource "aws_cloudfront_distribution" "cdn" {
     compress               = true
   }
 
-  # Comportamiento prioritario: peticiones /api/* van al ALB de ECS
+  # Comportamiento prioritario: /api/* -> ALB ECS
   ordered_cache_behavior {
     path_pattern     = "/api/*"
     allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
@@ -133,7 +131,7 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 }
 
-# 5. Política en S3 para permitir acceso exclusivo a CloudFront vía OAC
+# 5. Política en S3
 resource "aws_s3_bucket_policy" "frontend_policy" {
   bucket = aws_s3_bucket.frontend.id
 
