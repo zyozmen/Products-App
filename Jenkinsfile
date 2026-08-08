@@ -65,6 +65,11 @@ pipeline {
         }
 
         stage('SonarQube Static Analysis') {
+            agent {
+                docker {
+                    image 'node:20-alpine'
+                }
+            }
             steps {
                 withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
                     sh '''
