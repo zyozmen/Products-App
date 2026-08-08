@@ -25,17 +25,13 @@ describe('ProductosService', () => {
     expect(productosService.categoriesUrl).toBe('/api/productos/categories');
   });
 
-  it('returns local mock products when the remote API is unavailable', async () => {
-    vi.stubEnv('VITE_APP_USE_MOCK_DATA', 'true');
+  it('propagates the remote API error when the backend is unavailable', async () => {
+    vi.stubEnv('VITE_APP_PRODUCTS_API_URL', 'http://localhost:8080/api/productos');
+    vi.stubEnv('NODE_ENV', 'development');
     axios.get.mockRejectedValueOnce(new Error('network down'));
 
     const { default: productosService } = await import('./ProductosService');
-    const result = await productosService.listarProductos(0, 5, {});
 
-    expect(result.products.length).toBeGreaterThan(0);
-    expect(result.products[0]).toMatchObject({
-      id: expect.any(String),
-      name: expect.any(String),
-    });
+    await expect(productosService.listarProductos(0, 5, {})).rejects.toThrow('network down');
   });
 });
