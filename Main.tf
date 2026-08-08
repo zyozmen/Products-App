@@ -41,12 +41,23 @@ resource "aws_cloudfront_origin_access_control" "oac" {
   signing_protocol                  = "sigv4"
 }
 
-# 4. Distribución de CloudFront con Doble Origen (S3 + ALB)
+# 4. Políticas Gestionadas por AWS para Manejo de API (Moderna y sin Deprecaciones)
+# CachingDisabled: Evita que CloudFront guarde en caché peticiones dinámicas de la REST API
+data "aws_cloudfront_cache_policy" "caching_disabled" {
+  name = "Managed-CachingDisabled"
+}
+
+# AllViewerExceptHostHeader: Pasa todos los Headers, Query Strings y Cookies a tu Backend Java
+data "aws_cloudfront_origin_request_policy" "all_viewer_except_host" {
+  name = "Managed-AllViewerExceptHostHeader"
+}
+
+# 5. Distribución de CloudFront con Doble Origen (S3 + ALB)
 resource "aws_cloudfront_distribution" "cdn" {
   enabled             = true
   default_root_object = "index.html"
 
-  # Origen 1: S3 para los estáticos del Frontend (CORREGIDO)
+  # Origen 1: S3 para los estáticos del Frontend
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
@@ -54,15 +65,15 @@ resource "aws_cloudfront_distribution" "cdn" {
     origin_path              = "/live"
   }
 
-  # Origen 2: ALB para la API de ECS (CORREGIDO CON TU ALB REAL)
+  # Origen 2: ALB para la API de ECS
   origin {
-    domain_name = "products-api-alb-1106728675.us-east-2.elb.amazonaws.com" 
+    domain_name = "products-api-alb-1463179492.us-east-2.elb.amazonaws.com"
     origin_id   = "ALB-Backend"
 
     custom_origin_config {
       http_port              = 80
       https_port             = 443
-      origin_protocol_policy = "http-only"
+      origin_protocol_policy = "http-only" # Forzado por HTTP al ALB
       origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
@@ -87,25 +98,19 @@ resource "aws_cloudfront_distribution" "cdn" {
     compress               = true
   }
 
-  # Comportamiento prioritario: /api/* -> ALB ECS
+  # Comportamiento prioritario: /api/* -> ALB ECS (CORREGIDO)
   ordered_cache_behavior {
     path_pattern     = "/api/*"
     allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "ALB-Backend"
 
-    forwarded_values {
-      query_string = true
-      headers      = ["Authorization", "Origin", "Accept"]
-      cookies {
-        forward = "all"
-      }
-    }
+    # Uso de Políticas Gestionadas de AWS (Desactiva Caché en API y pasa Headers/CORS)
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
 
     viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 0
-    max_ttl                = 0
+    compress               = true
   }
 
   custom_error_response {
@@ -131,7 +136,7 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 }
 
-# 5. Política en S3
+# 6. Política en S3
 resource "aws_s3_bucket_policy" "frontend_policy" {
   bucket = aws_s3_bucket.frontend.id
 
