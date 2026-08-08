@@ -5,20 +5,20 @@ pipeline {
         APP_NAME = 'products-frontend'
         APP_VERSION = "1.0.${BUILD_NUMBER}"
 
-        // Configuración configurable desde Jenkins
-        SONAR_HOST_URL = credentials('SONAR_HOST_URL') ?: 'http://localhost:8070'
+        // Valores por defecto para el pipeline
+        SONAR_HOST_URL = 'http://localhost:8070'
         SONAR_PROJECT_KEY = 'products-frontend'
         SONAR_PROJECT_NAME = 'Products Frontend'
         SONAR_PROJECT_VERSION = '1.0'
 
         // AWS Config
-        AWS_REGION = credentials('AWS_REGION') ?: 'us-east-2'
-        AWS_ACCOUNT_ID = credentials('AWS_ACCOUNT_ID') ?: '505231787824'
-        S3_BUCKET_NAME = credentials('S3_BUCKET_NAME') ?: 'ecommerce-frontend-bucket-prod'
+        AWS_REGION = 'us-east-2'
+        AWS_ACCOUNT_ID = '505231787824'
+        S3_BUCKET_NAME = 'ecommerce-frontend-bucket-prod'
 
         // Terraform backend config
-        TERRAFORM_STATE_BUCKET = credentials('TERRAFORM_STATE_BUCKET') ?: 'terraform-state-505231787824'
-        TERRAFORM_DYNAMO_TABLE = credentials('TERRAFORM_DYNAMO_TABLE') ?: 'terraform-locks'
+        TERRAFORM_STATE_BUCKET = 'terraform-state-505231787824'
+        TERRAFORM_DYNAMO_TABLE = 'terraform-locks'
 
         // Credentials IDs en Jenkins
         CRED_AWS_KEY_ID = 'aws-access-key-id'
