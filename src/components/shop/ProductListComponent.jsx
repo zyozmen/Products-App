@@ -228,12 +228,12 @@ class ProductListComponent extends Component {
                             <div className="product-img position-relative overflow-hidden">
                                 <img className="img-fluid w-100" src="img/product-1.jpg" alt="" />
                                 <div className="product-action">
-                                    <a className="btn btn-outline-dark btn-square" href="#" onClick={(event) => this.handleAddToCart(event, product)}>
+                                    <button type="button" className="btn btn-outline-dark btn-square" onClick={(event) => this.handleAddToCart(event, product)} aria-label="Agregar al carrito">
                                         <i className="fa fa-shopping-cart" />
-                                    </a>
-                                    <a className="btn btn-outline-dark btn-square" href="">
+                                    </button>
+                                    <button type="button" className="btn btn-outline-dark btn-square" aria-label="Agregar a favoritos">
                                         <i className="far fa-heart" />
-                                    </a>
+                                    </button>
                                     <NavLink className="btn btn-outline-dark btn-square" to={`/product/${product.id}`}>
                                         <i className="fa fa-search" />
                                     </NavLink>

@@ -4,6 +4,7 @@ import NavBarComponent from "../dashboard/NavBarComponent";
 import FooterComponent from "../dashboard/FooterComponent";
 import navigationComponent from "../navigation/NavigationComponent";
 import cartService, { DEFAULT_TAX_RATE } from "../../services/CartService";
+import './ShoppingCarComponent.css';
 
 class ShoppingCarComponent extends Component {
     constructor(props) {
@@ -85,14 +86,13 @@ class ShoppingCarComponent extends Component {
                                     {items.map((item) => (
                                         <tr key={item.id}>
                                             <td className="align-middle">
-                                                <img src={item.image} alt={item.name} style={{ width: 50 }} />{" "}
+                                                <img src={item.image} alt={item.name} className="cart-product-image" />{" "}
                                                 {item.name}
                                             </td>
                                             <td className="align-middle">${item.price.toFixed(2)}</td>
                                             <td className="align-middle">
                                                 <div
-                                                    className="input-group quantity mx-auto"
-                                                    style={{ width: 100 }}
+                                                    className="input-group quantity mx-auto cart-quantity-input"
                                                 >
                                                     <div className="input-group-btn">
                                                         <button

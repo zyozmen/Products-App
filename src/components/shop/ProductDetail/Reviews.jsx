@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import './Reviews.css';
 
 class Reviews extends Component {
 
@@ -11,7 +12,7 @@ class Reviews extends Component {
                                 src="/img/user.jpg"
                                 alt="Image"
                                 className="img-fluid mr-3 mt-1"
-                                style={{ width: 45 }}
+                                className="img-fluid mr-3 mt-1 review-avatar"
                             />
                             <div className="media-body">
                                 <h6>

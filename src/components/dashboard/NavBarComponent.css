@@ -1,0 +1,8 @@
+.navbar-services-trigger {
+  height: 65px;
+  padding: 0 30px;
+}
+
+.navbar-services-menu {
+  width: calc(100% - 30px);
+}

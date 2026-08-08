@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import './FooterComponent.css';
 
 class FooterComponent extends Component {
 
@@ -30,51 +31,51 @@ class FooterComponent extends Component {
               <div className="col-md-4 mb-5">
                 <h5 className="text-secondary text-uppercase mb-4">Quick Shop</h5>
                 <div className="d-flex flex-column justify-content-start">
-                  <a className="text-secondary mb-2" href="#">
+                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     Home
-                  </a>
-                  <a className="text-secondary mb-2" href="#">
+                  </button>
+                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     Our Shop
-                  </a>
-                  <a className="text-secondary mb-2" href="#">
+                  </button>
+                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     Shop Detail
-                  </a>
-                  <a className="text-secondary mb-2" href="#">
+                  </button>
+                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     Shopping Cart
-                  </a>
-                  <a className="text-secondary mb-2" href="#">
+                  </button>
+                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     Checkout
-                  </a>
-                  <a className="text-secondary" href="#">
+                  </button>
+                  <button type="button" className="btn btn-link text-secondary p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     Contact Us
-                  </a>
+                  </button>
                 </div>
               </div>
               <div className="col-md-4 mb-5">
                 <h5 className="text-secondary text-uppercase mb-4">My Account</h5>
                 <div className="d-flex flex-column justify-content-start">
-                  <a className="text-secondary mb-2" href="#">
+                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     Home
-                  </a>
-                  <a className="text-secondary mb-2" href="#">
+                  </button>
+                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     Shopping Cart
-                  </a>
-                  <a className="text-secondary mb-2" href="#">
+                  </button>
+                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     Checkout
-                  </a>
-                  <a className="text-secondary" href="#">
+                  </button>
+                  <button type="button" className="btn btn-link text-secondary p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     Contact Us
-                  </a>
+                  </button>
                 </div>
               </div>
               <div className="col-md-4 mb-5">
@@ -94,33 +95,30 @@ class FooterComponent extends Component {
                 </form>
                 <h6 className="text-secondary text-uppercase mt-4 mb-3">Follow Us</h6>
                 <div className="d-flex">
-                  <a className="btn btn-primary btn-square mr-2" href="#">
+                  <button type="button" className="btn btn-primary btn-square mr-2" aria-label="Twitter">
                     <i className="fab fa-twitter" />
-                  </a>
-                  <a className="btn btn-primary btn-square mr-2" href="#">
+                  </button>
+                  <button type="button" className="btn btn-primary btn-square mr-2" aria-label="Facebook">
                     <i className="fab fa-facebook-f" />
-                  </a>
-                  <a className="btn btn-primary btn-square mr-2" href="#">
+                  </button>
+                  <button type="button" className="btn btn-primary btn-square mr-2" aria-label="LinkedIn">
                     <i className="fab fa-linkedin-in" />
-                  </a>
-                  <a className="btn btn-primary btn-square" href="#">
+                  </button>
+                  <button type="button" className="btn btn-primary btn-square" aria-label="Instagram">
                     <i className="fab fa-instagram" />
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div
-          className="row border-top mx-xl-5 py-4"
-          style={{ borderColor: "rgba(256, 256, 256, .1) !important" }}
-        >
+        <div className="row border-top mx-xl-5 py-4 footer-border-top">
           <div className="col-md-6 px-xl-0">
             <p className="mb-md-0 text-center text-md-left text-secondary">
               ©{" "}
-              <a className="text-primary" href="#">
+              <button type="button" className="btn btn-link text-primary p-0">
                 Domain
-              </a>
+              </button>
               . All Rights Reserved. Designed by
               <a className="text-primary" href="https://htmlcodex.com">
                 HTML Codex

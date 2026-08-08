@@ -1,0 +1,7 @@
+.collapse-menu-open {
+  display: block;
+}
+
+.collapse-menu-closed {
+  display: none;
+}

@@ -3,8 +3,8 @@ import ProductDescriptionComponent from "./ProductDescriptionComponent";
 import ShareComponent from "./ShareComponent";
 import CartControllsComponent from "./CartControllsComponent";
 import productosService from "../../../services/ProductosService.js";
-import productInterface, { toProduct } from "../../../Interfaces/ProductInterface.js";
-import { Link } from "react-router-dom";
+import { toProduct } from "../../../Interfaces/ProductInterface.js";
+import ImageCarousel from "../../ui/ImageCarousel";
 
 class ProductDetails extends Component {
     constructor(props) {
@@ -38,7 +38,6 @@ class ProductDetails extends Component {
     }
 
     render() {
-        const productId = Number(this.props.params?.id);
         const ranking = this.state.product.ranking || {};
         const price = this.state.product.price || {};
         const categories = Array.isArray(this.state.product.categories)
@@ -48,40 +47,15 @@ class ProductDetails extends Component {
             <div className="container-fluid pb-5">
                 <div className="row px-xl-5">
                     <div className="col-lg-5 mb-30">
-                        <div
-                            id="product-carousel"
-                            className="carousel slide"
-                            data-ride="carousel"
-                        >
-                            <div className="carousel-inner bg-light">
-                                <div className="carousel-item active">
-                                    <img className="w-100 h-100" src="/img/product-1.jpg" alt="Product view 1" />
-                                </div>
-                                <div className="carousel-item">
-                                    <img className="w-100 h-100" src="/img/product-2.jpg" alt="Product view 2" />
-                                </div>
-                                <div className="carousel-item">
-                                    <img className="w-100 h-100" src="/img/product-3.jpg" alt="Product view 3" />
-                                </div>
-                                <div className="carousel-item">
-                                    <img className="w-100 h-100" src="/img/product-4.jpg" alt="Product view 4" />
-                                </div>
-                            </div>
-                            <a
-                                className="carousel-control-prev"
-                                href="#product-carousel"
-                                data-slide="prev"
-                            >
-                                <i className="fa fa-2x fa-angle-left text-dark" />
-                            </a>
-                            <a
-                                className="carousel-control-next"
-                                href="#product-carousel"
-                                data-slide="next"
-                            >
-                                <i className="fa fa-2x fa-angle-right text-dark" />
-                            </a>
-                        </div>
+                        <ImageCarousel
+                            items={[
+                                { id: 1, src: '/img/product-1.jpg' },
+                                { id: 2, src: '/img/product-2.jpg' },
+                                { id: 3, src: '/img/product-3.jpg' },
+                                { id: 4, src: '/img/product-4.jpg' },
+                            ]}
+                            altPrefix="Product view"
+                        />
                     </div>
                     <div className="col-lg-7 h-auto mb-30">
                         <div className="h-100 bg-light p-30">
@@ -99,8 +73,8 @@ class ProductDetails extends Component {
                             <div className="d-flex mb-3 categories-container">
                                 <ul className="product-categories">
                                 {categories.length > 0 ? (
-                                    categories.map((category) => (
-                                            <li><span className="label label-custom">{category.name}</span></li>
+                                    categories.map((category, index) => (
+                                            <li key={`${category.name || 'category'}-${index}`}><span className="label label-custom">{category.name}</span></li>
                                     ))
                                 ) : (
                                     <small className="text-muted">No categories available</small>

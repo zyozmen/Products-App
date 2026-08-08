@@ -1,6 +1,31 @@
 import { toProductList, toProduct } from '../Interfaces/ProductInterface';
 import BaseRequestService from './BaseRequestService';
 
+const rawProductsApiUrl = String(import.meta.env.VITE_APP_PRODUCTS_API_URL ?? '').trim();
+const nodeEnv = String(import.meta.env.NODE_ENV ?? import.meta.env.PROD ?? '').toLowerCase();
+const isProduction = nodeEnv === 'true' || nodeEnv === 'production';
+
+const normalizeApiUrl = (value) => {
+    const trimmedValue = String(value ?? '').trim();
+
+    if (!trimmedValue) {
+        return '/api/productos';
+    }
+
+    try {
+        const parsedUrl = new URL(trimmedValue, 'http://localhost');
+        if (parsedUrl.origin !== 'http://localhost' && parsedUrl.pathname) {
+            return parsedUrl.pathname.replace(/\/$/, '') || '/';
+        }
+    } catch {
+        // Ignore invalid URLs and fall back to the raw value.
+    }
+
+    return trimmedValue.replace(/\/$/, '');
+};
+
+const productsApiUrl = normalizeApiUrl(isProduction ? '/api/productos' : (rawProductsApiUrl || '/api/productos'));
+
 const toCategory = (raw = {}) => ({
     category_id: String(raw.category_id ?? raw.id ?? '').trim(),
     name: String(raw.name ?? raw.nombre ?? raw.Description ?? '').trim(),
@@ -18,8 +43,8 @@ const toCategoryList = (raw) => {
 class ProductosService extends BaseRequestService {
     constructor() {
         super();
-        this.url = 'http://localhost:8080/api/productos';
-        this.categoriesUrl = 'http://localhost:8080/api/productos/categories';
+        this.url = productsApiUrl;
+        this.categoriesUrl = `${productsApiUrl}/categories`;
         this.listarProductos = this.listarProductos.bind(this);
         this.detalleProducto = this.detalleProducto.bind(this);
         this.crearProducto = this.crearProducto.bind(this);
@@ -144,7 +169,7 @@ class ProductosService extends BaseRequestService {
         } catch (firstError) {
             // Fallback for backends that expose the endpoint in Spanish.
             try {
-                const data = await this.executeGetRequest('http://localhost:8080/api/productos/categories');
+                const data = await this.executeGetRequest(this.categoriesUrl);
                 return toCategoryList(data);
             } catch (fallbackError) {
                 console.error(firstError);

@@ -2,13 +2,43 @@ pipeline {
     agent any
 
     environment {
-        APP_NAME             = 'products-frontend'
-        DOCKER_USER          = 'zyozmen'
-        DOCKER_NETWORK_NAME   = 'red-productos'
-        APP_VERSION          = "1.0.${BUILD_NUMBER}"
+        APP_NAME        = 'products-frontend'
+        APP_VERSION     = "1.0.${BUILD_NUMBER}"
+        
+        // AWS Config
+        AWS_REGION      = 'us-east-2'
+        AWS_ACCOUNT_ID  = '505231787824'
+        S3_BUCKET_NAME  = 'ecommerce-frontend-bucket-prod'
+
+        // Credentials IDs en Jenkins
+        CRED_AWS_KEY_ID = 'aws-access-key-id'
+        CRED_AWS_SECRET = 'aws-secret-access-key'
     }
 
     stages {
+
+        stage('Checkout') {
+            steps {
+                cleanWs()
+                checkout scm
+            }
+        }
+
+        stage('Test & Coverage') {
+            agent {
+                docker {
+                    image 'node:20-alpine'
+                }
+            }
+            steps {
+                sh 'npm ci' 
+                sh 'npm run test:coverage'
+                sh 'npm run build'
+
+                stash includes: 'build/**', name: 'build-artifacts'
+            }
+        }
+
         stage('SonarQube Static Analysis') {
             steps {
                 withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
@@ -21,121 +51,110 @@ pipeline {
             }
         }
 
-        stage('Build & Push Docker Image') {
-            when {
-                expression {
-                    // Evalúa la rama sin importar el tipo de job en Jenkins
-                    def currentBranch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: ''
-                    echo "Evaluando reglas de empaquetado para la rama: ${currentBranch}"
-                    
-                    // Retorna true si contiene main, master o develop
-                    return currentBranch =~ /(main|master|develop)/
-                }
-            }
+        stage('Provision Infrastructure (Terraform)') {
             steps {
-                script {
-                    def gitBranch = env.BRANCH_NAME ?: 'main'
-                    def fullImageName = "${DOCKER_USER}/${APP_NAME}"
+                withCredentials([
+                    string(credentialsId: env.CRED_AWS_KEY_ID, variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: env.CRED_AWS_SECRET, variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh """
+                        set -e
+                        
+                        STATE_BUCKET="terraform-state-505231787824"
+                        DYNAMO_TABLE="terraform-locks"
 
-                    echo "Construyendo imagen: ${fullImageName}:${APP_VERSION} para la rama [${gitBranch}]..."
-                    def customImage = docker.build("${fullImageName}:${APP_VERSION}")
+                        echo "=== 1. Verificando/Creando Backend Remoto en AWS (PRE-INIT) ==="
+                        
+                        if ! aws s3api head-bucket --bucket "\$STATE_BUCKET" 2>/dev/null; then
+                            echo "Bucket \$STATE_BUCKET no existe. Creando en ${env.AWS_REGION}..."
+                            
+                            if [ "${env.AWS_REGION}" = "us-east-1" ]; then
+                                aws s3api create-bucket --bucket "\$STATE_BUCKET" --region ${env.AWS_REGION}
+                            else
+                                aws s3api create-bucket \
+                                    --bucket "\$STATE_BUCKET" \
+                                    --region ${env.AWS_REGION} \
+                                    --create-bucket-configuration LocationConstraint=${env.AWS_REGION}
+                            fi
+                            
+                            aws s3api put-bucket-versioning \
+                                --bucket "\$STATE_BUCKET" \
+                                --versioning-configuration Status=Enabled
+                        else
+                            echo "✓ Bucket \$STATE_BUCKET ya existe."
+                        fi
 
-                    docker.withRegistry("https://index.docker.io/v1/", 'DOCKER_HUB_CREDENTIALS') {
-                        echo "Publicando tag de versión: ${APP_VERSION}..."
-                        customImage.push(APP_VERSION)
+                        if ! aws dynamodb describe-table --table-name "\$DYNAMO_TABLE" 2>/dev/null; then
+                            echo "Tabla DynamoDB \$DYNAMO_TABLE no existe. Creando..."
+                            aws dynamodb create-table \
+                                --table-name "\$DYNAMO_TABLE" \
+                                --attribute-definitions AttributeName=LockID,AttributeType=S \
+                                --key-schema AttributeName=LockID,KeyType=HASH \
+                                --billing-mode PAY_PER_REQUEST \
+                                --region ${env.AWS_REGION}
 
-                        if (gitBranch == 'main' || gitBranch == 'master') {
-                            echo "Publicando tag: latest para Producción..."
-                            customImage.push('latest')
-                        }
-                    }
+                            aws dynamodb wait table-exists --table-name "\$DYNAMO_TABLE" --region ${env.AWS_REGION}
+                        else
+                            echo "✓ Tabla \$DYNAMO_TABLE ya existe."
+                        fi
+
+                        echo "=== 2. Aprovisionando Recursos con Terraform ==="
+                        terraform init
+                        terraform apply -auto-approve
+                    """
                 }
             }
         }
 
-    stage('SSH Secure Deployment') {
-            when {
-                expression {
-                    // Evalúa la rama sin importar el tipo de job en Jenkins
-                    def currentBranch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: ''
-                    echo "Evaluando reglas de empaquetado para la rama: ${currentBranch}"
-                    
-                    // Retorna true si contiene main, master o develop
-                    return currentBranch =~ /(main)/
+        stage('Deploy to AWS S3 Versioned') {
+            steps {
+                unstash 'build-artifacts'
+
+                withCredentials([
+                    string(credentialsId: env.CRED_AWS_KEY_ID, variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: env.CRED_AWS_SECRET, variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    echo "Subiendo versión ${env.APP_VERSION} a S3..."
+                    sh """
+                        set -e
+                        aws s3 sync build/ s3://${env.S3_BUCKET_NAME}/releases/${env.APP_VERSION}/ \
+                            --region ${env.AWS_REGION}
+
+                        aws s3 sync build/ s3://${env.S3_BUCKET_NAME}/live/ \
+                            --region ${env.AWS_REGION} \
+                            --delete
+                    """
                 }
             }
-            
+        }
+
+        stage('Invalidate CloudFront Cache') {
             steps {
-                 withCredentials([
-                    sshUserPrivateKey(
-                        credentialsId: 'SSH_DEPLOY_KEY', 
-                        keyFileVariable: 'SSH_KEY', 
-                        usernameVariable: 'SSH_USER'
-                    ),
-                    usernamePassword(
-                        credentialsId: 'DOCKER_HUB_CREDENTIALS', 
-                        usernameVariable: 'DOCKER_USER', 
-                        passwordVariable: 'DOCKER_PASS'
-                    )
-                ]){
-                        script {
-                            def awsIp = "18.224.29.18"
-                            def fullImageTag = "${DOCKER_USER}/${APP_NAME}:${APP_VERSION}"
-                            sh """
-                            ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no \${SSH_USER}@${awsIp} \
-                            DOCKER_USER='${DOCKER_USER}' \
-                            DOCKER_PASS='${DOCKER_PASS}' \
-                            APP_NAME='${APP_NAME}' \
-                            IMAGE_TAG='${fullImageTag}' \
-                            NETWORK_NAME='${DOCKER_NETWORK_NAME}' \
-                            'bash -s' << 'EOF'
-                                set -e
-                                ENV_FILE="/etc/products-api/.env"
+                withCredentials([
+                    string(credentialsId: env.CRED_AWS_KEY_ID, variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: env.CRED_AWS_SECRET, variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh """
+                        set -e
+                        DIST_ID=\$(terraform output -raw cloudfront_distribution_id)
 
-                                echo "--> Autenticando en Docker Hub..."
-                                echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
-
-                                echo "--> Descargando imagen desde Docker Hub: \$IMAGE_TAG"
-                                docker pull "\$IMAGE_TAG"
-
-                                echo "--> Verificando red aislada..."
-                                docker network inspect "\$NETWORK_NAME" >/dev/null 2>&1 || docker network create "\$NETWORK_NAME"
-
-                                echo "--> Removiendo contenedor anterior..."
-                                if [ \$(docker ps -aq -f name=^\${APP_NAME}\$) ]; then
-                                    docker stop "\$APP_NAME" || true
-                                    docker rm "\$APP_NAME" || true
-                                fi
-
-                                echo "--> Desplegando contenedor React en AWS..."
-                                docker run -d \\
-                                    --name "\$APP_NAME" \\
-                                    --restart unless-stopped \\
-                                    --network "\$NETWORK_NAME" \\
-                                    --env-file "\$ENV_FILE" \\
-                                    -p 4200:4200 \\
-                                    "\$IMAGE_TAG"
-
-                                echo "--> Limpiando imágenes en desuso..."
-                                docker image prune -f
-
-                                echo "--> Verificando estado del contenedor..."
-                                sleep 5
-                                docker ps -f name="\$APP_NAME"
-EOF
-"""
-                    }
+                        echo "Creando invalidación en CloudFront ID: \$DIST_ID..."
+                        aws cloudfront create-invalidation \
+                            --distribution-id \$DIST_ID \
+                            --paths "/*" \
+                            --region ${env.AWS_REGION}
+                    """
                 }
             }
         }
     }
 
     post {
-        always {
-            cleanWs()
+        success {
+            echo '¡Infraestructura y Frontend desplegados con éxito de extremo a extremo!'
         }
         failure {
-            echo "El pipeline abortó su ejecución para prevenir fugas de contexto o fallos de autenticación."
+            echo 'El pipeline ha fallado. Revisa los logs.'
         }
     }
 }
