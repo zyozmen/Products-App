@@ -1,6 +1,6 @@
 # Products App
 
-Aplicación frontend de e-commerce desarrollada con React y Vite. El proyecto incluye catálogo de productos, carrito, login, vistas de administración y un flujo de despliegue basado en ramas.
+Aplicaciï¿½n frontend de e-commerce desarrollada con React y Vite. El proyecto incluye catï¿½logo de productos, carrito, login, vistas de administraciï¿½n y un flujo de despliegue basado en ramas.
 
 ## Requisitos
 
@@ -15,7 +15,7 @@ npm install
 npm run dev
 ```
 
-La aplicación quedará disponible en:
+La aplicaciï¿½n quedarï¿½ disponible en:
 - http://localhost:4200
 
 ## Scripts disponibles
@@ -49,20 +49,36 @@ docker compose -f docker-compose.dev.yml down --remove-orphans
 
 ## Flujo de despliegue por ramas
 
-- main: ejecuta build, pruebas, análisis SonarQube, provisioning con Terraform y despliegue a AWS S3/CloudFront.
-- develop: ejecuta build, pruebas, análisis SonarQube y despliegue local con Docker.
-- otras ramas: ejecutan análisis de SonarQube y validaciones básicas, sin despliegues productivos.
+- main: ejecuta build, pruebas, anï¿½lisis SonarQube, provisioning con Terraform y despliegue a AWS S3/CloudFront.
+- develop: ejecuta build, pruebas, anï¿½lisis SonarQube y despliegue local con Docker.
+- otras ramas: ejecutan anï¿½lisis de SonarQube y validaciones bï¿½sicas, sin despliegues productivos.
+## PreparaciÃ³n previa de Jenkins
 
+Antes de ejecutar el pipeline, configura las credenciales en Jenkins desde la mÃ¡quina/host que tenga acceso al servidor Jenkins. El script de apoyo crea los secrets de Jenkins y no depende de que el pipeline haya creado un contenedor previamente.
+
+```bash
+JENKINS_TOKEN="tu-token-jenkins" \
+SONAR_TOKEN="tu-token-sonar" \
+AWS_ACCESS_KEY_ID="tu-access-key" \
+AWS_SECRET_ACCESS_KEY="tu-secret-key" \
+bash scripts/setup-jenkins-config.sh
+```
+
+Para probar sin escribir realmente en Jenkins:
+
+```bash
+DRY_RUN=1 bash scripts/setup-jenkins-config.sh
+```
 ## Estructura principal
 
 - src/components: vistas y componentes de la interfaz
-- src/services: servicios para productos, autenticación, carrito y peticiones HTTP
-- src/interfaces: mapeo y transformación de datos
+- src/services: servicios para productos, autenticaciï¿½n, carrito y peticiones HTTP
+- src/interfaces: mapeo y transformaciï¿½n de datos
 - docker-compose.dev.yml: entorno local de desarrollo
 - Jenkinsfile: pipeline CI/CD
 - Main.tf: infraestructura base para despliegue en AWS
 
-## Calidad y validación
+## Calidad y validaciï¿½n
 
 ```bash
 npm run build

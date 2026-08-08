@@ -5,10 +5,20 @@ pipeline {
         APP_NAME = 'products-frontend'
         APP_VERSION = "1.0.${BUILD_NUMBER}"
 
+        // Configuración configurable desde Jenkins
+        SONAR_HOST_URL = credentials('SONAR_HOST_URL') ?: 'http://localhost:8070'
+        SONAR_PROJECT_KEY = 'products-frontend'
+        SONAR_PROJECT_NAME = 'Products Frontend'
+        SONAR_PROJECT_VERSION = '1.0'
+
         // AWS Config
-        AWS_REGION = 'us-east-2'
-        AWS_ACCOUNT_ID = '505231787824'
-        S3_BUCKET_NAME = 'ecommerce-frontend-bucket-prod'
+        AWS_REGION = credentials('AWS_REGION') ?: 'us-east-2'
+        AWS_ACCOUNT_ID = credentials('AWS_ACCOUNT_ID') ?: '505231787824'
+        S3_BUCKET_NAME = credentials('S3_BUCKET_NAME') ?: 'ecommerce-frontend-bucket-prod'
+
+        // Terraform backend config
+        TERRAFORM_STATE_BUCKET = credentials('TERRAFORM_STATE_BUCKET') ?: 'terraform-state-505231787824'
+        TERRAFORM_DYNAMO_TABLE = credentials('TERRAFORM_DYNAMO_TABLE') ?: 'terraform-locks'
 
         // Credentials IDs en Jenkins
         CRED_AWS_KEY_ID = 'aws-access-key-id'
@@ -20,6 +30,17 @@ pipeline {
             steps {
                 cleanWs()
                 checkout scm
+            }
+        }
+
+        stage('Validate Jenkins Configuration') {
+            steps {
+                withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
+                    sh '''
+                        set -e
+                        test -n "$SONAR_TOKEN" || { echo "Falta la credencial SONAR_TOKEN en Jenkins"; exit 1; }
+                    '''
+                }
             }
         }
 
@@ -47,9 +68,21 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
                     sh '''
-                        set +x
-                        echo "Ejecutando analisis de seguridad con SonarQube..."
-                        # npx sonar-scanner -Dsonar.token="$SONAR_TOKEN" || exit 1
+                        set -e
+                        echo "Ejecutando análisis de SonarQube..."
+                        npm install --no-audit --no-fund
+                        npm run test:coverage
+                        npx sonar-scanner \
+                            -Dsonar.host.url="$SONAR_HOST_URL" \
+                            -Dsonar.login="$SONAR_TOKEN" \
+                            -Dsonar.projectKey="$SONAR_PROJECT_KEY" \
+                            -Dsonar.projectName="$SONAR_PROJECT_NAME" \
+                            -Dsonar.projectVersion="$SONAR_PROJECT_VERSION" \
+                            -Dsonar.sources=src \
+                            -Dsonar.tests=src \
+                            -Dsonar.test.inclusions="src/**/*.test.js,src/**/*.test.jsx,src/**/*.test.ts,src/**/*.test.tsx" \
+                            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                            -Dsonar.exclusions="src/vendor/**,public/**"
                     '''
                 }
             }
@@ -82,8 +115,8 @@ pipeline {
                     sh """
                         set -e
 
-                        STATE_BUCKET="terraform-state-505231787824"
-                        DYNAMO_TABLE="terraform-locks"
+                        STATE_BUCKET="${TERRAFORM_STATE_BUCKET}"
+                        DYNAMO_TABLE="${TERRAFORM_DYNAMO_TABLE}"
 
                         echo "=== 1. Verificando/Creando Backend Remoto en AWS (PRE-INIT) ==="
 
