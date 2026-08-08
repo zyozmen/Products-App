@@ -5,6 +5,18 @@ const rawProductsApiUrl = String(import.meta.env.VITE_APP_PRODUCTS_API_URL ?? ''
 const nodeEnv = String(import.meta.env.NODE_ENV ?? import.meta.env.PROD ?? '').toLowerCase();
 const isProduction = nodeEnv === 'true' || nodeEnv === 'production';
 
+const resolveApiBaseUrl = () => {
+    if (rawProductsApiUrl) {
+        return rawProductsApiUrl;
+    }
+
+    if (!isProduction) {
+        return 'http://localhost:8080/api/productos';
+    }
+
+    return '/api/productos';
+};
+
 const normalizeApiUrl = (value) => {
     const trimmedValue = String(value ?? '').trim();
 
@@ -24,7 +36,7 @@ const normalizeApiUrl = (value) => {
     return trimmedValue.replace(/\/$/, '');
 };
 
-const productsApiUrl = normalizeApiUrl(isProduction ? '/api/productos' : (rawProductsApiUrl || '/api/productos'));
+const productsApiUrl = normalizeApiUrl(resolveApiBaseUrl());
 
 const toCategory = (raw = {}) => ({
     category_id: String(raw.category_id ?? raw.id ?? '').trim(),
@@ -62,12 +74,13 @@ class ProductosService extends BaseRequestService {
             maxRating,
         } = filters;
 
+        const normalizedSearch = String(searchTerm ?? '').trim();
+
         const queryParams = new URLSearchParams({
             page: String(page),
             size: String(size),
         });
 
-        const normalizedSearch = String(searchTerm ?? '').trim();
         if (normalizedSearch) {
             queryParams.set('name', normalizedSearch);
         }

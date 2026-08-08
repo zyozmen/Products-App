@@ -1,8 +1,17 @@
+import axios from 'axios';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('axios', () => ({
+  default: {
+    get: vi.fn(),
+    post: vi.fn(),
+  },
+}));
 
 afterEach(() => {
   vi.resetModules();
   vi.unstubAllEnvs();
+  vi.clearAllMocks();
 });
 
 describe('ProductosService', () => {
@@ -14,5 +23,19 @@ describe('ProductosService', () => {
 
     expect(productosService.url).toBe('/api/productos');
     expect(productosService.categoriesUrl).toBe('/api/productos/categories');
+  });
+
+  it('returns local mock products when the remote API is unavailable', async () => {
+    vi.stubEnv('VITE_APP_USE_MOCK_DATA', 'true');
+    axios.get.mockRejectedValueOnce(new Error('network down'));
+
+    const { default: productosService } = await import('./ProductosService');
+    const result = await productosService.listarProductos(0, 5, {});
+
+    expect(result.products.length).toBeGreaterThan(0);
+    expect(result.products[0]).toMatchObject({
+      id: expect.any(String),
+      name: expect.any(String),
+    });
   });
 });

@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     environment {
-        APP_NAME        = 'products-frontend'
-        APP_VERSION     = "1.0.${BUILD_NUMBER}"
-        
+        APP_NAME = 'products-frontend'
+        APP_VERSION = "1.0.${BUILD_NUMBER}"
+
         // AWS Config
-        AWS_REGION      = 'us-east-2'
-        AWS_ACCOUNT_ID  = '505231787824'
-        S3_BUCKET_NAME  = 'ecommerce-frontend-bucket-prod'
+        AWS_REGION = 'us-east-2'
+        AWS_ACCOUNT_ID = '505231787824'
+        S3_BUCKET_NAME = 'ecommerce-frontend-bucket-prod'
 
         // Credentials IDs en Jenkins
         CRED_AWS_KEY_ID = 'aws-access-key-id'
@@ -16,7 +16,6 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 cleanWs()
@@ -25,16 +24,21 @@ pipeline {
         }
 
         stage('Test & Coverage') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'develop'
+                }
+            }
             agent {
                 docker {
                     image 'node:20-alpine'
                 }
             }
             steps {
-                sh 'npm ci' 
+                sh 'npm install --no-audit --no-fund'
                 sh 'npm run test:coverage'
                 sh 'npm run build'
-
                 stash includes: 'build/**', name: 'build-artifacts'
             }
         }
@@ -51,7 +55,25 @@ pipeline {
             }
         }
 
+        stage('Deploy Local Docker Environment') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                sh '''
+                    set -e
+                    echo "Desplegando ambiente local con Docker para develop..."
+                    docker compose -f docker-compose.dev.yml down --remove-orphans || true
+                    docker compose -f docker-compose.dev.yml up -d --build
+                    docker ps --filter "name=products-app" --format "table {{.Names}}\t{{.Status}}"
+                '''
+            }
+        }
+
         stage('Provision Infrastructure (Terraform)') {
+            when {
+                branch 'main'
+            }
             steps {
                 withCredentials([
                     string(credentialsId: env.CRED_AWS_KEY_ID, variable: 'AWS_ACCESS_KEY_ID'),
@@ -59,15 +81,15 @@ pipeline {
                 ]) {
                     sh """
                         set -e
-                        
+
                         STATE_BUCKET="terraform-state-505231787824"
                         DYNAMO_TABLE="terraform-locks"
 
                         echo "=== 1. Verificando/Creando Backend Remoto en AWS (PRE-INIT) ==="
-                        
+
                         if ! aws s3api head-bucket --bucket "\$STATE_BUCKET" 2>/dev/null; then
                             echo "Bucket \$STATE_BUCKET no existe. Creando en ${env.AWS_REGION}..."
-                            
+
                             if [ "${env.AWS_REGION}" = "us-east-1" ]; then
                                 aws s3api create-bucket --bucket "\$STATE_BUCKET" --region ${env.AWS_REGION}
                             else
@@ -76,7 +98,7 @@ pipeline {
                                     --region ${env.AWS_REGION} \
                                     --create-bucket-configuration LocationConstraint=${env.AWS_REGION}
                             fi
-                            
+
                             aws s3api put-bucket-versioning \
                                 --bucket "\$STATE_BUCKET" \
                                 --versioning-configuration Status=Enabled
@@ -107,6 +129,9 @@ pipeline {
         }
 
         stage('Deploy to AWS S3 Versioned') {
+            when {
+                branch 'main'
+            }
             steps {
                 unstash 'build-artifacts'
 
@@ -129,6 +154,9 @@ pipeline {
         }
 
         stage('Invalidate CloudFront Cache') {
+            when {
+                branch 'main'
+            }
             steps {
                 withCredentials([
                     string(credentialsId: env.CRED_AWS_KEY_ID, variable: 'AWS_ACCESS_KEY_ID'),
@@ -151,7 +179,7 @@ pipeline {
 
     post {
         success {
-            echo '¡Infraestructura y Frontend desplegados con éxito de extremo a extremo!'
+            echo 'Pipeline completado con éxito.'
         }
         failure {
             echo 'El pipeline ha fallado. Revisa los logs.'

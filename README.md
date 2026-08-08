@@ -1,70 +1,75 @@
-# Getting Started with Create React App
+# Products App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Aplicación frontend de e-commerce desarrollada con React y Vite. El proyecto incluye catálogo de productos, carrito, login, vistas de administración y un flujo de despliegue basado en ramas.
 
-## Available Scripts
+## Requisitos
 
-In the project directory, you can run:
+- Node.js 20+
+- npm
+- Docker y Docker Compose (opcional para desarrollo local)
 
-### `npm start`
+## Primeros pasos
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```bash
+npm install
+npm run dev
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+La aplicación quedará disponible en:
+- http://localhost:4200
 
-### `npm test`
+## Scripts disponibles
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+npm run dev
+npm run dev:docker
+npm run dev:docker:down
+npm run build
+npm run test
+npm run test:coverage
+```
 
-### `npm run build`
+## Desarrollo local con Docker
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Para levantar el entorno completo con frontend y MongoDB:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Servicios incluidos:
+- Frontend: http://localhost:4200
+- MongoDB: localhost:27017
 
-### `npm run eject`
+Para detener el entorno:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```bash
+docker compose -f docker-compose.dev.yml down --remove-orphans
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Flujo de despliegue por ramas
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- main: ejecuta build, pruebas, análisis SonarQube, provisioning con Terraform y despliegue a AWS S3/CloudFront.
+- develop: ejecuta build, pruebas, análisis SonarQube y despliegue local con Docker.
+- otras ramas: ejecutan análisis de SonarQube y validaciones básicas, sin despliegues productivos.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Estructura principal
 
-## Learn More
+- src/components: vistas y componentes de la interfaz
+- src/services: servicios para productos, autenticación, carrito y peticiones HTTP
+- src/interfaces: mapeo y transformación de datos
+- docker-compose.dev.yml: entorno local de desarrollo
+- Jenkinsfile: pipeline CI/CD
+- Main.tf: infraestructura base para despliegue en AWS
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Calidad y validación
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```bash
+npm run build
+npm run test:coverage
+```
 
-### Code Splitting
+## Notas de desarrollo
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- El proyecto incluye un modo de desarrollo con datos mock por defecto para que un nuevo integrante pueda arrancar sin configurar un backend externo.
+- Si deseas conectar un backend real, puedes configurar la variable de entorno VITE_APP_PRODUCTS_API_URL.
