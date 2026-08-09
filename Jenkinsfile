@@ -93,19 +93,22 @@ pipeline {
     }
             steps {
                 sh '''
-                    set -e
-                    echo "=== Desplegando ambiente local con Docker para develop ==="
+            set -e
+            echo "=== Desplegando ambiente usando Docker CLI nativo ==="
+            
+            docker stop products-frontend-dev || true
+            docker rm products-frontend-dev || true
 
-                    # 1. Tumbar contenedores previos
-                    docker-compose -f docker-compose.dev.yml down --remove-orphans || true
+            docker build -t products-frontend:develop .
 
-                    # 2. Reconstruir y levantar en segundo plano
-                    docker-compose -f docker-compose.dev.yml up -d --build
+            docker run -d \
+                --name products-frontend-dev \
+                -p 80:80 \
+                products-frontend:develop
 
-                    # 3. Mostrar estado final del contenedor
-                    docker ps --filter "name=products-app"
-                '''
-            }
+            docker ps --filter "name=products-frontend-dev"
+        '''
+    }
         }
 
         stage('Provision Infrastructure (Terraform)') {
