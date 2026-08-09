@@ -86,7 +86,7 @@ pipeline {
 
         stage('Deploy Local Docker Environment') {
             when {
-                branch 'develop'
+                branch '*/develop'
             }
             steps {
                 sh '''
