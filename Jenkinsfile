@@ -97,10 +97,10 @@ pipeline {
                     echo "=== Desplegando ambiente local con Docker para develop ==="
 
                     # 1. Tumbar contenedores previos
-                    docker compose -f docker-compose.dev.yml down --remove-orphans || true
+                    docker-compose -f docker-compose.dev.yml down --remove-orphans || true
 
                     # 2. Reconstruir y levantar en segundo plano
-                    docker compose -f docker-compose.dev.yml up -d --build
+                    docker-compose -f docker-compose.dev.yml up -d --build
 
                     # 3. Mostrar estado final del contenedor
                     docker ps --filter "name=products-app"
