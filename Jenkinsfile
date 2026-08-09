@@ -7,8 +7,8 @@ pipeline {
 
         // Valores por defecto para SonarQube
         SONAR_HOST_URL = 'http://localhost:8070'
-        SONAR_PROJECT_KEY = 'products-frontend'
-        SONAR_PROJECT_NAME = 'Products Frontend'
+        SONAR_PROJECT_KEY = 'Products-App-Sonar'
+        SONAR_PROJECT_NAME = 'Products-App-Sonar'
         SONAR_PROJECT_VERSION = '1.0'
 
         // AWS Config
