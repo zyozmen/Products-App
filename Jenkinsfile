@@ -56,7 +56,8 @@ pipeline {
                 withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
                     sh '''
                         set -e
-                        echo "=== 1. Instalando dependencias ==="
+                        echo "=== 1. Limpiando workspace e instalando dependencias ==="
+                        rm -rf node_modules
                         npm install --no-audit --no-fund
 
                         echo "=== 2. Ejecutando Pruebas Unitarias y Cobertura ==="
