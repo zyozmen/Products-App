@@ -5,7 +5,7 @@ pipeline {
         APP_NAME = 'products-frontend'
         APP_VERSION = "1.0.${BUILD_NUMBER}"
 
-        // Valores por defecto para el pipeline
+        // Valores por defecto para SonarQube
         SONAR_HOST_URL = 'http://localhost:8070'
         SONAR_PROJECT_KEY = 'products-frontend'
         SONAR_PROJECT_NAME = 'Products Frontend'
@@ -44,42 +44,31 @@ pipeline {
             }
         }
 
-        stage('Test & Coverage') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'develop'
-                }
-            }
+        stage('Quality & Code Analysis') {
             agent {
                 docker {
                     image 'node:20-alpine'
-                }
-            }
-            steps {
-                sh 'npm install --no-audit --no-fund'
-                sh 'npm run test:coverage'
-                sh 'npm run build'
-                stash includes: 'build/**', name: 'build-artifacts'
-            }
-        }
-
-        stage('SonarQube Static Analysis') {
-            agent {
-                docker {
-                    image 'node:20-alpine'
+                    // Permite que el contenedor alcance el puerto 8070 si SonarQube está en la máquina host
+                    args '--net=host'
                 }
             }
             steps {
                 withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
                     sh '''
                         set -e
-                        echo "Ejecutando análisis de SonarQube..."
+                        echo "=== 1. Instalando dependencias ==="
                         npm install --no-audit --no-fund
+
+                        echo "=== 2. Ejecutando Pruebas Unitarias y Cobertura ==="
                         npm run test:coverage
-                        npx sonar-scanner \
+
+                        echo "=== 3. Construyendo Artefacto de Aplicación ==="
+                        npm run build
+
+                        echo "=== 4. Enviando Análisis a SonarQube ==="
+                        npx sonarqube-scanner \
                             -Dsonar.host.url="$SONAR_HOST_URL" \
-                            -Dsonar.login="$SONAR_TOKEN" \
+                            -Dsonar.token="$SONAR_TOKEN" \
                             -Dsonar.projectKey="$SONAR_PROJECT_KEY" \
                             -Dsonar.projectName="$SONAR_PROJECT_NAME" \
                             -Dsonar.projectVersion="$SONAR_PROJECT_VERSION" \
@@ -90,6 +79,7 @@ pipeline {
                             -Dsonar.exclusions="src/vendor/**,public/**"
                     '''
                 }
+                stash includes: 'build/**', name: 'build-artifacts'
             }
         }
 
