@@ -85,9 +85,12 @@ pipeline {
         }
 
         stage('Deploy Local Docker Environment') {
-            when {
-                branch '*/develop'
-            }
+           when {
+        expression { 
+            def currentBranch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+            return currentBranch.contains('develop')
+        }
+    }
             steps {
                 sh '''
                     set -e
