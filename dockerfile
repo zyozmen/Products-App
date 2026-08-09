@@ -22,7 +22,7 @@ RUN npm run build
 FROM nginx:alpine
 
 # Variables de entorno dinámicas para la plantilla de Nginx
-ARG BACKEND_HOST=backend-service
+ARG BACKEND_HOST=Products-Api
 ARG BACKEND_PORT=8080
 ARG CORS_ALLOWED_ORIGIN=*
 
