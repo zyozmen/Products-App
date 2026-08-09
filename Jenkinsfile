@@ -95,6 +95,8 @@ pipeline {
                 sh '''
             set -e
             echo "=== Desplegando ambiente usando Docker CLI nativo ==="
+
+            docker network inspect products-net >/dev/null 2>&1 || docker network create products-net
             
             docker stop products-frontend-dev || true
             docker rm products-frontend-dev || true
@@ -102,6 +104,7 @@ pipeline {
             docker build -t products-frontend:develop .
 
             docker run -d \
+                --network products-net \
                 --name products-frontend-dev \
                 -p 80:80 \
                 products-frontend:develop
