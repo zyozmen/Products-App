@@ -4,6 +4,7 @@ pipeline {
     environment {
         APP_NAME = 'products-frontend'
         APP_VERSION = "1.0.${BUILD_NUMBER}"
+        CLUSTER_NAME   = 'products-cluster'
 
         // Valores por defecto para SonarQube
         SONAR_HOST_URL = 'http://localhost:8070'
@@ -112,6 +113,47 @@ pipeline {
             docker ps --filter "name=products-frontend-dev"
         '''
     }
+        }
+
+        stage('Deploy to KIND') {
+            when {
+                expression {
+                    def currentBranch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                    return currentBranch.contains('develop')
+                }
+            }
+            steps {
+                sh '''
+                    set -e
+                    echo "=== Desplegando en KIND ==="
+
+                    command -v kind >/dev/null || { echo "KIND no está instalado en el agente Jenkins"; exit 1; }
+                    command -v kubectl >/dev/null || { echo "kubectl no está instalado en el agente Jenkins"; exit 1; }
+
+                    docker network inspect products-net >/dev/null 2>&1 || docker network create products-net
+
+                    if ! kind get clusters | grep -qx "$KIND_CLUSTER_NAME"; then
+                        kind create cluster --name "$KIND_CLUSTER_NAME" --wait 60s
+                    fi
+                    kubectl config use-context "kind-$CLUSTER_NAME"
+
+                    for node in $(kind get nodes --name "$KIND_CLUSTER_NAME"); do
+                        docker network connect products-net "$node" 2>/dev/null || true
+                    done
+
+                    kind load docker-image products-frontend:develop --name "$KIND_CLUSTER_NAME"
+
+                    kubectl apply -f front.yaml
+                    kubectl set image deployment/products-frontend \
+                        web-container=products-frontend:develop
+                    kubectl rollout status deployment/products-frontend --timeout=120s
+                    kubectl get pods,svc -l app=products-frontend
+
+                    echo "=== Nodos KIND conectados a products-net ==="
+                    docker network inspect products-net \
+                        --format '{{range .Containers}}{{println .Name}}{{end}}'
+                '''
+            }
         }
 
         stage('Provision Infrastructure (Terraform)') {
