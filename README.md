@@ -1,60 +1,87 @@
 # Products App
 
-Aplicaci�n frontend de e-commerce desarrollada con React y Vite. El proyecto incluye cat�logo de productos, carrito, login, vistas de administraci�n y un flujo de despliegue basado en ramas.
+Frontend de e-commerce para GrowShop, desarrollado con React 19, Vite y React Router. Incluye catalogo de productos, filtros, detalle de producto, carrito, autenticacion y creacion de productos.
 
 ## Requisitos
 
-- Node.js 20+
+- Node.js 20 o superior
 - npm
-- Docker y Docker Compose (opcional para desarrollo local)
+- Docker, solo si se desea construir o ejecutar la imagen del frontend
 
-## Primeros pasos
+## Instalacion y desarrollo
 
 ```bash
 npm install
+copy .env.example .env.local
 npm run dev
 ```
 
-La aplicaci�n quedar� disponible en:
-- http://localhost:4200
+La aplicacion se inicia en [http://localhost:4200](http://localhost:4200).
+
+En Linux o macOS, el segundo comando equivalente es:
+
+```bash
+cp .env.example .env.local
+```
+
+## Variables de entorno
+
+Vite expone al frontend las variables que comienzan por `VITE_`. La configuracion minima se encuentra en `.env.example`:
+
+| Variable | Descripcion | Ejemplo |
+| --- | --- | --- |
+| `VITE_API_URL` | Base general de la API | `/api` |
+| `VITE_APP_PRODUCTS_API_URL` | Endpoint de productos | `http://localhost:8080/api/productos` |
+| `VITE_APP_NAME` | Nombre de la aplicacion | `GrowShop` |
+
+Usa `.env.local` para la configuracion de desarrollo y evita publicar credenciales o URLs sensibles.
 
 ## Scripts disponibles
 
 ```bash
-npm run dev
-npm run dev:docker
-npm run dev:docker:down
-npm run build
-npm run test
-npm run test:coverage
+npm run dev              # Servidor de desarrollo en el puerto 4200
+npm run start            # Alias del servidor de desarrollo
+npm run build            # Genera la aplicacion en build/
+npm run preview          # Sirve localmente la compilacion producida
+npm run test             # Ejecuta Vitest en modo interactivo
+npm run test:coverage    # Ejecuta pruebas y genera cobertura
 ```
 
-## Desarrollo local con Docker
+## Funcionalidades y rutas
 
-Para levantar el entorno completo con frontend y MongoDB:
+- `/`: pagina de bienvenida
+- `/shop`: catalogo y filtros de productos
+- `/product/:id`: detalle de un producto
+- `/cart`: carrito de compra
+- `/login`: inicio de sesion
+- `/createProduct`: alta de productos
+- `/welcome/:name`: bienvenida personalizada
+
+## Ejecucion con Docker
+
+La imagen usa una etapa de build con Node.js y una etapa final con Nginx:
 
 ```bash
-docker compose -f docker-compose.dev.yml up --build
+docker build -t products-frontend .
+docker run --rm -p 8080:80 products-frontend
 ```
 
-Servicios incluidos:
-- Frontend: http://localhost:4200
-- MongoDB: localhost:27017
-
-Para detener el entorno:
+La aplicacion quedara disponible en [http://localhost:8080](http://localhost:8080). Los argumentos `VITE_APP_API_URL` y `VITE_APP_PRODUCTS_API_URL` pueden definirse durante el build:
 
 ```bash
-docker compose -f docker-compose.dev.yml down --remove-orphans
+docker build \
+	--build-arg VITE_APP_PRODUCTS_API_URL=http://localhost:8080/api/productos \
+	-t products-frontend .
 ```
 
-## Flujo de despliegue por ramas
+## CI/CD y despliegue
 
-- main: ejecuta build, pruebas, an�lisis SonarQube, provisioning con Terraform y despliegue a AWS S3/CloudFront.
-- develop: ejecuta build, pruebas, an�lisis SonarQube y despliegue local con Docker.
-- otras ramas: ejecutan an�lisis de SonarQube y validaciones b�sicas, sin despliegues productivos.
-## Preparación previa de Jenkins
+El pipeline de `Jenkinsfile` ejecuta instalacion de dependencias, pruebas con cobertura, build y analisis SonarQube. Ademas:
 
-Antes de ejecutar el pipeline, configura las credenciales en Jenkins desde la máquina/host que tenga acceso al servidor Jenkins. El script de apoyo crea los secrets de Jenkins y no depende de que el pipeline haya creado un contenedor previamente.
+- En `develop`, construye y ejecuta el frontend en Docker en el puerto 80.
+- En `main`, aprovisiona la infraestructura con Terraform y publica `build/` en AWS S3, seguido de una invalidacion de CloudFront.
+
+Antes de ejecutar Jenkins, configura sus credenciales con el script incluido:
 
 ```bash
 JENKINS_TOKEN="tu-token-jenkins" \
@@ -64,28 +91,26 @@ AWS_SECRET_ACCESS_KEY="tu-secret-key" \
 bash scripts/setup-jenkins-config.sh
 ```
 
-Para probar sin escribir realmente en Jenkins:
+Para validar el script sin modificar Jenkins:
 
 ```bash
 DRY_RUN=1 bash scripts/setup-jenkins-config.sh
 ```
+
 ## Estructura principal
 
-- src/components: vistas y componentes de la interfaz
-- src/services: servicios para productos, autenticaci�n, carrito y peticiones HTTP
-- src/interfaces: mapeo y transformaci�n de datos
-- docker-compose.dev.yml: entorno local de desarrollo
-- Jenkinsfile: pipeline CI/CD
-- Main.tf: infraestructura base para despliegue en AWS
+- `src/components/`: paginas y componentes de la interfaz
+- `src/services/`: acceso a productos, autenticacion, carrito y favoritos
+- `src/Interfaces/`: interfaces y transformacion de datos
+- `public/`: recursos estaticos
+- `dockerfile`: imagen de produccion con Nginx
+- `nginx/`: plantilla de configuracion del servidor web
+- `Jenkinsfile`: pipeline de CI/CD
+- `Main.tf`: infraestructura de AWS con Terraform
 
-## Calidad y validaci�n
+## Validacion local
 
 ```bash
-npm run build
 npm run test:coverage
+npm run build
 ```
-
-## Notas de desarrollo
-
-- El proyecto incluye un modo de desarrollo con datos mock por defecto para que un nuevo integrante pueda arrancar sin configurar un backend externo.
-- Si deseas conectar un backend real, puedes configurar la variable de entorno VITE_APP_PRODUCTS_API_URL.
