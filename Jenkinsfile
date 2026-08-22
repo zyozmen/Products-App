@@ -137,7 +137,7 @@ pipeline {
                     fi
                     kubectl config use-context "kind-$CLUSTER_NAME"
 
-                    for node in $(kind get nodes --name "$KIND_CLUSTER_NAME"); do
+                    for node in $(kind get nodes --name "$CLUSTER_NAME"); do
                         docker network connect products-net "$node" 2>/dev/null || true
                     done
 
