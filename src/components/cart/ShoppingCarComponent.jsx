@@ -6,16 +6,49 @@ import navigationComponent from "../navigation/NavigationComponent";
 import cartService, { DEFAULT_TAX_RATE } from "../../services/CartService";
 import './ShoppingCarComponent.css';
 
+const whatsappPhoneNumber = String(import.meta.env.VITE_WHATSAPP_NUMBER ?? '573124058166').trim();
+
+export const createWhatsAppCheckoutUrl = ({ items, phoneNumber, subtotal, taxAmount, total, delivery = {} }) => {
+    const orderLines = items.map((item) =>
+        `- ${item.name} x${item.quantity}: $${(item.price * item.quantity).toFixed(2)}`
+    );
+    const message = [
+        'Hola, quiero realizar este pedido:',
+        ...orderLines,
+        '',
+        'Datos de entrega:',
+        `Receptor: ${delivery.recipientName ?? ''}`,
+        `Direccion: ${delivery.address ?? ''}`,
+        delivery.addressComplement ? `Complemento: ${delivery.addressComplement}` : null,
+        `Telefono de contacto: ${delivery.contactPhone ?? ''}`,
+        '',
+        `Total: $${total.toFixed(2)}`,
+    ].filter((line) => line !== null).join('\n');
+    const normalizedPhoneNumber = String(phoneNumber ?? '').replace(/\D/g, '');
+
+    return `https://wa.me/${normalizedPhoneNumber}?text=${encodeURIComponent(message)}`;
+};
+
 class ShoppingCarComponent extends Component {
     constructor(props) {
         super(props);
         this.state = {
             items: cartService.getCart(),
+            delivery: {
+                recipientName: '',
+                address: '',
+                addressComplement: '',
+                contactPhone: '',
+            },
+            isOrderConfirmed: false,
         };
         this.handleRemove = this.handleRemove.bind(this);
         this.handleIncrement = this.handleIncrement.bind(this);
         this.handleDecrement = this.handleDecrement.bind(this);
         this.handleQuantityChange = this.handleQuantityChange.bind(this);
+        this.handleDeliveryChange = this.handleDeliveryChange.bind(this);
+        this.handleCheckout = this.handleCheckout.bind(this);
+        this.handleConfirmationAccept = this.handleConfirmationAccept.bind(this);
         this.unsubscribe = null;
     }
 
@@ -48,6 +81,41 @@ class ShoppingCarComponent extends Component {
         if (Number.isFinite(quantity) && quantity > 0) {
             cartService.updateQuantity(item.id, quantity);
         }
+    }
+
+    handleDeliveryChange(event) {
+        const { name, value } = event.target;
+        this.setState((previousState) => ({
+            delivery: {
+                ...previousState.delivery,
+                [name]: value,
+            },
+        }));
+    }
+
+    handleCheckout(event) {
+        event.preventDefault();
+        const items = cartService.getCart();
+        if (items.length === 0) {
+            return;
+        }
+
+        const url = createWhatsAppCheckoutUrl({
+            items,
+            phoneNumber: whatsappPhoneNumber,
+            subtotal: cartService.getSubtotal(),
+            taxAmount: cartService.getTaxAmount(),
+            total: cartService.getTotal(),
+            delivery: this.state.delivery,
+        });
+
+        window.open(url, '_blank', 'noopener,noreferrer');
+        cartService.clearCart();
+        this.setState({ isOrderConfirmed: true });
+    }
+
+    handleConfirmationAccept() {
+        this.props.navigate('/');
     }
 
     render() {
@@ -140,6 +208,63 @@ class ShoppingCarComponent extends Component {
                                 <span className="bg-secondary pr-3">Cart Summary</span>
                             </h5>
                             <div className="bg-light p-30 mb-5">
+                                <form onSubmit={this.handleCheckout}>
+                                    <div className="cart-delivery-form border-bottom pb-3 mb-3">
+                                        <h6>Detalles de la Entrega</h6>
+                                        <div className="cart-delivery-fields">
+                                            <div>
+                                                <label htmlFor="delivery-recipient">Nombre del destinatario</label>
+                                                <input
+                                                    id="delivery-recipient"
+                                                    className="form-control"
+                                                    name="recipientName"
+                                                    type="text"
+                                                    autoComplete="name"
+                                                    value={this.state.delivery.recipientName}
+                                                    onChange={this.handleDeliveryChange}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label htmlFor="delivery-address">Dirección</label>
+                                                <input
+                                                    id="delivery-address"
+                                                    className="form-control"
+                                                    name="address"
+                                                    type="text"
+                                                    autoComplete="street-address"
+                                                    value={this.state.delivery.address}
+                                                    onChange={this.handleDeliveryChange}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label htmlFor="delivery-complement">Complemento de la dirección (opcional)</label>
+                                                <input
+                                                    id="delivery-complement"
+                                                    className="form-control"
+                                                    name="addressComplement"
+                                                    type="text"
+                                                    placeholder="Casa 34, unidad 4, apto. 204"
+                                                    value={this.state.delivery.addressComplement}
+                                                    onChange={this.handleDeliveryChange}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label htmlFor="delivery-phone">Teléfono de contacto</label>
+                                                <input
+                                                    id="delivery-phone"
+                                                    className="form-control"
+                                                    name="contactPhone"
+                                                    type="tel"
+                                                    autoComplete="tel"
+                                                    value={this.state.delivery.contactPhone}
+                                                    onChange={this.handleDeliveryChange}
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
                                 <div className="border-bottom pb-2">
                                     <div className="d-flex justify-content-between mb-3">
                                         <h6>Subtotal</h6>
@@ -156,18 +281,41 @@ class ShoppingCarComponent extends Component {
                                         <h5>${total.toFixed(2)}</h5>
                                     </div>
                                     <button
-                                        type="button"
+                                        type="submit"
                                         className="btn btn-block btn-primary font-weight-bold my-3 py-3"
                                         disabled={items.length === 0}
                                     >
-                                        Proceed To Checkout
+                                        Proceder al Pago
                                     </button>
-                                </div>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
                 <FooterComponent />
+                {this.state.isOrderConfirmed && (
+                    <div className="cart-checkout-modal-backdrop">
+                        <section
+                            className="cart-checkout-modal"
+                            role="alertdialog"
+                            aria-modal="true"
+                            aria-labelledby="checkout-confirmation-title"
+                            aria-describedby="checkout-confirmation-message"
+                        >
+                            <h2 id="checkout-confirmation-title">Gracias por comprar con nosotros</h2>
+                            <p id="checkout-confirmation-message">Tu pedido se abrió en WhatsApp.</p>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={this.handleConfirmationAccept}
+                                autoFocus
+                            >
+                                Aceptar
+                            </button>
+                        </section>
+                    </div>
+                )}
             </>
         );
     }
