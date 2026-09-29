@@ -19,7 +19,7 @@ class FeaturedProducts extends Component {
         event.preventDefault();
         cartService.addToCart({
             id: featuredProduct.id,
-            name: featuredProduct.nombre,
+            name: featuredProduct.name,
             price: featuredProduct.price?.current ?? 0,
             image: `/img/product-${featuredProduct.id}.jpg`,
         });
@@ -57,7 +57,7 @@ class FeaturedProducts extends Component {
                             </div>
                             <div className="text-center py-4">
                                 <Link className="h6 text-decoration-none text-truncate" to={`/product/${featuredProduct.id}`}>
-                                    {featuredProduct.nombre}
+                                    {featuredProduct.name}
                                 </Link>
                                 <div className="d-flex align-items-center justify-content-center mt-2">
                                     <h5>${featuredProduct.price.current.toFixed(2)}</h5>

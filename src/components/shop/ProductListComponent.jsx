@@ -19,6 +19,7 @@ class ProductListComponent extends Component {
             numberOfElements: 0,
             first: true,
             last: true,
+            isOrderConfirmed: false,
         };
 
         this.loadProducts = this.loadProducts.bind(this);
@@ -38,6 +39,7 @@ class ProductListComponent extends Component {
             price: product.current_price,
             image: `/img/product-${product.id}.jpg`,
         });
+        this.setState({ isOrderConfirmed: true });
     }
 
     componentDidMount() {
@@ -145,6 +147,11 @@ class ProductListComponent extends Component {
         this.loadProducts(0, Number(nextPageSize));
     }
 
+    handleConfirmationAccept(event) {
+        event.preventDefault();
+        this.setState({ isOrderConfirmed: false });
+    }
+
     renderStars(averageRating) {
         const stars = Math.max(0, Math.min(5, Math.round(Number(averageRating) || 0)));
         return [...Array(stars)].map((_, i) => (
@@ -231,7 +238,7 @@ class ProductListComponent extends Component {
                                     <button type="button" className="btn btn-outline-dark btn-square" onClick={(event) => this.handleAddToCart(event, product)} aria-label="Agregar al carrito">
                                         <i className="fa fa-shopping-cart" />
                                     </button>
-                                    <button type="button" className="btn btn-outline-dark btn-square" aria-label="Agregar a favoritos">
+                                    <button type="button" className="btn btn-outline-dark btn-square" onClick={(event) => this.handleAddToFavorites(event, product)} aria-label="Agregar a favoritos">
                                         <i className="far fa-heart" />
                                     </button>
                                     <NavLink className="btn btn-outline-dark btn-square" to={`/product/${product.id}`}>
@@ -262,6 +269,28 @@ class ProductListComponent extends Component {
                         this.renderPaginationControls(visiblePages)
                     )}
                 </div>
+
+                {this.state.isOrderConfirmed && (
+                    <div className="cart-checkout-modal-backdrop">
+                        <section
+                            className="cart-checkout-modal"
+                            role="alertdialog"
+                            aria-modal="true"
+                            aria-labelledby="checkout-confirmation-title"
+                            aria-describedby="checkout-confirmation-message"
+                        >
+                            <h2 id="checkout-confirmation-title">Tu producto fue añadido al carrito</h2>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={(event) => this.handleConfirmationAccept(event)}
+                                autoFocus
+                            >
+                                Aceptar
+                            </button>
+                        </section>
+                    </div>
+                )}
             </div>
         );
     }

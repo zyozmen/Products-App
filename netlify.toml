@@ -1,0 +1,6 @@
+[build]
+  command = "npm run build && node scripts/prepare-netlify.js"
+  publish = "build"
+
+[context.production.environment]
+  NODE_VERSION = "20"
