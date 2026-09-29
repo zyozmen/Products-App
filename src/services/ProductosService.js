@@ -26,7 +26,7 @@ const normalizeApiUrl = (value) => {
 
     try {
         const parsedUrl = new URL(trimmedValue, 'http://localhost');
-        if (parsedUrl.origin !== 'http://localhost' && parsedUrl.pathname) {
+        if (/^https?:\/\//i.test(trimmedValue) && parsedUrl.pathname) {
             return parsedUrl.pathname.replace(/\/$/, '') || '/';
         }
     } catch {

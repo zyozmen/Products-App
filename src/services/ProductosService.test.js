@@ -25,6 +25,16 @@ describe('ProductosService', () => {
     expect(productosService.categoriesUrl).toBe('/api/productos/categories');
   });
 
+  it('uses a same-origin API path in development when an absolute URL is configured', async () => {
+    vi.stubEnv('VITE_APP_PRODUCTS_API_URL', 'http://127.0.0.1:8080/api/productos');
+    vi.stubEnv('NODE_ENV', 'development');
+
+    const { default: productosService } = await import('./ProductosService');
+
+    expect(productosService.url).toBe('/api/productos');
+    expect(productosService.categoriesUrl).toBe('/api/productos/categories');
+  });
+
   it('propagates the remote API error when the backend is unavailable', async () => {
     vi.stubEnv('VITE_APP_PRODUCTS_API_URL', 'http://localhost:8080/api/productos');
     vi.stubEnv('NODE_ENV', 'development');

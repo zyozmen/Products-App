@@ -16,7 +16,11 @@ copy .env.example .env.local
 npm run dev
 ```
 
-La aplicacion se inicia en [http://localhost:4200](http://localhost:4200).
+La aplicacion se inicia en [http://localhost:4200](http://localhost:4200). El backend debe estar disponible en el puerto `8080`.
+
+Durante el desarrollo, el frontend solicita `/api/productos` y Vite reenvia las rutas `/api/*` al host definido por `VITE_APP_PRODUCTS_API_URL`. Asi, el navegador usa el mismo origen del frontend y no necesita conectarse directamente al backend. Puedes abrir la aplicacion con `localhost` o `127.0.0.1`.
+
+Despues de cambiar la URL del backend en `.env.local`, reinicia Vite para que actualice el destino del proxy.
 
 En Linux o macOS, el segundo comando equivalente es:
 
@@ -26,15 +30,15 @@ cp .env.example .env.local
 
 ## Variables de entorno
 
-Vite expone al frontend las variables que comienzan por `VITE_`. La configuracion minima se encuentra en `.env.example`:
+La configuracion minima se encuentra en `.env.example`:
 
 | Variable | Descripcion | Ejemplo |
 | --- | --- | --- |
 | `VITE_API_URL` | Base general de la API | `/api` |
-| `VITE_APP_PRODUCTS_API_URL` | Endpoint de productos | `http://localhost:8080/api/productos` |
+| `VITE_APP_PRODUCTS_API_URL` | Endpoint del backend; Vite usa su origen como destino del proxy local | `http://127.0.0.1:8080/api/productos` |
 | `VITE_APP_NAME` | Nombre de la aplicacion | `GrowShop` |
 
-Usa `.env.local` para la configuracion de desarrollo y evita publicar credenciales o URLs sensibles.
+Usa `.env.local` para la configuracion de desarrollo; este archivo no se publica en Git. Las variables que empiezan por `VITE_` se incluyen en el frontend, asi que no pongas contrasenas, tokens ni credenciales de MongoDB en ellas. En produccion, las solicitudes `/api/*` se reenvian desde Nginx al backend configurado con `BACKEND_HOST` y `BACKEND_PORT`.
 
 ## Scripts disponibles
 
@@ -59,18 +63,19 @@ npm run test:coverage    # Ejecuta pruebas y genera cobertura
 
 ## Ejecucion con Docker
 
-La imagen usa una etapa de build con Node.js y una etapa final con Nginx:
+La imagen usa una etapa de build con Node.js y una etapa final con Nginx. Nginx reenvia las solicitudes `/api/*` al backend; el backend debe ser accesible desde el contenedor:
 
 ```bash
 docker build -t products-frontend .
 docker run --rm -p 8080:80 products-frontend
 ```
 
-La aplicacion quedara disponible en [http://localhost:8080](http://localhost:8080). Los argumentos `VITE_APP_API_URL` y `VITE_APP_PRODUCTS_API_URL` pueden definirse durante el build:
+La aplicacion quedara disponible en [http://localhost:8080](http://localhost:8080). Si el backend usa un nombre de servicio distinto al valor predeterminado `Products-Api`, configura `BACKEND_HOST` y `BACKEND_PORT` durante el build:
 
 ```bash
 docker build \
-	--build-arg VITE_APP_PRODUCTS_API_URL=http://localhost:8080/api/productos \
+	--build-arg BACKEND_HOST=products-api \
+	--build-arg BACKEND_PORT=8080 \
 	-t products-frontend .
 ```
 
