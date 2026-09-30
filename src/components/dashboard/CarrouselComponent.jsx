@@ -10,11 +10,8 @@ class CarrouselComponent extends Component {
             currentLanguage: translationService.getLanguage(),
             carrousel:
                 [
-                    { id: 1, Description: 'Category Name 1' },
-                    { id: 2, Description: 'Category Name 2' },
-                    { id: 3, Description: 'Category Name 3' },
-                    { id: 4, Description: 'Category Name 4' },
-                    { id: 5, Description: 'Category Name 5' }
+                    { id: 1, Description: '' },
+                    { id: 2, Description: '' }
                 ]
 
         };

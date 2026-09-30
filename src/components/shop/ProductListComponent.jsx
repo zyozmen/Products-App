@@ -259,9 +259,6 @@ class ProductListComponent extends Component {
                                     <button type="button" className="btn btn-outline-dark btn-square" onClick={(event) => this.handleAddToCart(event, product)} aria-label="Agregar al carrito">
                                         <i className="fa fa-shopping-cart" />
                                     </button>
-                                    <button type="button" className="btn btn-outline-dark btn-square" onClick={(event) => this.handleAddToFavorites(event, product)} aria-label="Agregar a favoritos">
-                                        <i className="far fa-heart" />
-                                    </button>
                                     <NavLink className="btn btn-outline-dark btn-square" to={`/product/${product.id}`} aria-label="Ver detalles">
                                         <i className="fa fa-search" />
                                     </NavLink>
