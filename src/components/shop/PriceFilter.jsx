@@ -1,11 +1,28 @@
 
 import React, { Component } from "react";
+import translationService from "../../services/TranslationService";
 
 class PriceFilter extends Component {
     constructor(props) {
         super(props);
+        this.state = {
+            currentLanguage: translationService.getLanguage(),
+        };
         this.handleAllPricesChange = this.handleAllPricesChange.bind(this);
         this.handlePriceRangeChange = this.handlePriceRangeChange.bind(this);
+        this.unsubscribeFromLanguage = null;
+    }
+
+    componentDidMount() {
+        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+            this.setState({ currentLanguage: lang });
+        });
+    }
+
+    componentWillUnmount() {
+        if (this.unsubscribeFromLanguage) {
+            this.unsubscribeFromLanguage();
+        }
     }
 
     handleAllPricesChange() {
@@ -24,6 +41,7 @@ class PriceFilter extends Component {
 
     render() {
         const { minPrice, maxPrice } = this.props;
+        const t = (key) => translationService.t(key);
         const priceRanges = [
             { id: "price-1", label: "$0 - $100", minPrice: 0, maxPrice: 100 },
             { id: "price-2", label: "$100 - $200", minPrice: 100, maxPrice: 200 },
@@ -45,7 +63,7 @@ class PriceFilter extends Component {
                             id="price-all"
                         />
                         <label className="custom-control-label" htmlFor="price-all">
-                            All Price
+                            {t('all_price')}
                         </label>
                         <span className="badge border font-weight-normal">1000</span>
                     </div>

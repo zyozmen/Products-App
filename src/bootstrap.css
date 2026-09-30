@@ -21,7 +21,7 @@
   --white: #fff;
   --gray: #6c757d;
   --gray-dark: #343a40;
-  --primary: #FFD333;
+  --primary: #6BBF23;
   --secondary: #F5F5F5;
   --success: #28a745;
   --info: #17a2b8;
@@ -2367,8 +2367,8 @@ fieldset:disabled a.btn {
 
 .btn-primary {
   color: #212529;
-  background-color: #FFD333;
-  border-color: #FFD333;
+  background-color: #6BBF23;
+  border-color: #000000;
 }
 
 .btn-primary:hover {
@@ -3505,8 +3505,8 @@ input[type="button"].btn-block {
 
 .custom-control-input:checked ~ .custom-control-label::before {
   color: #fff;
-  border-color: #FFD333;
-  background-color: #FFD333;
+  border-color: #6BBF23;
+  background-color: #6BBF23;
 }
 
 .custom-control-input:focus ~ .custom-control-label::before {
@@ -6096,7 +6096,7 @@ a.close.disabled {
 }
 
 .bg-primary {
-  background-color: #FFD333 !important;
+  background-color: #6BBF23 !important;
 }
 
 a.bg-primary:hover, a.bg-primary:focus,
@@ -9266,7 +9266,7 @@ button.bg-dark:focus {
 }
 
 .text-primary {
-  color: #FFD333 !important;
+  color: #6BBF23 !important;
 }
 
 a.text-primary:hover, a.text-primary:focus {
@@ -9510,7 +9510,7 @@ a.text-dark:hover, a.text-dark:focus {
 
 .navbar-dark .navbar-nav .nav-link:hover,
 .navbar-dark .navbar-nav .nav-link.active {
-  color: #FFD333;
+  color: #6BBF23;
 }
 
 @media (max-width: 991.98px) {

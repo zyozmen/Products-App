@@ -1,10 +1,12 @@
 import React, { Component } from 'react';
+import translationService from '../../services/TranslationService';
 import './CategoryComponent.css';
 
 class CategoryComponent extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            currentLanguage: translationService.getLanguage(),
             category:
                 [
                     { id: 1, Description: 'Category Name 1' },
@@ -14,12 +16,27 @@ class CategoryComponent extends Component {
                 ]
 
         };
+        this.unsubscribeFromLanguage = null;
     }
+
+    componentDidMount() {
+        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+            this.setState({ currentLanguage: lang });
+        });
+    }
+
+    componentWillUnmount() {
+        if (this.unsubscribeFromLanguage) {
+            this.unsubscribeFromLanguage();
+        }
+    }
+
     render() {
+        const t = (key) => translationService.t(key);
         return (
             <div className="container-fluid pt-5">
                 <h2 className="section-title position-relative text-uppercase mx-xl-5 mb-4">
-                    <span className="bg-secondary pr-3">Categories</span>
+                    <span className="bg-secondary pr-3">{t('categories')}</span>
                 </h2>
                 <div className="row px-xl-5 pb-3">
                     {this.state.category.map(category =>
@@ -32,7 +49,7 @@ class CategoryComponent extends Component {
                                 </div>
                                 <div className="flex-fill pl-3">
                                     <h6>{category.Description}</h6>
-                                    <small className="text-body">100 Products</small>
+                                    <small className="text-body">{t('products_count')}</small>
                                 </div>
                             </div>
                         </button>

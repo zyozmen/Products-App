@@ -3,6 +3,7 @@ import FilterProducts from "./FilterProducts";
 import { NavLink } from "react-router-dom";
 import productosService from "../../services/ProductosService";
 import cartService from "../../services/CartService";
+import translationService from "../../services/TranslationService";
 
 class ProductListComponent extends Component {
     constructor(props) {
@@ -20,6 +21,7 @@ class ProductListComponent extends Component {
             first: true,
             last: true,
             isOrderConfirmed: false,
+            currentLanguage: translationService.getLanguage(),
         };
 
         this.loadProducts = this.loadProducts.bind(this);
@@ -29,6 +31,7 @@ class ProductListComponent extends Component {
         this.getVisiblePageNumbers = this.getVisiblePageNumbers.bind(this);
         this.handlePageSizeChange = this.handlePageSizeChange.bind(this);
         this.handleAddToCart = this.handleAddToCart.bind(this);
+        this.unsubscribeFromLanguage = null;
     }
 
     handleAddToCart(event, product) {
@@ -44,6 +47,15 @@ class ProductListComponent extends Component {
 
     componentDidMount() {
         this.loadProducts(0);
+        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+            this.setState({ currentLanguage: lang });
+        });
+    }
+
+    componentWillUnmount() {
+        if (this.unsubscribeFromLanguage) {
+            this.unsubscribeFromLanguage();
+        }
     }
 
     componentDidUpdate(prevProps) {
@@ -95,7 +107,7 @@ class ProductListComponent extends Component {
                 });
             })
             .catch(() => {
-                this.setState({ products: [], loading: false, error: "Could not load products." });
+                this.setState({ products: [], loading: false, error: translationService.t("could_not_load_products") });
             });
     }
 
@@ -161,6 +173,7 @@ class ProductListComponent extends Component {
 
     renderPaginationControls(visiblePages) {
         const { pageNumber, totalPages, totalElements, numberOfElements, first, last } = this.state;
+        const t = (key) => translationService.t(key);
 
         return (
             <div className="col-12 mt-3">
@@ -171,7 +184,7 @@ class ProductListComponent extends Component {
                             className="btn btn-light"
                             onClick={this.goToPreviousPage}
                         >
-                            Previous
+                            {t('previous')}
                         </button>
                     ) : <div />}
 
@@ -195,13 +208,13 @@ class ProductListComponent extends Component {
                             className="btn btn-light mt-2 mt-md-0"
                             onClick={this.goToNextPage}
                         >
-                            Next
+                            {t('next')}
                         </button>
                     ) : <div />}
                 </div>
 
                 <div className="text-center mt-2">
-                    Showing {numberOfElements} of {totalElements} | Page {totalPages === 0 ? 0 : pageNumber + 1} of {totalPages}
+                    {t('showing')} {numberOfElements} {t('of')} {totalElements} | {t('page')} {totalPages === 0 ? 0 : pageNumber + 1} {t('of')} {totalPages}
                 </div>
             </div>
         );
@@ -211,6 +224,7 @@ class ProductListComponent extends Component {
         const { products, loading, error, pageNumber, pageSize, totalPages, totalElements, numberOfElements } = this.state;
         const { selectedSortBy, onSortByChange } = this.props;
         const visiblePages = this.getVisiblePageNumbers();
+        const t = (key) => translationService.t(key);
 
         return (
 
@@ -223,11 +237,11 @@ class ProductListComponent extends Component {
                         selectedSortBy={selectedSortBy}
                         onSortByChange={onSortByChange}
                     />
-                    {loading && <div className="col-12">Loading products...</div>}
+                    {loading && <div className="col-12">{t('loading_products')}</div>}
                     {error && <div className="col-12 text-danger">{error}</div>}
                     {!loading && !error && products.length > 0 && this.renderPaginationControls(visiblePages)}
                     {!loading && !error && products.length === 0 && (
-                        <div className="col-12 text-center py-4"><h1>Producto no encontrado</h1></div>
+                        <div className="col-12 text-center py-4"><h1>{t('product_not_found')}</h1></div>
                     )}
                     {!loading && !error && products.map((product) => (
                     <div key={product.id} className="col-lg-4 col-md-6 col-sm-6 pb-1">
@@ -279,14 +293,14 @@ class ProductListComponent extends Component {
                             aria-labelledby="checkout-confirmation-title"
                             aria-describedby="checkout-confirmation-message"
                         >
-                            <h2 id="checkout-confirmation-title">Tu producto fue añadido al carrito</h2>
+                            <h2 id="checkout-confirmation-title">{t('product_added_to_cart')}</h2>
                             <button
                                 type="button"
                                 className="btn btn-primary"
                                 onClick={(event) => this.handleConfirmationAccept(event)}
                                 autoFocus
                             >
-                                Aceptar
+                                {t('accept')}
                             </button>
                         </section>
                     </div>

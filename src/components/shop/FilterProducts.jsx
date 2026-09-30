@@ -1,7 +1,28 @@
 import React, { Component } from 'react';
 import DropdownMenu from '../ui/DropdownMenu';
+import translationService from '../../services/TranslationService';
 
 class FeaturedProducts extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            currentLanguage: translationService.getLanguage(),
+        };
+        this.unsubscribeFromLanguage = null;
+    }
+
+    componentDidMount() {
+        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+            this.setState({ currentLanguage: lang });
+        });
+    }
+
+    componentWillUnmount() {
+        if (this.unsubscribeFromLanguage) {
+            this.unsubscribeFromLanguage();
+        }
+    }
+
     render() {
         const {
             selectedPageSize = 15,
@@ -10,13 +31,15 @@ class FeaturedProducts extends Component {
             selectedSortBy = "",
             onSortByChange,
         } = this.props;
+        const t = (key) => translationService.t(key);
 
         const sortOptions = [
-            { label: "Default", value: "" },
-            { label: "Price", value: "price" },
-            { label: "Best Rating", value: "rating" },
+            { label: t('default_sort'), value: "" },
+            { label: t('price_sort'), value: "price" },
+            { label: t('rating_sort'), value: "rating" },
         ];
-        const selectedSortLabel = sortOptions.find((option) => option.value === selectedSortBy)?.label || "Sorting";
+        const selectedSortLabel = sortOptions.find((option) => option.value === selectedSortBy)?.label || t('sorting');
+        const showingLabel = t('showing');
         return (
 
             <div className="col-12 pb-1">
@@ -34,7 +57,7 @@ class FeaturedProducts extends Component {
                                 </button>
                             ))}
                         </DropdownMenu>
-                        <DropdownMenu label={`Showing ${selectedPageSize}`} className="ml-2">
+                        <DropdownMenu label={`${showingLabel} ${selectedPageSize}`} className="ml-2">
                             {pageSizeOptions.map((size) => (
                                 <button
                                     key={size}

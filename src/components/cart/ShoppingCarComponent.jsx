@@ -4,6 +4,7 @@ import NavBarComponent from "../dashboard/NavBarComponent";
 import FooterComponent from "../dashboard/FooterComponent";
 import navigationComponent from "../navigation/NavigationComponent";
 import cartService, { DEFAULT_TAX_RATE } from "../../services/CartService";
+import translationService from "../../services/TranslationService";
 import './ShoppingCarComponent.css';
 
 const whatsappPhoneNumber = String(import.meta.env.VITE_WHATSAPP_NUMBER ?? '573124058166').trim();
@@ -41,6 +42,7 @@ class ShoppingCarComponent extends Component {
                 contactPhone: '',
             },
             isOrderConfirmed: false,
+            currentLanguage: translationService.getLanguage(),
         };
         this.handleRemove = this.handleRemove.bind(this);
         this.handleIncrement = this.handleIncrement.bind(this);
@@ -50,15 +52,22 @@ class ShoppingCarComponent extends Component {
         this.handleCheckout = this.handleCheckout.bind(this);
         this.handleConfirmationAccept = this.handleConfirmationAccept.bind(this);
         this.unsubscribe = null;
+        this.unsubscribeFromLanguage = null;
     }
 
     componentDidMount() {
         this.unsubscribe = cartService.subscribe((items) => this.setState({ items }));
+        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+            this.setState({ currentLanguage: lang });
+        });
     }
 
     componentWillUnmount() {
         if (this.unsubscribe) {
             this.unsubscribe();
+        }
+        if (this.unsubscribeFromLanguage) {
+            this.unsubscribeFromLanguage();
         }
     }
 
@@ -125,6 +134,7 @@ class ShoppingCarComponent extends Component {
         const taxAmount = cartService.getTaxAmount();
         const total = cartService.getTotal();
         const taxPercentage = (DEFAULT_TAX_RATE * 100).toFixed(0);
+        const t = (key) => translationService.t(key);
 
         return (
             <>
@@ -136,18 +146,18 @@ class ShoppingCarComponent extends Component {
                             <table className="table table-light table-borderless table-hover text-center mb-0">
                                 <thead className="thead-dark">
                                     <tr>
-                                        <th>Products</th>
-                                        <th>Price</th>
-                                        <th>Quantity</th>
-                                        <th>Total</th>
-                                        <th>Remove</th>
+                                        <th>{t('product')}</th>
+                                        <th>{t('price')}</th>
+                                        <th>{t('quantity')}</th>
+                                        <th>{t('total')}</th>
+                                        <th>{t('remove')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="align-middle">
                                     {items.length === 0 && (
                                         <tr>
                                             <td colSpan="5" className="align-middle py-4">
-                                                Your shopping cart is empty.
+                                                {t('empty_cart')}
                                             </td>
                                         </tr>
                                     )}
@@ -205,15 +215,15 @@ class ShoppingCarComponent extends Component {
                         </div>
                         <div className="col-lg-4">
                             <h5 className="section-title position-relative text-uppercase mb-3">
-                                <span className="bg-secondary pr-3">Cart Summary</span>
+                                <span className="bg-secondary pr-3">{t('cart_summary')}</span>
                             </h5>
                             <div className="bg-light p-30 mb-5">
                                 <form onSubmit={this.handleCheckout}>
                                     <div className="cart-delivery-form border-bottom pb-3 mb-3">
-                                        <h6>Detalles de la Entrega</h6>
+                                        <h6>{t('delivery_details')}</h6>
                                         <div className="cart-delivery-fields">
                                             <div>
-                                                <label htmlFor="delivery-recipient">Nombre del destinatario</label>
+                                                <label htmlFor="delivery-recipient">{t('recipient_name')}</label>
                                                 <input
                                                     id="delivery-recipient"
                                                     className="form-control"
@@ -226,7 +236,7 @@ class ShoppingCarComponent extends Component {
                                                 />
                                             </div>
                                             <div>
-                                                <label htmlFor="delivery-address">Dirección</label>
+                                                <label htmlFor="delivery-address">{t('address')}</label>
                                                 <input
                                                     id="delivery-address"
                                                     className="form-control"
@@ -239,7 +249,7 @@ class ShoppingCarComponent extends Component {
                                                 />
                                             </div>
                                             <div>
-                                                <label htmlFor="delivery-complement">Complemento de la dirección (opcional)</label>
+                                                <label htmlFor="delivery-complement">{t('address_complement')}</label>
                                                 <input
                                                     id="delivery-complement"
                                                     className="form-control"
@@ -251,7 +261,7 @@ class ShoppingCarComponent extends Component {
                                                 />
                                             </div>
                                             <div>
-                                                <label htmlFor="delivery-phone">Teléfono de contacto</label>
+                                                <label htmlFor="delivery-phone">{t('contact_phone')}</label>
                                                 <input
                                                     id="delivery-phone"
                                                     className="form-control"
@@ -267,17 +277,17 @@ class ShoppingCarComponent extends Component {
                                     </div>
                                 <div className="border-bottom pb-2">
                                     <div className="d-flex justify-content-between mb-3">
-                                        <h6>Subtotal</h6>
+                                        <h6>{t('subtotal')}</h6>
                                         <h6>${subtotal.toFixed(2)}</h6>
                                     </div>
                                     <div className="d-flex justify-content-between">
-                                        <h6 className="font-weight-medium">Tax ({taxPercentage}%)</h6>
+                                        <h6 className="font-weight-medium">{t('tax')} ({taxPercentage}%)</h6>
                                         <h6 className="font-weight-medium">${taxAmount.toFixed(2)}</h6>
                                     </div>
                                 </div>
                                 <div className="pt-2">
                                     <div className="d-flex justify-content-between mt-2">
-                                        <h5>Total</h5>
+                                        <h5>{t('total')}</h5>
                                         <h5>${total.toFixed(2)}</h5>
                                     </div>
                                     <button
@@ -285,7 +295,7 @@ class ShoppingCarComponent extends Component {
                                         className="btn btn-block btn-primary font-weight-bold my-3 py-3"
                                         disabled={items.length === 0}
                                     >
-                                        Proceder al Pago
+                                        {t('proceed_checkout')}
                                     </button>
                                     </div>
                                 </form>
@@ -303,15 +313,15 @@ class ShoppingCarComponent extends Component {
                             aria-labelledby="checkout-confirmation-title"
                             aria-describedby="checkout-confirmation-message"
                         >
-                            <h2 id="checkout-confirmation-title">Gracias por comprar con nosotros</h2>
-                            <p id="checkout-confirmation-message">Tu pedido se abrió en WhatsApp.</p>
+                            <h2 id="checkout-confirmation-title">{t('thank_you_purchase')}</h2>
+                            <p id="checkout-confirmation-message">{t('order_opened_whatsapp')}</p>
                             <button
                                 type="button"
                                 className="btn btn-primary"
                                 onClick={this.handleConfirmationAccept}
                                 autoFocus
                             >
-                                Aceptar
+                                {t('accept')}
                             </button>
                         </section>
                     </div>

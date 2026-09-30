@@ -2,17 +2,19 @@ import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import productosService from '../../services/ProductosService';
 import cartService from '../../services/CartService';
+import translationService from '../../services/TranslationService';
 
 
 class FeaturedProducts extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            featuredProducts:[]
-
+            featuredProducts:[],
+            currentLanguage: translationService.getLanguage(),
         };
         this.callBackendService = this.callBackendService.bind(this);
         this.handleAddToCart = this.handleAddToCart.bind(this);
+        this.unsubscribeFromLanguage = null;
     }
 
     handleAddToCart(event, featuredProduct) {
@@ -27,12 +29,23 @@ class FeaturedProducts extends Component {
 
     componentDidMount() {
         this.callBackendService();
+        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+            this.setState({ currentLanguage: lang });
+        });
     }
+
+    componentWillUnmount() {
+        if (this.unsubscribeFromLanguage) {
+            this.unsubscribeFromLanguage();
+        }
+    }
+
     render() {
+        const t = (key) => translationService.t(key);
         return (
             <div className="container-fluid pt-5 pb-3">
                 <h2 className="section-title position-relative text-uppercase mx-xl-5 mb-4">
-                    <span className="bg-secondary pr-3">Featured Products</span>
+                    <span className="bg-secondary pr-3">{t('featured_products')}</span>
                 </h2>
                 <div className="row px-xl-5">
                     {this.state.featuredProducts.map((featuredProduct) => (

@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import cartService from '../../services/CartService';
+import translationService from '../../services/TranslationService';
 import { NavLink } from 'react-router-dom';
 import DropdownMenu from '../ui/DropdownMenu';
 import CollapseMenu from '../ui/CollapseMenu';
@@ -10,8 +11,10 @@ class NavBarComponent extends Component {
         super(props);
         this.state = {
             cartItemCount: cartService.getItemCount(),
+            currentLanguage: translationService.getLanguage(),
         };
         this.unsubscribeFromCart = null;
+        this.unsubscribeFromLanguage = null;
     }
 
     componentDidMount() {
@@ -19,81 +22,38 @@ class NavBarComponent extends Component {
             const cartItemCount = items.reduce((total, item) => total + item.quantity, 0);
             this.setState({ cartItemCount });
         });
+        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+            this.setState({ currentLanguage: lang });
+        });
     }
 
     componentWillUnmount() {
         if (this.unsubscribeFromCart) {
             this.unsubscribeFromCart();
         }
+        if (this.unsubscribeFromLanguage) {
+            this.unsubscribeFromLanguage();
+        }
     }
 
     render() {
         const { cartItemCount } = this.state;
+        const t = (key) => translationService.t(key);
         return (
             <div className="container-fluid bg-dark mb-30">
                 <div className="row px-xl-5">
                     <div className="col-lg-3 d-none d-lg-block">
-                        <CollapseMenu
-                            className="position-relative"
-                            title={(
-                                <div className="btn d-flex align-items-center justify-content-between bg-primary w-100 navbar-services-trigger">
-                                    <h6 className="text-dark m-0">
-                                        <i className="fa fa-bars mr-2" />
-                                        Servicios
-                                    </h6>
-                                    <i className="fa fa-angle-down text-dark" />
-                                </div>
-                            )}
-                            triggerClassName="btn border-0 p-0 w-100"
-                            contentClassName="position-absolute navbar navbar-vertical navbar-light align-items-start p-0 bg-light"
-                        >
-                            <div className="navbar-nav w-100 navbar-services-menu">
-                                <DropdownMenu label="Premium" className="nav-item dropdown dropright w-100">
-                                    <NavLink to="" className="dropdown-item">
-                                        Armarios Inteligentes
-                                    </NavLink>
-                                    <NavLink to="" className="dropdown-item">
-                                        Iluminacion
-                                    </NavLink>
-                                    <NavLink to="" className="dropdown-item">
-                                        Sistemas de Ventilacion
-                                    </NavLink>
-                                </DropdownMenu>
-                                <NavLink to="" className="nav-item nav-link">
-                                    Mantenimiento de equipos
-                                </NavLink>
-                                <NavLink to="" className="nav-item nav-link">
-                                    Alquiler de Equipo
-                                </NavLink>
-                                <NavLink to="" className="nav-item nav-link">
-                                    Calendario de Cultivo
-                                </NavLink>
-                                <NavLink to="" className="nav-item nav-link">
-                                    Kit de Nutrientes
-                                </NavLink>
-                                <NavLink to="" className="nav-item nav-link">
-                                    Caja Sorpresa
-                                </NavLink>
-                                <NavLink to="" className="nav-item nav-link">
-                                    Calculadora de Nutrientes
-                                </NavLink>
-                                <NavLink to="" className="nav-item nav-link">
-                                    Cuidado de plantas
-                                </NavLink>
-                                <NavLink to="" className="nav-item nav-link">
-                                    Automatizaciones
-                                </NavLink>
-                            </div>
-                        </CollapseMenu>
+                        
+                            
                     </div>
                     <div className="col-lg-9">
                         <nav className="navbar navbar-expand-lg bg-dark navbar-dark py-3 py-lg-0 px-0">
                             <NavLink to="" className="text-decoration-none d-block d-lg-none">
                                 <span className="h1 text-uppercase text-dark bg-light px-2">
-                                    Multi
+                                    Zona
                                 </span>
                                 <span className="h1 text-uppercase text-light bg-primary px-2 ml-n1">
-                                    Shop
+                                    Green
                                 </span>
                             </NavLink>
                             <CollapseMenu
@@ -103,23 +63,20 @@ class NavBarComponent extends Component {
                                 contentClassName="navbar-collapse justify-content-between"
                             >
                                 <div className="navbar-nav mr-auto py-0">
-                                    <NavLink to="/welcome/admin" className="nav-item nav-link active">
-                                        Inicio
+                                    <NavLink to="/shop" className="nav-item nav-link">
+                                        {t('cafe_premium')}
                                     </NavLink>
                                     <NavLink to="/shop" className="nav-item nav-link">
-                                        Esquejes
+                                        {t('flor_premium')}
                                     </NavLink>
-                                    <NavLink to="/detail" className="nav-item nav-link">
-                                        Asesoria de Cultivo
+                                    <NavLink to="/shop" className="nav-item nav-link">
+                                        {t('flor_en_sale')}
                                     </NavLink>
-                                    <NavLink to="/detail" className="nav-item nav-link">
-                                        Elementos Indoor
-                                    </NavLink>
-                                    <NavLink to="/detail" className="nav-item nav-link">
-                                        Hidroponia
+                                    <NavLink to="/shop" className="nav-item nav-link">
+                                        {t('hidroponia')}
                                     </NavLink>
                                     <NavLink to="/contact" className="nav-item nav-link">
-                                        Contacto
+                                        {t('contacto')}
                                     </NavLink>
                                 </div>
                                 <div className="navbar-nav ml-auto py-0 d-none d-lg-block">

@@ -1,15 +1,30 @@
 
 import React, { Component } from "react";
+import translationService from "../../services/TranslationService";
 
 class NameFilter extends Component {
     constructor(props) {
         super(props);
         this.state = {
             localName: props.nameFilter || "",
+            currentLanguage: translationService.getLanguage(),
         };
         this.handleInputChange = this.handleInputChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleClear = this.handleClear.bind(this);
+        this.unsubscribeFromLanguage = null;
+    }
+
+    componentDidMount() {
+        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+            this.setState({ currentLanguage: lang });
+        });
+    }
+
+    componentWillUnmount() {
+        if (this.unsubscribeFromLanguage) {
+            this.unsubscribeFromLanguage();
+        }
     }
 
     componentDidUpdate(prevProps) {
@@ -41,6 +56,7 @@ class NameFilter extends Component {
 
     render() {
         const { localName } = this.state;
+        const t = (key) => translationService.t(key);
         const hasValue = localName.trim().length > 0;
 
         return (
@@ -52,7 +68,7 @@ class NameFilter extends Component {
                             className="form-control"
                             value={localName}
                             onChange={this.handleInputChange}
-                            placeholder="Filter by product name"
+                            placeholder={t('filter_name_placeholder')}
                         />
                         <div className="input-group-append">
                             <button type="submit" className="input-group-text bg-transparent text-primary">
@@ -66,7 +82,7 @@ class NameFilter extends Component {
                             className="btn btn-sm btn-light"
                             onClick={this.handleClear}
                         >
-                            Clear
+                            {t('clear_btn')}
                         </button>
                     )}
                 </form>

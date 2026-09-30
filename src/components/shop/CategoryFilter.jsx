@@ -1,6 +1,7 @@
 
 import React, { Component } from "react";
 import productosService from "../../services/ProductosService";
+import translationService from "../../services/TranslationService";
 
 class CategoryFilter extends Component {
     constructor(props) {
@@ -9,20 +10,32 @@ class CategoryFilter extends Component {
             categories: [],
             loading: true,
             error: null,
+            currentLanguage: translationService.getLanguage(),
         };
 
         this.handleAllCategoriesChange = this.handleAllCategoriesChange.bind(this);
         this.handleCategoryToggle = this.handleCategoryToggle.bind(this);
+        this.unsubscribeFromLanguage = null;
     }
 
     componentDidMount() {
+        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+            this.setState({ currentLanguage: lang });
+        });
+
         productosService.listarCategorias()
             .then((categories) => {
                 this.setState({ categories, loading: false, error: null });
             })
             .catch(() => {
-                this.setState({ categories: [], loading: false, error: "Could not load categories." });
+                this.setState({ categories: [], loading: false, error: translationService.t("could_not_load_categories") });
             });
+    }
+
+    componentWillUnmount() {
+        if (this.unsubscribeFromLanguage) {
+            this.unsubscribeFromLanguage();
+        }
     }
 
     handleAllCategoriesChange() {
@@ -48,6 +61,7 @@ class CategoryFilter extends Component {
     render() {
         const { categories, loading, error } = this.state;
         const { selectedCategoryIds = [] } = this.props;
+        const t = (key) => translationService.t(key);
         const totalProductsInCategories = categories.reduce(
             (total, category) => total + Number(category.products_count ?? 0),
             0
@@ -66,11 +80,11 @@ class CategoryFilter extends Component {
                             id="category-all"
                         />
                         <label className="custom-control-label" htmlFor="category-all">
-                            All Categories
+                            {t('all_categories')}
                         </label>
                         <span className="badge border font-weight-normal">{totalProductsInCategories}</span>
                     </div>
-                    {loading && <div className="text-muted">Loading categories...</div>}
+                    {loading && <div className="text-muted">{t('loading_categories')}</div>}
                     {error && <div className="text-danger">{error}</div>}
                     {!loading && !error && categories.map((category) => (
                         <div

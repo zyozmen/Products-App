@@ -1,11 +1,13 @@
 import React, { Component } from 'react';
 import SwiperCarousel from '../ui/SwiperCarousel';
+import translationService from '../../services/TranslationService';
 import './CarrouselComponent.css';
 
 class CarrouselComponent extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            currentLanguage: translationService.getLanguage(),
             carrousel:
                 [
                     { id: 1, Description: 'Category Name 1' },
@@ -16,8 +18,23 @@ class CarrouselComponent extends Component {
                 ]
 
         };
+        this.unsubscribeFromLanguage = null;
     }
+
+    componentDidMount() {
+        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+            this.setState({ currentLanguage: lang });
+        });
+    }
+
+    componentWillUnmount() {
+        if (this.unsubscribeFromLanguage) {
+            this.unsubscribeFromLanguage();
+        }
+    }
+
     render() {
+        const t = (key) => translationService.t(key);
         return (
             <>
                 {/* Carousel Start */}
@@ -37,20 +54,20 @@ class CarrouselComponent extends Component {
                             <div className="product-offer mb-30 offer-card">
                                 <img className="img-fluid" src="/logo192.png" alt="" />
                                 <div className="offer-text">
-                                    <h6 className="text-white text-uppercase">Save 20%</h6>
-                                    <h3 className="text-white mb-3">Special Offer</h3>
+                                    <h6 className="text-white text-uppercase">{t('save_20')}</h6>
+                                    <h3 className="text-white mb-3">{t('special_offer')}</h3>
                                     <button type="button" className="btn btn-primary">
-                                        Shop Now
+                                        {t('shop_now')}
                                     </button>
                                 </div>
                             </div>
                             <div className="product-offer mb-30 offer-card">
                                 <img className="img-fluid" src="/logo512.png" alt="" />
                                 <div className="offer-text">
-                                    <h6 className="text-white text-uppercase">Save 20%</h6>
-                                    <h3 className="text-white mb-3">Special Offer</h3>
+                                    <h6 className="text-white text-uppercase">{t('save_20')}</h6>
+                                    <h3 className="text-white mb-3">{t('special_offer')}</h3>
                                     <button type="button" className="btn btn-primary">
-                                        Shop Now
+                                        {t('shop_now')}
                                     </button>
                                 </div>
                             </div>

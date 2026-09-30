@@ -1,17 +1,37 @@
 import React, { Component } from 'react';
+import translationService from '../../services/TranslationService';
 import './FooterComponent.css';
 
 class FooterComponent extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      currentLanguage: translationService.getLanguage(),
+    };
+    this.unsubscribeFromLanguage = null;
+  }
+
+  componentDidMount() {
+    this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+      this.setState({ currentLanguage: lang });
+    });
+  }
+
+  componentWillUnmount() {
+    if (this.unsubscribeFromLanguage) {
+      this.unsubscribeFromLanguage();
+    }
+  }
 
   render() {
+    const t = (key) => translationService.t(key);
     return (
       <div className="container-fluid bg-dark text-secondary mt-5 pt-5">
         <div className="row px-xl-5 pt-5">
           <div className="col-lg-4 col-md-12 mb-5 pr-3 pr-xl-5">
-            <h5 className="text-secondary text-uppercase mb-4">Get In Touch</h5>
+            <h5 className="text-secondary text-uppercase mb-4">{t('get_in_touch')}</h5>
             <p className="mb-4">
-              No dolore ipsum accusam no lorem. Invidunt sed clita kasd clita et et
-              dolor sed dolor. Rebum tempor no vero est magna amet no
+              {t('footer_touch_text')}
             </p>
             <p className="mb-2">
               <i className="fa fa-map-marker-alt text-primary mr-3" />
@@ -29,71 +49,71 @@ class FooterComponent extends Component {
           <div className="col-lg-8 col-md-12">
             <div className="row">
               <div className="col-md-4 mb-5">
-                <h5 className="text-secondary text-uppercase mb-4">Quick Shop</h5>
+                <h5 className="text-secondary text-uppercase mb-4">{t('quick_shop')}</h5>
                 <div className="d-flex flex-column justify-content-start">
                   <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
-                    Home
+                    {t('home')}
                   </button>
                   <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
-                    Our Shop
+                    {t('our_shop')}
                   </button>
                   <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
-                    Shop Detail
+                    {t('shop_detail')}
                   </button>
                   <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
-                    Shopping Cart
+                    {t('shopping_cart')}
                   </button>
                   <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
-                    Checkout
+                    {t('checkout')}
                   </button>
                   <button type="button" className="btn btn-link text-secondary p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
-                    Contact Us
+                    {t('contact_us')}
                   </button>
                 </div>
               </div>
               <div className="col-md-4 mb-5">
-                <h5 className="text-secondary text-uppercase mb-4">My Account</h5>
+                <h5 className="text-secondary text-uppercase mb-4">{t('my_account')}</h5>
                 <div className="d-flex flex-column justify-content-start">
                   <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
-                    Home
+                    {t('home')}
                   </button>
                   <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
-                    Shopping Cart
+                    {t('shopping_cart')}
                   </button>
                   <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
-                    Checkout
+                    {t('checkout')}
                   </button>
                   <button type="button" className="btn btn-link text-secondary p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
-                    Contact Us
+                    {t('contact_us')}
                   </button>
                 </div>
               </div>
               <div className="col-md-4 mb-5">
-                <h5 className="text-secondary text-uppercase mb-4">Newsletter</h5>
-                <p>Duo stet tempor ipsum sit amet magna ipsum tempor est</p>
+                <h5 className="text-secondary text-uppercase mb-4">{t('newsletter')}</h5>
+                <p>{t('newsletter_text')}</p>
                 <form action="">
                   <div className="input-group">
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Your Email Address"
+                      placeholder={t('email_placeholder')}
                     />
                     <div className="input-group-append">
-                      <button className="btn btn-primary">Sign Up</button>
+                      <button className="btn btn-primary">{t('sign_up')}</button>
                     </div>
                   </div>
                 </form>
-                <h6 className="text-secondary text-uppercase mt-4 mb-3">Follow Us</h6>
+                <h6 className="text-secondary text-uppercase mt-4 mb-3">{t('follow_us')}</h6>
                 <div className="d-flex">
                   <button type="button" className="btn btn-primary btn-square mr-2" aria-label="Twitter">
                     <i className="fab fa-twitter" />
@@ -119,7 +139,7 @@ class FooterComponent extends Component {
               <button type="button" className="btn btn-link text-primary p-0">
                 Domain
               </button>
-              . All Rights Reserved. Designed by
+              . {t('all_rights_reserved')}
               <a className="text-primary" href="https://htmlcodex.com">
                 HTML Codex
               </a>
@@ -134,4 +154,4 @@ class FooterComponent extends Component {
     );
   }
 }
-export default FooterComponent;
+export default FooterComponent; 

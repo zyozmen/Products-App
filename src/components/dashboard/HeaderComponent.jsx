@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import AuthenticationService from '../../services/AuthenticationService.js';
 import cartService from '../../services/CartService.js';
+import translationService from '../../services/TranslationService.js';
 import DropdownMenu from '../ui/DropdownMenu';
 import './HeaderComponent.css';
 
@@ -10,6 +11,7 @@ class HeaderComponent extends Component {
         this.state = {
             searchTerm: '',
             cartItemCount: cartService.getItemCount(),
+            currentLanguage: translationService.getLanguage(),
         };
         this.handleSignOut = this.handleSignOut.bind(this);
         this.handleSignIn = this.handleSignIn.bind(this);
@@ -17,7 +19,9 @@ class HeaderComponent extends Component {
         this.handleSearchChange = this.handleSearchChange.bind(this);
         this.handleSearchSubmit = this.handleSearchSubmit.bind(this);
         this.handleCartClick = this.handleCartClick.bind(this);
+        this.handleLanguageChange = this.handleLanguageChange.bind(this);
         this.unsubscribeFromCart = null;
+        this.unsubscribeFromLanguage = null;
     }
 
     componentDidMount() {
@@ -25,11 +29,17 @@ class HeaderComponent extends Component {
             const cartItemCount = items.reduce((total, item) => total + item.quantity, 0);
             this.setState({ cartItemCount });
         });
+        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+            this.setState({ currentLanguage: lang });
+        });
     }
 
     componentWillUnmount() {
         if (this.unsubscribeFromCart) {
             this.unsubscribeFromCart();
+        }
+        if (this.unsubscribeFromLanguage) {
+            this.unsubscribeFromLanguage();
         }
     }
 
@@ -57,6 +67,10 @@ class HeaderComponent extends Component {
         this.props.navigate(`/cart`);
     }
 
+    handleLanguageChange(lang) {
+        translationService.setLanguage(lang);
+    }
+
     handleSearchChange(event) {
         this.setState({ searchTerm: event.target.value });
     }
@@ -72,71 +86,44 @@ class HeaderComponent extends Component {
 
     render() {
         const isUserLoggedIn = AuthenticationService.isUserLoggedIn();
-        const { searchTerm, cartItemCount } = this.state;
+        const { searchTerm, cartItemCount, currentLanguage } = this.state;
+        const t = (key) => translationService.t(key);
         console.log(isUserLoggedIn);
         return (
             <div className="container-fluid">
                 <div className="row bg-secondary py-1 px-xl-5">
                     <div className="col-lg-6 d-none d-lg-block">
-                        <div className="d-inline-flex align-items-center h-100">
-                            <button type="button" className="btn btn-link text-body mr-3 p-0">
-                                About
-                            </button>
-                            <button type="button" className="btn btn-link text-body mr-3 p-0">
-                                Contact
-                            </button>
-                            <button type="button" className="btn btn-link text-body mr-3 p-0">
-                                Help
-                            </button>
-                            <button type="button" className="btn btn-link text-body mr-3 p-0">
-                                FAQs
-                            </button>
-                        </div>
                     </div>
                     <div className="col-lg-6 text-center text-lg-right">
                         <div className="d-inline-flex align-items-center">
-                            <DropdownMenu label="My Account">
+                            <DropdownMenu label={t('my_account')}>
                                 {!isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleSignIn}>
-                                    Sign in
+                                    {t('sign_in')}
                                 </button>}
                                 {isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleCreateProduct}>
-                                    Crear Producto
+                                    {t('create_product')}
                                 </button>}
                                 {isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleSignOut}>
-                                    Logout
+                                    {t('logout')}
                                 </button>}
                             </DropdownMenu>
-                            <DropdownMenu label="USD" className="mx-2">
-                                <button className="dropdown-item" type="button">
-                                    EUR
+                            <DropdownMenu label={currentLanguage}>
+                                <button className="dropdown-item" type="button" onClick={() => this.handleLanguageChange('ES')}>
+                                    ES
                                 </button>
-                                <button className="dropdown-item" type="button">
-                                    GBP
-                                </button>
-                                <button className="dropdown-item" type="button">
-                                    CAD
-                                </button>
-                            </DropdownMenu>
-                            <DropdownMenu label="EN">
-                                <button className="dropdown-item" type="button">
-                                    FR
-                                </button>
-                                <button className="dropdown-item" type="button">
-                                    AR
-                                </button>
-                                <button className="dropdown-item" type="button">
-                                    RU
+                                <button className="dropdown-item" type="button" onClick={() => this.handleLanguageChange('EN')}>
+                                    EN
                                 </button>
                             </DropdownMenu>
                         </div>
                         <div className="d-inline-flex align-items-center d-block d-lg-none">
-                            <button type="button" className="btn px-0 ml-2" aria-label="Ver favoritos">
+                            <button type="button" className="btn px-0 ml-2" aria-label={t('view_favs')}>
                                 <i className="fas fa-heart text-dark" />
                                 <span className="badge text-dark border border-dark rounded-circle header-badge">
                                     0
                                 </span>
                             </button>
-                            <button type="button" className="btn px-0 ml-2" onClick={this.handleCartClick} aria-label="Ver carrito">
+                            <button type="button" className="btn px-0 ml-2" onClick={this.handleCartClick} aria-label={t('view_cart')}>
                                 <i className="fas fa-shopping-cart text-dark" />
                                 <span className="badge text-dark border border-dark rounded-circle header-badge">
                                     {cartItemCount}
@@ -149,10 +136,10 @@ class HeaderComponent extends Component {
                     <div className="col-lg-4">
                         <button type="button" className="btn btn-link text-decoration-none p-0">
                             <span className="h1 text-uppercase text-primary bg-dark px-2">
-                                Grow
+                                Zona
                             </span>
                             <span className="h1 text-uppercase text-dark bg-primary px-2 ml-n1">
-                                Shop
+                                Green
                             </span>
                         </button>
                     </div>
@@ -162,7 +149,7 @@ class HeaderComponent extends Component {
                                 <input
                                     type="text"
                                     className="form-control"
-                                    placeholder="Search for products"
+                                    placeholder={t('search_placeholder')}
                                     value={searchTerm}
                                     onChange={this.handleSearchChange}
                                 />
@@ -175,8 +162,8 @@ class HeaderComponent extends Component {
                         </form>
                     </div>
                     <div className="col-lg-4 col-6 text-right">
-                        <p className="m-0">Customer Service</p>
-                        <h5 className="m-0">+012 345 6789</h5>
+                        <p className="m-0">{t('customer_service')}</p>
+                        <h5 className="m-0">{t('customer_service_num')}</h5>
                     </div>
                 </div>
             </div>
