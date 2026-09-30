@@ -99,12 +99,18 @@ export const toProduct = (raw = {}) => ({
     : [],
   created_at: String(raw.created_at ?? ""),
   updated_at: String(raw.updated_at ?? ""),
-  foto_principal: String(raw.foto_principal ?? raw.fotoPrincipal ?? ""),
-  fotos_secundarias: Array.isArray(raw.fotos_secundarias)
-    ? raw.fotos_secundarias.map(String)
-    : Array.isArray(raw.fotosSecundarias)
-      ? raw.fotosSecundarias.map(String)
-      : [],
+  foto_principal: raw.images?.foto_principal?.filepart
+    ? `data:image/${(raw.images.foto_principal.extension || "jpeg").toLowerCase().replace("jpg", "jpeg")};base64,${raw.images.foto_principal.filepart}`
+    : String(raw.foto_principal ?? raw.fotoPrincipal ?? ""),
+  fotos_secundarias: Array.isArray(raw.images?.fotos_secundarias)
+    ? raw.images.fotos_secundarias
+        .filter((f) => f && f.filepart)
+        .map((f) => `data:image/${(f.extension || "jpeg").toLowerCase().replace("jpg", "jpeg")};base64,${f.filepart}`)
+    : Array.isArray(raw.fotos_secundarias)
+      ? raw.fotos_secundarias.map(String)
+      : Array.isArray(raw.fotosSecundarias)
+        ? raw.fotosSecundarias.map(String)
+        : [],
 });
 
 export const toProductList = (rawList) =>
