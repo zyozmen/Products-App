@@ -1,8 +1,6 @@
 import React, { Component } from "react";
-import ProductDescriptionComponent from "./ProductDescriptionComponent";
-import ShareComponent from "./ShareComponent";
-import CartControllsComponent from "./CartControllsComponent";
 import productosService from "../../../services/ProductosService.js";
+import CartControllsComponent from "./CartControllsComponent";
 import { toProduct } from "../../../Interfaces/ProductInterface.js";
 import ImageCarousel from "../../ui/ImageCarousel";
 
@@ -10,7 +8,7 @@ class ProductDetails extends Component {
     constructor(props) {
         super(props);
         this.state = {
-                product: {}
+            product: {}
         }
         this.getProductDetails = this.getProductDetails.bind(this);
     }
@@ -43,7 +41,7 @@ class ProductDetails extends Component {
         const categories = Array.isArray(this.state.product.categories)
             ? this.state.product.categories
             : [];
-        
+
         // Configuración dinámica de imágenes para el carrusel
         const itemImages = [];
         if (this.state.product.foto_principal) {
@@ -52,7 +50,7 @@ class ProductDetails extends Component {
         if (Array.isArray(this.state.product.fotos_secundarias)) {
             this.state.product.fotos_secundarias.forEach((src, idx) => {
                 if (src) {
-                    itemImages.push({ id: `s-${idx}`, src: `/img/${idx}/product-${idx}-secondary.jpg` });
+                    itemImages.push({ id: `s-${idx}`, src });
                 }
             });
         }
@@ -71,7 +69,7 @@ class ProductDetails extends Component {
                         />
                     </div>
                     <div className="col-lg-7 h-auto mb-30">
-                        <div className="h-100 bg-light p-30">
+                        <div className="h-25 bg-light p-30">
                             <h3>{this.state.product.name}</h3>
                             <div className="d-flex mb-3">
                                 <div className="text-primary mr-2">
@@ -85,20 +83,24 @@ class ProductDetails extends Component {
                             </p>
                             <div className="d-flex mb-3 categories-container">
                                 <ul className="product-categories">
-                                {categories.length > 0 ? (
-                                    categories.map((category, index) => (
+                                    {categories.length > 0 ? (
+                                        categories.map((category, index) => (
                                             <li key={`${category.name || 'category'}-${index}`}><span className="label label-custom">{category.name}</span></li>
-                                    ))
-                                ) : (
-                                    <small className="text-muted">No categories available</small>
-                                )}
+                                        ))
+                                    ) : (
+                                        <small className="text-muted">No categories available</small>
+                                    )}
                                 </ul>
                             </div>
-                            <CartControllsComponent product={this.state.product} />
-                            <ShareComponent />
                         </div>
+                        <div className="d-flex h-50 bg-light p-30">
+                            <div className="d-flex mb-1 categories-container">
+                                <h4 className="mb-3">Product Description</h4>
+                                <p>{this.state.product.description}</p>
+                            </div>
+                        </div>
+                        <CartControllsComponent product={this.state.product} />
                     </div>
-                    <ProductDescriptionComponent params={{ product: this.state.product }} />
                 </div>
             </div>
         );

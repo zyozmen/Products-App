@@ -126,6 +126,7 @@ class ProductosService extends BaseRequestService {
                     price_currency: product.price.currency,
                     average_rating: product.ranking.average_rating,
                     total_reviews: product.ranking.total_reviews,
+                    foto_principal: product.foto_principal || '',
                     }));
 
                     return {

@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import HeaderComponent from "../dashboard/HeaderComponent";
-import NavBarComponent from "../dashboard/NavBarComponent";
 import FooterComponent from "../dashboard/FooterComponent";
 import navigationComponent from "../navigation/NavigationComponent";
 import cartService, { DEFAULT_TAX_RATE } from "../../services/CartService";
@@ -139,7 +138,6 @@ class ShoppingCarComponent extends Component {
         return (
             <>
                 <HeaderComponentWithNavigation />
-                <NavBarComponent />
                 <div className="container-fluid">
                     <div className="row px-xl-5">
                         <div className="col-lg-8 table-responsive mb-5">

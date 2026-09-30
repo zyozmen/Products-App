@@ -249,7 +249,12 @@ class ProductListComponent extends Component {
                     <div key={product.id} className="col-lg-4 col-md-6 col-sm-6 pb-1">
                         <div className="product-item bg-light mb-4">
                             <div className="product-img position-relative overflow-hidden">
-                                <img className="img-fluid w-100" src="img/product-1.jpg" alt="" />
+                                <img 
+                                    className="img-fluid w-100" 
+                                    src={product.foto_principal || "img/product-1.jpg"} 
+                                    alt={product.name} 
+                                    style={{ height: "280px", objectFit: "cover" }}
+                                />
                                 <div className="product-action">
                                     <button type="button" className="btn btn-outline-dark btn-square" onClick={(event) => this.handleAddToCart(event, product)} aria-label="Agregar al carrito">
                                         <i className="fa fa-shopping-cart" />

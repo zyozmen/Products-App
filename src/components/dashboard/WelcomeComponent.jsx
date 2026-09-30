@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import HeaderComponent from './HeaderComponent.jsx';
 import FooterComponent from './FooterComponent.jsx';
-import NavBarComponent from './NavBarComponent.jsx';
 import CategoryComponent from './CategoryComponent.jsx';
 import CarrouselComponent from './CarrouselComponent.jsx';
 import FeaturedProducts from './FeaturedProducts.jsx';
@@ -14,7 +13,6 @@ class WelcomeComponent extends Component {
     return (
       <>
         <HeaderComponentWithNavigation />
-        <NavBarComponent />
         <CarrouselComponent />
         <FeaturedProducts />
         <CategoryComponent />
