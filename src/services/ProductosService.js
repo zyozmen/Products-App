@@ -60,6 +60,8 @@ class ProductosService extends BaseRequestService {
         this.listarProductos = this.listarProductos.bind(this);
         this.detalleProducto = this.detalleProducto.bind(this);
         this.crearProducto = this.crearProducto.bind(this);
+        this.actualizarProducto = this.actualizarProducto.bind(this);
+        this.subirImagenesProducto = this.subirImagenesProducto.bind(this);
         this.listarCategorias = this.listarCategorias.bind(this);
     }
 
@@ -161,6 +163,34 @@ class ProductosService extends BaseRequestService {
             .then(data => toProduct(data))
             .catch(error => {
                 console.error(error);
+                throw error;
+            });
+    }
+
+    actualizarProducto(id, product) {
+        return this.executePutRequest(`${this.url}/${id}`, product)
+            .then(data => toProduct(data))
+            .catch(error => {
+                console.error(error);
+                throw error;
+            });
+    }
+
+    subirImagenesProducto(productId, fotoPrincipal, fotosSecundarias) {
+        const formData = new FormData();
+        if (fotoPrincipal) {
+            formData.append('fotoPrincipal', fotoPrincipal);
+        }
+        if (Array.isArray(fotosSecundarias) && fotosSecundarias.length > 0) {
+            fotosSecundarias.forEach((file) => {
+                formData.append('fotosSecundarias', file);
+            });
+        }
+        // Nota: Asegúrate de que el endpoint del backend mapee a la ruta correcta. 
+        // Si tu backend mapea a la ruta en español ("/{idProducto}/imagenes"), cambia "/images" por "/imagenes" abajo.
+        return this.executePostRequest(`${this.url}/${productId}/images`, formData)
+            .catch(error => {
+                console.error("Error al subir las imágenes del producto:", error);
                 throw error;
             });
     }

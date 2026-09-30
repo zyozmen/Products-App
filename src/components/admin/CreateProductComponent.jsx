@@ -13,7 +13,7 @@ class CreateProductComponent extends Component {
             <>
             <HeaderComponentWithNavigation />
             <NavBarComponent />
-            <CreateProduct navigate={this.props.navigate} />
+            <CreateProduct {...this.props} />
             <FooterComponent />
             </>
         );

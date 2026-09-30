@@ -43,17 +43,30 @@ class ProductDetails extends Component {
         const categories = Array.isArray(this.state.product.categories)
             ? this.state.product.categories
             : [];
+        
+        // Configuración dinámica de imágenes para el carrusel
+        const itemImages = [];
+        if (this.state.product.foto_principal) {
+            itemImages.push({ id: 'p', src: this.state.product.foto_principal });
+        }
+        if (Array.isArray(this.state.product.fotos_secundarias)) {
+            this.state.product.fotos_secundarias.forEach((src, idx) => {
+                if (src) {
+                    itemImages.push({ id: `s-${idx}`, src: `/img/${idx}/product-${idx}-secondary.jpg` });
+                }
+            });
+        }
+        // Fallback si no tiene imágenes cargadas
+        if (itemImages.length === 0) {
+            itemImages.push({ id: 'f1', src: '/img/product-1.jpg' });
+        }
+
         return (
             <div className="container-fluid pb-5">
                 <div className="row px-xl-5">
                     <div className="col-lg-5 mb-30">
                         <ImageCarousel
-                            items={[
-                                { id: 1, src: '/img/product-1.jpg' },
-                                { id: 2, src: '/img/product-2.jpg' },
-                                { id: 3, src: '/img/product-3.jpg' },
-                                { id: 4, src: '/img/product-4.jpg' },
-                            ]}
+                            items={itemImages}
                             altPrefix="Product view"
                         />
                     </div>

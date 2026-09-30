@@ -41,6 +41,53 @@ export const createInitialForm = () => ({
     recent_comments: [],
 });
 
+export const formFromProduct = (product) => ({
+    // Basic info
+    name: product.name || "",
+    slug: product.slug || "",
+    description: product.description || product.descripcion || "",
+    sku: product.sku || "",
+    status: product.status || "ACTIVE",
+    created_at: product.created_at || "",
+    updated_at: product.updated_at || "",
+
+    // Price
+    price_current: product.price?.current ?? "",
+    price_original: product.price?.original ?? "",
+    price_currency: product.price?.currency || "USD",
+    price_discount_percentage: product.price?.discount_percentage ?? "",
+    price_tax_inclusive: product.price?.tax_inclusive ?? false,
+
+    // Ranking
+    ranking_average_rating: product.ranking?.average_rating ?? "",
+    ranking_total_reviews: product.ranking?.total_reviews ?? "",
+    ranking_5_star: product.ranking?.rating_distribution?.["5_star"] ?? "",
+    ranking_4_star: product.ranking?.rating_distribution?.["4_star"] ?? "",
+    ranking_3_star: product.ranking?.rating_distribution?.["3_star"] ?? "",
+    ranking_2_star: product.ranking?.rating_distribution?.["2_star"] ?? "",
+    ranking_1_star: product.ranking?.rating_distribution?.["1_star"] ?? "",
+
+    // Dynamic arrays
+    categories: Array.isArray(product.categories) && product.categories.length > 0
+        ? product.categories.map((cat) => ({
+            name: cat.name || "",
+            slug: cat.slug || "",
+            category_id: cat.category_id || "",
+        }))
+        : [emptyCategory()],
+    recent_comments: Array.isArray(product.recent_comments)
+        ? product.recent_comments.map((comment) => ({
+            username: comment.username || "",
+            rating: comment.rating ?? "",
+            title: comment.title || "",
+            body: comment.body || "",
+            comment_id: comment.comment_id || "",
+            user_id: comment.user_id || "",
+            created_at: comment.created_at || "",
+        }))
+        : [],
+});
+
 export const updateFlatField = (form, target) => {
     const { name, value, type, checked } = target;
     return {

@@ -4,6 +4,7 @@ import { NavLink } from "react-router-dom";
 import productosService from "../../services/ProductosService";
 import cartService from "../../services/CartService";
 import translationService from "../../services/TranslationService";
+import AuthenticationService from "../../services/AuthenticationService";
 
 class ProductListComponent extends Component {
     constructor(props) {
@@ -225,6 +226,7 @@ class ProductListComponent extends Component {
         const { selectedSortBy, onSortByChange } = this.props;
         const visiblePages = this.getVisiblePageNumbers();
         const t = (key) => translationService.t(key);
+        const isUserAdmin = AuthenticationService.isUserLoggedIn() && sessionStorage.getItem('authenticatedUser') === "admin";
 
         return (
 
@@ -255,9 +257,14 @@ class ProductListComponent extends Component {
                                     <button type="button" className="btn btn-outline-dark btn-square" onClick={(event) => this.handleAddToFavorites(event, product)} aria-label="Agregar a favoritos">
                                         <i className="far fa-heart" />
                                     </button>
-                                    <NavLink className="btn btn-outline-dark btn-square" to={`/product/${product.id}`}>
+                                    <NavLink className="btn btn-outline-dark btn-square" to={`/product/${product.id}`} aria-label="Ver detalles">
                                         <i className="fa fa-search" />
                                     </NavLink>
+                                    {isUserAdmin && (
+                                        <NavLink className="btn btn-outline-dark btn-square" to={`/editProduct/${product.id}`} aria-label="Editar producto">
+                                            <i className="fa fa-edit" />
+                                        </NavLink>
+                                    )}
                                 </div>
                             </div>
                             <div className="text-center py-4">

@@ -99,6 +99,12 @@ export const toProduct = (raw = {}) => ({
     : [],
   created_at: String(raw.created_at ?? ""),
   updated_at: String(raw.updated_at ?? ""),
+  foto_principal: String(raw.foto_principal ?? raw.fotoPrincipal ?? ""),
+  fotos_secundarias: Array.isArray(raw.fotos_secundarias)
+    ? raw.fotos_secundarias.map(String)
+    : Array.isArray(raw.fotosSecundarias)
+      ? raw.fotosSecundarias.map(String)
+      : [],
 });
 
 export const toProductList = (rawList) =>

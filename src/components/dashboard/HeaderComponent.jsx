@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { NavLink } from 'react-router-dom';
 import AuthenticationService from '../../services/AuthenticationService.js';
 import cartService from '../../services/CartService.js';
 import translationService from '../../services/TranslationService.js';
@@ -134,14 +135,14 @@ class HeaderComponent extends Component {
                 </div>
                 <div className="row align-items-center bg-light py-3 px-xl-5 d-none d-lg-flex">
                     <div className="col-lg-4">
-                        <button type="button" className="btn btn-link text-decoration-none p-0">
+                        <NavLink to="/welcome" className="btn btn-link text-decoration-none p-0">
                             <span className="h1 text-uppercase text-primary bg-dark px-2">
                                 Zona
                             </span>
                             <span className="h1 text-uppercase text-dark bg-primary px-2 ml-n1">
                                 Green
                             </span>
-                        </button>
+                        </NavLink>
                     </div>
                     <div className="col-lg-4 col-6 text-left">
                         <form onSubmit={this.handleSearchSubmit}>

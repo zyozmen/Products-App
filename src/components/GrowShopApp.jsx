@@ -30,6 +30,7 @@ class GrowShopApp extends Component {
                         <Route path="/welcome/:name" element={<WelcomeComponentWithParams />} />
                         <Route path="/product/:id" element={<ProductDetailComponentWithParams />} />
                         <Route path="/createProduct" element={<CreateProductComponentWithNavigation />} />
+                        <Route path="/editProduct/:productId" element={<CreateProductComponentWithNavigation />} />
                         <Route path="/cart" element={<ShoppingCarComponentWithNavigation />} />
                         <Route path="*" element={<ErrorComponent />} />
                     </Routes>
