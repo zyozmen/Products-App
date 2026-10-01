@@ -14,7 +14,7 @@
 /* The Main Tag Body */
 .product-categories > li .label-custom {
     position: relative;
-    background-color: #fdd835; 
+    background-color: #6BBF23; 
     color: #222;               
     font-size: 12px;
     font-weight: 700;          
@@ -44,12 +44,12 @@
     border-radius: 50%;
     
     /* Creates the plastic/metal reinforcement ring around the hole */
-    box-shadow: 0 0 0 3px #dcb614; 
+    box-shadow: 0 0 0 3px #8de118; 
 }
 
 /* Optional Hover Effect */
 .product-categories > li .label-custom:hover {
-    background-color: #fbc02d;
+    background-color: #6BB800;
     cursor: pointer;
 }
 

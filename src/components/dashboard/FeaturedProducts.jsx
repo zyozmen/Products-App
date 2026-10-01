@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import productosService from '../../services/ProductosService';
 import cartService from '../../services/CartService';
 import translationService from '../../services/TranslationService';
+import { formatCOP } from '../../Interfaces/ProductInterface';
 
 
 class FeaturedProducts extends Component {
@@ -73,10 +74,12 @@ class FeaturedProducts extends Component {
                                     {featuredProduct.name}
                                 </Link>
                                 <div className="d-flex align-items-center justify-content-center mt-2">
-                                    <h5>${featuredProduct.price.current.toFixed(2)}</h5>
-                                    <h6 className="text-muted ml-2">
-                                        <del>${featuredProduct.price.previous?.toFixed(2)}</del>
-                                    </h6>
+                                    <h5>{formatCOP(featuredProduct.price.current)}</h5>
+                                    {featuredProduct.price.previous && (
+                                        <h6 className="text-muted ml-2">
+                                            <del>{formatCOP(featuredProduct.price.previous)}</del>
+                                        </h6>
+                                    )}
                                 </div>
                                 <div className="d-flex align-items-center justify-content-center mb-1">
                                     <small className="fa fa-star text-primary mr-1" />

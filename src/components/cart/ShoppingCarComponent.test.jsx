@@ -24,11 +24,11 @@ describe('createWhatsAppCheckoutUrl', () => {
 
         expect(url.origin).toBe('https://wa.me');
         expect(url.pathname).toBe('/573124058166');
-        expect(url.searchParams.get('text')).toContain('Mochila & termo x2: $20.00');
+        expect(url.searchParams.get('text')).toContain('Mochila & termo x2: $20');
         expect(url.searchParams.get('text')).toContain('Receptor: Ana Perez');
         expect(url.searchParams.get('text')).toContain('Complemento: Casa 34, int. 4, apto. 204');
         expect(url.searchParams.get('text')).toContain('Telefono de contacto: +57 300 123 4567');
-        expect(url.searchParams.get('text')).toContain('Total: $23.20');
+        expect(url.searchParams.get('text')).toContain('Total: $23');
     });
 
     it('opens checkout in a new tab without replacing the cart', () => {

@@ -5,6 +5,7 @@ import productosService from "../../services/ProductosService";
 import cartService from "../../services/CartService";
 import translationService from "../../services/TranslationService";
 import AuthenticationService from "../../services/AuthenticationService";
+import { formatCOP } from "../../Interfaces/ProductInterface";
 
 class ProductListComponent extends Component {
     constructor(props) {
@@ -274,10 +275,12 @@ class ProductListComponent extends Component {
                                     {product.name}
                                 </NavLink>
                                 <div className="d-flex align-items-center justify-content-center mt-2">
-                                    <h5>{product.price_currency} {product.current_price}</h5>
-                                    <h6 className="text-muted ml-2">
-                                        <del>{product.price_currency} {product.original_price}</del>
-                                    </h6>
+                                    <h5>{formatCOP(product.current_price)}</h5>
+                                    {product.original_price && Number(product.original_price) !== Number(product.current_price) && (
+                                        <h6 className="text-muted ml-2">
+                                            <del>{formatCOP(product.original_price)}</del>
+                                        </h6>
+                                    )}
                                 </div>
                                 <div className="d-flex align-items-center justify-content-center mb-1">
                                     {this.renderStars(product.average_rating)}

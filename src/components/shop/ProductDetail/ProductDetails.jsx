@@ -69,15 +69,8 @@ class ProductDetails extends Component {
                         />
                     </div>
                     <div className="col-lg-7 h-auto mb-30">
-                        <div className="h-30 bg-light p-30">
+                        <div className="h-25 bg-light p-30">
                             <h3>{this.state.product.name}</h3>
-                            <div className="d-flex mb-3">
-                                <div className="text-primary mr-2">
-                                    {this.renderStars(ranking.average_rating)}
-                                </div>
-                                <small className="pt-1">({ranking.total_reviews} Reviews)</small>
-                            </div>
-                            <h3 className="font-weight-semi-bold mb-4">${price.current}</h3>
                             <p className="mb-4">
                                 {this.state.product.LongDescription}
                             </p>

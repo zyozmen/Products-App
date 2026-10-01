@@ -4,13 +4,14 @@ import FooterComponent from "../dashboard/FooterComponent";
 import navigationComponent from "../navigation/NavigationComponent";
 import cartService, { DEFAULT_TAX_RATE } from "../../services/CartService";
 import translationService from "../../services/TranslationService";
+import { formatCOP } from "../../Interfaces/ProductInterface";
 import './ShoppingCarComponent.css';
 
 const whatsappPhoneNumber = String(import.meta.env.VITE_WHATSAPP_NUMBER ?? '573124058166').trim();
 
 export const createWhatsAppCheckoutUrl = ({ items, phoneNumber, subtotal, taxAmount, total, delivery = {} }) => {
     const orderLines = items.map((item) =>
-        `- ${item.name} x${item.quantity}: $${(item.price * item.quantity).toFixed(2)}`
+        `- ${item.name} x${item.quantity}: ${formatCOP(item.price * item.quantity)}`
     );
     const message = [
         'Hola, quiero realizar este pedido:',
@@ -22,7 +23,7 @@ export const createWhatsAppCheckoutUrl = ({ items, phoneNumber, subtotal, taxAmo
         delivery.addressComplement ? `Complemento: ${delivery.addressComplement}` : null,
         `Telefono de contacto: ${delivery.contactPhone ?? ''}`,
         '',
-        `Total: $${total.toFixed(2)}`,
+        `Total: ${formatCOP(total)}`,
     ].filter((line) => line !== null).join('\n');
     const normalizedPhoneNumber = String(phoneNumber ?? '').replace(/\D/g, '');
 
@@ -165,7 +166,7 @@ class ShoppingCarComponent extends Component {
                                                 <img src={item.image} alt={item.name} className="cart-product-image" />{" "}
                                                 {item.name}
                                             </td>
-                                            <td className="align-middle">${item.price.toFixed(2)}</td>
+                                            <td className="align-middle">{formatCOP(item.price)}</td>
                                             <td className="align-middle">
                                                 <div
                                                     className="input-group quantity mx-auto cart-quantity-input"
@@ -196,7 +197,7 @@ class ShoppingCarComponent extends Component {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="align-middle">${(item.price * item.quantity).toFixed(2)}</td>
+                                            <td className="align-middle">{formatCOP(item.price * item.quantity)}</td>
                                             <td className="align-middle">
                                                 <button
                                                     type="button"
@@ -276,17 +277,17 @@ class ShoppingCarComponent extends Component {
                                 <div className="border-bottom pb-2">
                                     <div className="d-flex justify-content-between mb-3">
                                         <h6>{t('subtotal')}</h6>
-                                        <h6>${subtotal.toFixed(2)}</h6>
+                                        <h6>{formatCOP(subtotal)}</h6>
                                     </div>
                                     <div className="d-flex justify-content-between">
                                         <h6 className="font-weight-medium">{t('tax')} ({taxPercentage}%)</h6>
-                                        <h6 className="font-weight-medium">${taxAmount.toFixed(2)}</h6>
+                                        <h6 className="font-weight-medium">{formatCOP(taxAmount)}</h6>
                                     </div>
                                 </div>
                                 <div className="pt-2">
                                     <div className="d-flex justify-content-between mt-2">
                                         <h5>{t('total')}</h5>
-                                        <h5>${total.toFixed(2)}</h5>
+                                        <h5>{formatCOP(total)}</h5>
                                     </div>
                                     <button
                                         type="submit"

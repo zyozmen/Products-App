@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import cartService from "../../../services/CartService";
+import { formatCOP } from "../../../Interfaces/ProductInterface.js";
 import './CartControllsComponent.css';
 
 class ShareComponent extends Component {
@@ -49,6 +50,10 @@ class ShareComponent extends Component {
         return (
             <>
                 <div className="d-flex align-items-center mb-4 pt-2">
+                    <div className=" mr-1">
+                        <h3 className="font-weight-semi-bold mb-4 text-primary">{formatCOP(this.props.product.price?.current ?? 0)}</h3>
+                    </div>
+
                     <div className="input-group quantity mr-3 quantity-control">
                         <div className="input-group-btn">
                             <button type="button" className="btn btn-primary btn-minus" onClick={this.handleDecrement}>
