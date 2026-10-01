@@ -11,8 +11,8 @@
 
 button.live {
 	border-radius: 20px;
-	border: 1px solid #FF4B2B;
-	background-color: #FF4B2B;
+	border: 1px solid #6BBF23;
+	background-color: #6BBF23;
 	color: #FFFFFF;
 	font-size: 12px;
 	font-weight: bold;
@@ -125,9 +125,9 @@ input.LoginInput {
 }
 
 .overlay {
-	background: #FF416C;
-	background: -webkit-linear-gradient(to right, #FF4B2B, #FF416C);
-	background: linear-gradient(to right, #FF4B2B, #FF416C);
+	background: #6BBF23;
+	background: -webkit-linear-gradient(to right, #6BBB2B, #6BBF23);
+	background: linear-gradient(to right, #6BBB2B, #6BBF23);
 	background-repeat: no-repeat;
 	background-size: cover;
 	background-position: 0 0;
@@ -199,13 +199,106 @@ input.LoginInput {
 }
 .forgot-password:hover {
 	text-decoration: underline;
-	color: #FF416C;
+	color: #6BBF23;
 }
 
 .alert-warning{
-	color: #ff4b2b;
+	color: #6BBF23;
 	font-size: 14px;
 	margin: 15px 0;
 	background-color: #ffe6e1;
+}
+
+/* Responsividad para pantallas pequeñas / móviles */
+@media (max-width: 768px) {
+	.LoginComponent {
+		height: auto;
+		min-height: 100vh;
+		justify-content: flex-start;
+		padding: 20px 10px;
+		margin: 0;
+	}
+
+	.container {
+		width: 100%;
+		min-height: 520px;
+		display: flex;
+		flex-direction: column;
+		box-shadow: none;
+		background-color: transparent;
+	}
+
+	.form-container {
+		position: relative;
+		width: 100% !important;
+		height: auto;
+		transform: none !important;
+		opacity: 1 !important;
+		transition: none;
+		z-index: 10 !important;
+		background-color: #fff;
+		border-radius: 10px;
+		box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+		margin-bottom: 20px;
+	}
+
+	.sign-in-container {
+		order: 1;
+	}
+
+	.sign-up-container {
+		order: 3;
+	}
+
+	.LoginComponentForm {
+		padding: 30px 20px;
+	}
+
+	.overlay-container {
+		position: relative;
+		left: 0;
+		width: 100%;
+		height: auto;
+		order: 2;
+		transform: none !important;
+		transition: none;
+		margin-bottom: 20px;
+		border-radius: 10px;
+		overflow: hidden;
+		box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+	}
+
+	.overlay {
+		left: 0;
+		width: 100%;
+		transform: none !important;
+		transition: none;
+	}
+
+	.overlay-panel {
+		position: relative;
+		width: 100%;
+		padding: 40px 20px;
+		transform: none !important;
+		transition: none;
+	}
+
+	/* Ocultar botones ghost e interactividad deslizante en móviles ya que se muestran verticalmente en columna */
+	.overlay-left {
+		display: none;
+	}
+
+	.overlay-right h1 {
+		font-size: 24px;
+	}
+
+	.overlay-right p {
+		font-size: 14px;
+		margin-bottom: 0;
+	}
+
+	.overlay-right .ghost {
+		display: none;
+	}
 }
 

@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import './LoginComponent.css';
+import { NavLink } from 'react-router-dom';
 import AuthenticationService from '../../services/AuthenticationService.js';
 import translationService from '../../services/TranslationService.js';
 
@@ -34,6 +35,21 @@ class LoginForm extends Component {
         this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
             this.setState({ currentLanguage: lang });
         });
+
+        // Event listeners for responsive sliding transition on mobile/desktop
+        const signUpButton = document.getElementById('signUp');
+        const signInButton = document.getElementById('signIn');
+        const container = document.getElementById('container');
+
+        if (signUpButton && signInButton && container) {
+            signUpButton.addEventListener('click', () => {
+                container.classList.add("right-panel-active");
+            });
+
+            signInButton.addEventListener('click', () => {
+                container.classList.remove("right-panel-active");
+            });
+        }
     }
 
     componentWillUnmount() {
@@ -46,20 +62,18 @@ class LoginForm extends Component {
         const t = (key) => translationService.t(key);
         return (
             <div className="container" id="container">
-                <div className="form-container sign-up-container">
-                    <form action="#" className="LoginComponentForm">
-                        <h1>{t('create_account')}</h1>
-                        <span>{t('or_use_email')}</span>
-                        <input type="text" placeholder={t('name')} />
-                        <input type="email" placeholder={t('email')} />
-                        <input type="password" placeholder={t('password')} />
-                        <button type="button" onClick={this.handleSignUp}>{t('create_account')}</button>
-                    </form>
-                </div>
                 <div className="form-container sign-in-container">
                     <form action="#" className="LoginComponentForm">
-                        <h1>{t('sign_in')}</h1>
-                        <span>{t('my_account')}</span>
+                        <div>
+                            <NavLink to="/welcome" className="btn btn-link text-decoration-none p-0">
+                                        <span className="h1 text-uppercase text-dark bg-light px-2">
+                                            Zona
+                                        </span>
+                                        <span className="h1 text-uppercase text-dark bg-primary px-2 ml-n1">
+                                            Green
+                                        </span>
+                                    </NavLink>
+                        </div>
                         <label htmlFor="username" className="d-block mt-2">{t('user_name_label')}</label>
                         <input id="username" className="LoginInput" type="text" placeholder={t('user_name_label')} value={this.state.username} onChange={e => this.setState({ username: e.target.value })} />
                         <label htmlFor="password" className="d-block mt-2">{t('password')}</label>
@@ -79,7 +93,7 @@ class LoginForm extends Component {
                         <div className="overlay-panel overlay-right">
                             <h1>{t('hello_friend')}</h1>
                             <p>{t('journey_text')}</p>
-                            <button type="button" className="ghost live" id="signUp">{t('create_account')}</button>
+                            <button type="button" className="live" id="signUp">{t('create_account')}</button>
                         </div>
                     </div>
                 </div>

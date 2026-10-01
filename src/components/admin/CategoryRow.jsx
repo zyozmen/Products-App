@@ -7,7 +7,6 @@ const CategoryRow = ({
     availableCategories,
     onNameChange,
     onIdChange,
-    onSlugChange,
     onRemove,
     canRemove,
 }) => {
@@ -16,7 +15,7 @@ const CategoryRow = ({
     return (
         <div className="border rounded p-3 mb-2">
             <div className="form-row align-items-end">
-                <div className="form-group col-md-4">
+                <div className="form-group col-md-6">
                     <label>Name</label>
                     <input
                         type="search"
@@ -28,17 +27,7 @@ const CategoryRow = ({
                         onChange={(e) => onNameChange(e.target.value)}
                     />
                 </div>
-                <div className="form-group col-md-4">
-                    <label>Slug</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        value={category.slug}
-                        disabled={hasSelectedExistingCategory}
-                        onChange={(e) => onSlugChange(e.target.value)}
-                    />
-                </div>
-                <div className="form-group col-md-3">
+                <div className="form-group col-md-5">
                     <label>Category ID</label>
                     <input
                         type="search"

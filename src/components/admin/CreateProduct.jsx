@@ -287,7 +287,6 @@ class CreateProduct extends Component {
                 return finalProductId;
             })
             .then((finalProductId) => {
-                // Clear previews
                 if (this.state.principalImagePreview) {
                     URL.revokeObjectURL(this.state.principalImagePreview);
                 }
@@ -362,15 +361,6 @@ class CreateProduct extends Component {
                                             onChange={this.handleChange}
                                         />
                                     </div>
-                                    <div className="form-group col-md-6">
-                                        <label htmlFor="sku">{t('sku_label')}</label>
-                                        <input
-                                            id="sku" name="sku" type="text"
-                                            className="form-control"
-                                            value={form.sku}
-                                            onChange={this.handleChange}
-                                        />
-                                    </div>
                                 </div>
 
                                 <div className="form-group">
@@ -385,27 +375,33 @@ class CreateProduct extends Component {
 
                                 <div className="form-row">
                                     <div className="form-group col-md-6">
-                                        <label htmlFor="slug">{t('slug_label')}</label>
-                                        <input
-                                            id="slug" name="slug" type="text"
-                                            className="form-control"
-                                            value={form.slug}
-                                            onChange={this.handleChange}
-                                            placeholder={t('slug_placeholder')}
-                                        />
-                                    </div>
-                                    <div className="form-group col-md-6">
                                         <label htmlFor="status">{t('status_label')}</label>
-                                        <select
-                                            id="status" name="status"
-                                            className="form-control"
-                                            value={form.status}
-                                            onChange={this.handleChange}
-                                        >
-                                            <option value="ACTIVE">{t('status_active')}</option>
-                                            <option value="DRAFT">{t('status_draft')}</option>
-                                            <option value="INACTIVE">{t('status_inactive')}</option>
-                                        </select>
+                                        <div className="status-slider-container-box">
+                                            <div className="status-slider-wrapper" data-status={form.status || 'ACTIVE'}>
+                                                <div className="status-slider-indicator"></div>
+                                                <button
+                                                    type="button"
+                                                    className="status-slider-btn btn-ACTIVE"
+                                                    onClick={() => this.handleChange({ target: { name: 'status', value: 'ACTIVE' } })}
+                                                >
+                                                    {t('status_active')}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="status-slider-btn btn-DRAFT"
+                                                    onClick={() => this.handleChange({ target: { name: 'status', value: 'DRAFT' } })}
+                                                >
+                                                    {t('status_draft')}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="status-slider-btn btn-INACTIVE"
+                                                    onClick={() => this.handleChange({ target: { name: 'status', value: 'INACTIVE' } })}
+                                                >
+                                                    {t('status_inactive')}
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -423,16 +419,6 @@ class CreateProduct extends Component {
                                         />
                                     </div>
                                     <div className="form-group col-md-3">
-                                        <label htmlFor="price_currency">{t('currency_label')}</label>
-                                        <input
-                                            id="price_currency" name="price_currency"
-                                            type="text" maxLength="3"
-                                            className="form-control"
-                                            value={form.price_currency}
-                                            onChange={this.handleChange}
-                                        />
-                                    </div>
-                                    <div className="form-group col-md-3">
                                         <label htmlFor="price_discount_percentage">{t('discount_percentage_label')}</label>
                                         <input
                                             id="price_discount_percentage" name="price_discount_percentage"
@@ -442,17 +428,6 @@ class CreateProduct extends Component {
                                             onChange={this.handleChange}
                                         />
                                     </div>
-                                </div>
-                                <div className="form-group form-check">
-                                    <input
-                                        id="price_tax_inclusive" name="price_tax_inclusive"
-                                        type="checkbox" className="form-check-input"
-                                        checked={form.price_tax_inclusive}
-                                        onChange={this.handleChange}
-                                    />
-                                    <label className="form-check-label" htmlFor="price_tax_inclusive">
-                                        {t('tax_inclusive_label')}
-                                    </label>
                                 </div>
 
                                 {/* ── Images ── */}
@@ -583,7 +558,6 @@ class CreateProduct extends Component {
                                         availableCategories={availableCategories}
                                         onNameChange={(value) => this.handleCategoryNameChange(idx, value)}
                                         onIdChange={(value) => this.handleCategoryIdChange(idx, value)}
-                                        onSlugChange={(value) => this.handleCategoryChange(idx, "slug", value)}
                                         onRemove={() => this.removeCategory(idx)}
                                         canRemove={form.categories.length > 1}
                                     />

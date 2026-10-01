@@ -222,7 +222,7 @@ export const validateProductForm = (form, availableCategories) => {
     for (const category of form.categories) {
         const categoryId = category.category_id.trim();
         const categoryName = normalize(category.name);
-        const categorySlug = normalize(category.slug);
+        const categorySlug = normalize(category.slug || (category.name.trim() ? createSlug(category.name) : ""));
 
         if (!categoryId && !categoryName && !categorySlug) {
             continue;
@@ -253,7 +253,7 @@ export const validateProductForm = (form, availableCategories) => {
             : false;
 
         if (hasExistingSlug) {
-            return `Category slug "${category.slug}" already exists. Use the existing category or choose another slug.`;
+            return `Category slug "${category.slug || createSlug(category.name)}" already exists. Use the existing category or choose another name.`;
         }
     }
 
@@ -283,11 +283,11 @@ export const buildProductPayload = (form) => {
         updated_at: form.updated_at || undefined,
 
         categories: form.categories
-            .filter((c) => c.name.trim() || c.slug.trim() || c.category_id.trim())
+            .filter((c) => c.name.trim() || c.category_id.trim())
             .map((c) => ({
                 category_id: c.category_id.trim(),
                 name: c.name.trim(),
-                slug: c.slug.trim(),
+                slug: c.slug ? c.slug.trim() : createSlug(c.name),
             })),
 
         price: {

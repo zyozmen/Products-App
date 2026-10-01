@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 import translationService from '../../services/TranslationService';
 import './FooterComponent.css';
 
@@ -33,17 +34,9 @@ class FooterComponent extends Component {
             <p className="mb-4">
               {t('footer_touch_text')}
             </p>
-            <p className="mb-2">
-              <i className="fa fa-map-marker-alt text-primary mr-3" />
-              123 Street, New York, USA
-            </p>
-            <p className="mb-2">
-              <i className="fa fa-envelope text-primary mr-3" />
-              info@example.com
-            </p>
             <p className="mb-0">
               <i className="fa fa-phone-alt text-primary mr-3" />
-              +012 345 67890
+              +57 312 4058166
             </p>
           </div>
           <div className="col-lg-8 col-md-12">
@@ -51,39 +44,31 @@ class FooterComponent extends Component {
               <div className="col-md-4 mb-5">
                 <h5 className="text-secondary text-uppercase mb-4">{t('quick_shop')}</h5>
                 <div className="d-flex flex-column justify-content-start">
-                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
+                  <Link to="/welcome" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     {t('home')}
-                  </button>
-                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
+                  </Link>
+                   <Link to="/shop"className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     {t('our_shop')}
-                  </button>
-                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
-                    <i className="fa fa-angle-right mr-2" />
-                    {t('shop_detail')}
-                  </button>
-                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
-                    <i className="fa fa-angle-right mr-2" />
-                    {t('shopping_cart')}
-                  </button>
-                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
+                  </Link>
+                  <Link to="/cart" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     {t('checkout')}
-                  </button>
-                  <button type="button" className="btn btn-link text-secondary p-0 text-left">
+                  </Link>
+                  <Link to="/contact" className="btn btn-link text-secondary p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     {t('contact_us')}
-                  </button>
+                  </Link>
                 </div>
               </div>
               <div className="col-md-4 mb-5">
                 <h5 className="text-secondary text-uppercase mb-4">{t('my_account')}</h5>
                 <div className="d-flex flex-column justify-content-start">
-                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
+                  <Link to="/welcome" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     {t('home')}
-                  </button>
+                  </Link>
                   <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
                     <i className="fa fa-angle-right mr-2" />
                     {t('shopping_cart')}

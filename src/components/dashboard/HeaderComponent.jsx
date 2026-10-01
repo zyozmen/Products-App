@@ -6,7 +6,6 @@ import translationService from '../../services/TranslationService.js';
 import DropdownMenu from '../ui/DropdownMenu';
 import CollapseMenu from '../ui/CollapseMenu';
 import './HeaderComponent.css';
-import './NavBarComponent.css';
 
 class HeaderComponent extends Component {
     constructor(props) {
@@ -173,9 +172,6 @@ class HeaderComponent extends Component {
                                         </NavLink>
                                         <NavLink to="/shop" className="nav-item nav-link">
                                             {t('flor_premium')}
-                                        </NavLink>
-                                        <NavLink to="/shop" className="nav-item nav-link">
-                                            {t('flor_en_sale')}
                                         </NavLink>
                                         <NavLink to="/shop" className="nav-item nav-link">
                                             {t('hidroponia')}
