@@ -260,6 +260,15 @@ export const validateProductForm = (form, availableCategories) => {
     return "";
 };
 
+export const createSku = (name) => {
+    if (!name || !name.trim()) return "";
+    return name
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+};
+
 export const createSlug = (name) =>
     name
         .trim()
@@ -277,7 +286,7 @@ export const buildProductPayload = (form) => {
         slug: form.slug.trim() || createSlug(form.name),
         description: form.description.trim(),
         descripcion: form.description.trim(),
-        sku: form.sku.trim(),
+        sku: form.sku.trim() || createSku(form.name),
         status: form.status,
         created_at: form.created_at || undefined,
         updated_at: form.updated_at || undefined,

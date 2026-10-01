@@ -69,7 +69,7 @@ class ProductDetails extends Component {
                         />
                     </div>
                     <div className="col-lg-7 h-auto mb-30">
-                        <div className="h-25 bg-light p-30">
+                        <div className="h-30 bg-light p-30">
                             <h3>{this.state.product.name}</h3>
                             <div className="d-flex mb-3">
                                 <div className="text-primary mr-2">
@@ -94,9 +94,13 @@ class ProductDetails extends Component {
                             </div>
                         </div>
                         <div className="d-flex h-50 bg-light p-30">
-                            <div className="d-flex mb-1 categories-container">
-                                <h4 className="mb-3">Product Description</h4>
+                            <div className="d-block mb-3 categories-container">
+                                <div className="d-block mb-3">
+                                <h4 className="mb-1">Product Description</h4>
+                                </div>
+                                <div className="mb-3">
                                 <p>{this.state.product.description}</p>
+                                </div>
                             </div>
                         </div>
                         <CartControllsComponent product={this.state.product} />
