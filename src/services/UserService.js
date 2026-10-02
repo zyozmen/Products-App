@@ -58,6 +58,36 @@ class UserService {
             throw error;
         }
     }
+
+    async updateProfile(profileData) {
+        try {
+            const token = sessionStorage.getItem('token');
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            const response = await axios.put(`${apiBaseUrl}/users/profile`, profileData, { headers });
+            return response.data;
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            if (error.response && error.response.data && error.response.data.message) {
+                throw new Error(error.response.data.message);
+            }
+            throw new Error('Ocurrió un error al actualizar el perfil.');
+        }
+    }
+
+    async resetPassword(username, newPassword) {
+        try {
+            const token = sessionStorage.getItem('token');
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            const response = await axios.put(`${apiBaseUrl}/admin/users/${username}/reset-password`, { password: newPassword }, { headers });
+            return response.data;
+        } catch (error) {
+            console.error(`Error resetting password for user ${username}:`, error);
+            if (error.response && error.response.data && error.response.data.message) {
+                throw new Error(error.response.data.message);
+            }
+            throw error;
+        }
+    }
 }
 
 const userServiceInstance = new UserService();

@@ -11,3 +11,86 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Dark Theme Overrides */
+body.dark-theme {
+    background-color: #1a1e21 !important;
+    color: #f1f2f6 !important;
+}
+
+body.dark-theme .bg-light,
+body.dark-theme .container-fluid.bg-light,
+body.dark-theme .card,
+body.dark-theme .bg-secondary,
+body.dark-theme .dropdown-menu,
+body.dark-theme .modal-content,
+body.dark-theme .table-light,
+body.dark-theme .table,
+body.dark-theme .breadcrumb {
+    background-color: #212529 !important;
+    color: #f1f2f6 !important;
+}
+
+body.dark-theme .text-dark,
+body.dark-theme .h1.text-dark,
+body.dark-theme .h2.text-dark,
+body.dark-theme .h3.text-dark,
+body.dark-theme .h4.text-dark,
+body.dark-theme .h5.text-dark,
+body.dark-theme .h6.text-dark,
+body.dark-theme p.text-dark,
+body.dark-theme .table td,
+body.dark-theme .table th,
+body.dark-theme .breadcrumb-item,
+body.dark-theme .breadcrumb-item.active,
+body.dark-theme .breadcrumb-item::before,
+body.dark-theme label,
+body.dark-theme .form-control {
+    color: #e4e6eb !important;
+}
+
+body.dark-theme .form-control {
+    background-color: #2c3034 !important;
+    border-color: #495057 !important;
+}
+
+body.dark-theme .form-control:focus {
+    background-color: #343a40 !important;
+    color: #fff !important;
+}
+
+body.dark-theme .dropdown-item {
+    color: #e4e6eb !important;
+    background-color: transparent !important;
+}
+
+body.dark-theme .dropdown-item:hover {
+    background-color: #343a40 !important;
+    color: #fff !important;
+}
+
+body.dark-theme .nav-link,
+body.dark-theme .nav-item {
+    color: #e4e6eb !important;
+}
+
+body.dark-theme .bg-white {
+    background-color: #1a1e21 !important;
+    color: #e4e6eb !important;
+}
+
+body.dark-theme .border,
+body.dark-theme .border-bottom,
+body.dark-theme .border-top,
+body.dark-theme .table-bordered {
+    border-color: #454d55 !important;
+}
+
+body.dark-theme .status-slider-wrapper {
+    background-color: #2c3034 !important;
+    border-color: #454d55 !important;
+}
+
+body.dark-theme .status-slider-btn {
+    color: #adb5bd !important;
+}

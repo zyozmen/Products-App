@@ -14,6 +14,7 @@ class UserAdminComponent extends Component {
             currentLanguage: translationService.getLanguage()
         };
         this.handleToggleStatus = this.handleToggleStatus.bind(this);
+        this.handleResetPassword = this.handleResetPassword.bind(this);
         this.unsubscribeFromLanguage = null;
     }
 
@@ -48,6 +49,23 @@ class UserAdminComponent extends Component {
             this.setState({ users });
         } catch (error) {
             console.error('Error toggling status:', error);
+        }
+    }
+
+    async handleResetPassword(username) {
+        const newPassword = window.prompt(`Ingrese la nueva contraseña para el usuario "${username}":`);
+        if (newPassword === null) return;
+        if (newPassword.trim() === '') {
+            alert('La contraseña no puede estar vacía.');
+            return;
+        }
+
+        try {
+            await UserService.resetPassword(username, newPassword);
+            alert(`¡Contraseña restablecida con éxito para el usuario "${username}"!`);
+        } catch (error) {
+            console.error('Error resetting password:', error);
+            alert(`Ocurrió un error al restablecer la contraseña: ${error.message}`);
         }
     }
 
@@ -112,15 +130,25 @@ class UserAdminComponent extends Component {
                                                         </span>
                                                     </td>
                                                     <td className="align-middle">
-                                                        <button
-                                                            type="button"
-                                                            className={`btn btn-sm ${u.active ? 'btn-danger' : 'btn-success'} font-weight-bold px-3`}
-                                                            onClick={() => this.handleToggleStatus(u.username)}
-                                                            disabled={isSelf}
-                                                            title={isSelf ? "No se puede inactivar al Administrador principal" : ""}
-                                                        >
-                                                            {u.active ? 'Inactivar' : 'Activar'}
-                                                        </button>
+                                                        <div className="d-flex justify-content-center" style={{ gap: '5px' }}>
+                                                            <button
+                                                                type="button"
+                                                                className={`btn btn-sm ${u.active ? 'btn-danger' : 'btn-success'} font-weight-bold px-2`}
+                                                                onClick={() => this.handleToggleStatus(u.username)}
+                                                                disabled={isSelf}
+                                                                title={isSelf ? "No se puede inactivar al Administrador principal" : ""}
+                                                            >
+                                                                {u.active ? 'Inactivar' : 'Activar'}
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-sm btn-warning font-weight-bold px-2"
+                                                                onClick={() => this.handleResetPassword(u.username)}
+                                                                title="Restablecer contraseña de usuario"
+                                                            >
+                                                                Restablecer Clave
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             );

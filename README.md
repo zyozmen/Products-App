@@ -57,10 +57,43 @@ npm run test:coverage    # Ejecuta pruebas y genera cobertura
 - `/`: pagina de bienvenida
 - `/shop`: catalogo y filtros de productos
 - `/product/:id`: detalle de un producto
-- `/cart`: carrito de compra
-- `/login`: inicio de sesion
-- `/createProduct`: alta de productos
+- `/cart`: carrito de compra (requiere login para compra segura, autocompletado y opcion de tercero receptor)
+- `/login`: inicio de sesion e inicio de registro de clientes con validacion de edad
+- `/profile`: administracion del perfil del usuario (edicion de datos y cambio de contraseña)
+- `/admin/users`: panel de administracion de usuarios (solo admin; activa/inactiva cuentas y restablece claves)
+- `/createProduct`: alta de productos (solo admin)
 - `/welcome/:name`: bienvenida personalizada
+
+## Gestión de Usuarios, Perfiles y Preferencias
+
+Hemos integrado un completo sistema transaccional de usuarios conectado al backend:
+
+### 1. Registro e Inicio de Sesión
+- **Registro de Clientes:** Formulario deslizable en `/login` que recopila información básica (Nombre, Apellido, Dirección, Teléfono, Tipo de Identificación, Número de Identificación y Consentimiento de mayoría de edad). Todos los registros se guardan con rol `'cliente'`.
+- **Control de Actividad:** El inicio de sesión valida si el usuario está activo. Las cuentas inactivadas por el administrador tienen el acceso bloqueado de forma inmediata.
+
+### 2. Administración de Perfil de Usuario (`/profile`)
+- **Edición Transaccional:** Cada usuario logueado puede acceder a su perfil en el dropdown *"Mi Cuenta"* para actualizar sus datos personales o cambiar su contraseña.
+- **Sincronización:** Los cambios se actualizan en el backend y se sincronizan al instante en `sessionStorage` para que todas las vistas de la aplicación (como el carrito de compras) reflejen los nuevos datos de inmediato.
+
+### 3. Panel de Administración de Usuarios (`/admin/users`)
+- **Restricción de Rol:** Ruta con guardias de seguridad asíncronas accesible únicamente para usuarios con rol de administrador (`isUserAdmin`).
+- **Activación/Inactivación:** Permite alternar el estado activo/inactivo de cualquier cuenta para suspender accesos (protegiendo la cuenta maestra `admin`).
+- **Restablecer Contraseñas:** Opción para que el administrador restablezca de forma segura la contraseña de cualquier usuario en la base de datos a través de la API.
+
+### 4. Compra Segura y Autocompletado
+- **Acceso Restringido:** Solo usuarios registrados y logueados pueden proceder al pago del carrito. Los usuarios invitados son guiados a iniciar sesión.
+- **Formulario Inteligente:** Al cargar el carrito, los datos de contacto y entrega se pre-llenan con el perfil del usuario logueado.
+- **Recibe un Tercero:** Se incluye un checkbox dinámico *"¿Recibe otra persona?"* que, al seleccionarse, muestra de forma obligatoria un campo para ingresar el nombre del destinatario alternativo.
+
+### 5. Control de Edad (+18)
+- **Advertencia Obligatoria:** Si un usuario no registrado ingresa al e-commerce, se muestra un modal overlay de confirmación de mayoría de edad.
+- **Restricción:** El acceso es denegado y se redirige al usuario fuera de la web si indica ser menor de edad. La confirmación es persistente en `sessionStorage` por sesión.
+
+### 6. Tema Claro / Oscuro (Dark Mode)
+- **Interruptor Global:** Botón con icono dinámico (Sol/Luna) en el menú superior para cambiar el tema en toda la aplicación de manera instantánea.
+- **Persistencia:** Guarda la selección en `localStorage` (`growShopTheme`) para recordar la preferencia del usuario en futuras visitas.
+- **Soporte de Estilos:** Estructurado mediante clases de CSS en `index.css` acopladas dinámicamente al `<body>` para alternar la visualización de cards, tablas, formularios y fondos de forma armoniosa con el diseño de la tienda.
 
 ## Ejecucion con Docker
 

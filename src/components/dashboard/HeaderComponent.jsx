@@ -10,10 +10,12 @@ import './HeaderComponent.css';
 class HeaderComponent extends Component {
     constructor(props) {
         super(props);
+        const savedTheme = localStorage.getItem('growShopTheme') || 'light';
         this.state = {
             searchTerm: '',
             cartItemCount: cartService.getItemCount(),
             currentLanguage: translationService.getLanguage(),
+            theme: savedTheme
         };
         this.handleSignOut = this.handleSignOut.bind(this);
         this.handleSignIn = this.handleSignIn.bind(this);
@@ -23,6 +25,7 @@ class HeaderComponent extends Component {
         this.handleLanguageChange = this.handleLanguageChange.bind(this);
         this.handleSearchChange = this.handleSearchChange.bind(this);
         this.handleSearchSubmit = this.handleSearchSubmit.bind(this);
+        this.toggleTheme = this.toggleTheme.bind(this);
         this.unsubscribeFromCart = null;
         this.unsubscribeFromLanguage = null;
     }
@@ -35,6 +38,13 @@ class HeaderComponent extends Component {
         this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
             this.setState({ currentLanguage: lang });
         });
+
+        const savedTheme = localStorage.getItem('growShopTheme') || 'light';
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+        } else {
+            document.body.classList.remove('dark-theme');
+        }
     }
 
     componentWillUnmount() {
@@ -72,6 +82,17 @@ class HeaderComponent extends Component {
         translationService.setLanguage(lang);
     }
 
+    toggleTheme() {
+        const nextTheme = this.state.theme === 'dark' ? 'light' : 'dark';
+        this.setState({ theme: nextTheme });
+        localStorage.setItem('growShopTheme', nextTheme);
+        if (nextTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+        } else {
+            document.body.classList.remove('dark-theme');
+        }
+    }
+
     handleSearchSubmit(event) {
         event.preventDefault();
         const normalizedSearch = this.state.searchTerm.trim();
@@ -105,6 +126,9 @@ class HeaderComponent extends Component {
                                     {!isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleSignIn}>
                                         {t('sign_in')}
                                     </button>}
+                                    {isUserLoggedIn && <button className="dropdown-item font-weight-bold text-dark" type="button" onClick={() => this.props.navigate('/profile')}>
+                                        {t('manage_profile')}
+                                    </button>}
                                     {isUserAdmin && <button className="dropdown-item text-primary" type="button" onClick={this.handleManageUsers}>
                                         {t('manage_users')}
                                     </button>}
@@ -118,11 +142,28 @@ class HeaderComponent extends Component {
                                 <DropdownMenu label={currentLanguage}>
                                     <button className="dropdown-item" type="button" onClick={() => this.handleLanguageChange('ES')}>
                                         ES
-                                    </button>
+                                    </button> 
                                     <button className="dropdown-item" type="button" onClick={() => this.handleLanguageChange('EN')}>
                                         EN
                                     </button> 
                                 </DropdownMenu>
+                                <button 
+                                    className="btn btn-sm btn-dark ml-2 d-inline-flex align-items-center" 
+                                    type="button"
+                                    onClick={this.toggleTheme}
+                                    style={{ 
+                                        borderRadius: '20px', 
+                                        padding: '4px 10px', 
+                                        fontSize: '12px',
+                                        backgroundColor: this.state.theme === 'dark' ? '#ffc107' : '#3D464D',
+                                        color: this.state.theme === 'dark' ? '#000' : '#fff',
+                                        border: 'none',
+                                        fontWeight: '700'
+                                    }}
+                                >
+                                    <i className={this.state.theme === 'dark' ? 'fas fa-sun mr-1' : 'fas fa-moon mr-1'} />
+                                    {this.state.theme === 'dark' ? 'CLARO' : 'OSCURO'}
+                                </button>
                             </div>
                             <div className="d-inline-flex align-items-center d-block d-lg-none">
                                 <button type="button" className="btn px-0 ml-2" aria-label={t('view_favs')}>
