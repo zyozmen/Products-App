@@ -18,6 +18,7 @@ class HeaderComponent extends Component {
         this.handleSignOut = this.handleSignOut.bind(this);
         this.handleSignIn = this.handleSignIn.bind(this);
         this.handleCreateProduct = this.handleCreateProduct.bind(this);
+        this.handleManageUsers = this.handleManageUsers.bind(this);
         this.handleCartClick = this.handleCartClick.bind(this);
         this.handleLanguageChange = this.handleLanguageChange.bind(this);
         this.handleSearchChange = this.handleSearchChange.bind(this);
@@ -54,6 +55,10 @@ class HeaderComponent extends Component {
         this.props.navigate(`/createProduct`);
     }
 
+    handleManageUsers(e) {
+        this.props.navigate(`/admin/users`);
+    }
+
     handleSignIn(e) {
        this.props.navigate(`/login`);
     }
@@ -82,6 +87,7 @@ class HeaderComponent extends Component {
 
     render() {
         const isUserLoggedIn = AuthenticationService.isUserLoggedIn();
+        const isUserAdmin = AuthenticationService.isUserAdmin();
         const { searchTerm, cartItemCount, currentLanguage } = this.state;
         const t = (key) => translationService.t(key);
         console.log("isUserLoggedIn:", isUserLoggedIn);
@@ -98,6 +104,9 @@ class HeaderComponent extends Component {
                                 <DropdownMenu label={t('my_account')}>
                                     {!isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleSignIn}>
                                         {t('sign_in')}
+                                    </button>}
+                                    {isUserAdmin && <button className="dropdown-item text-primary" type="button" onClick={this.handleManageUsers}>
+                                        {t('manage_users')}
                                     </button>}
                                     {isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleCreateProduct}>
                                         {t('create_product')}

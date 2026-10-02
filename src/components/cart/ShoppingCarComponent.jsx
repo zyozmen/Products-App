@@ -4,6 +4,7 @@ import FooterComponent from "../dashboard/FooterComponent";
 import navigationComponent from "../navigation/NavigationComponent";
 import cartService, { DEFAULT_TAX_RATE } from "../../services/CartService";
 import translationService from "../../services/TranslationService";
+import AuthenticationService from "../../services/AuthenticationService";
 import { formatCOP } from "../../Interfaces/ProductInterface";
 import './ShoppingCarComponent.css';
 
@@ -41,6 +42,7 @@ class ShoppingCarComponent extends Component {
                 addressComplement: '',
                 contactPhone: '',
             },
+            isOtherRecipient: false,
             isOrderConfirmed: false,
             currentLanguage: translationService.getLanguage(),
         };
@@ -60,6 +62,21 @@ class ShoppingCarComponent extends Component {
         this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
             this.setState({ currentLanguage: lang });
         });
+
+        const isUserLoggedIn = AuthenticationService.isUserLoggedIn();
+        if (isUserLoggedIn) {
+            const user = AuthenticationService.getLoggedInUser();
+            if (user) {
+                this.setState({
+                    delivery: {
+                        recipientName: `${user.nombre || ''} ${user.apellido || ''}`.trim(),
+                        address: user.direccion || '',
+                        addressComplement: '',
+                        contactPhone: user.telefono || '',
+                    }
+                });
+            }
+        }
     }
 
     componentWillUnmount() {
@@ -129,6 +146,7 @@ class ShoppingCarComponent extends Component {
 
     render() {
         const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
+        const isUserLoggedIn = AuthenticationService.isUserLoggedIn();
         const { items } = this.state;
         const subtotal = cartService.getSubtotal();
         const taxAmount = cartService.getTaxAmount();
@@ -217,87 +235,130 @@ class ShoppingCarComponent extends Component {
                                 <span className="bg-secondary pr-3">{t('cart_summary')}</span>
                             </h5>
                             <div className="bg-light p-30 mb-5">
-                                <form onSubmit={this.handleCheckout}>
-                                    <div className="cart-delivery-form border-bottom pb-3 mb-3">
-                                        <h6>{t('delivery_details')}</h6>
-                                        <div className="cart-delivery-fields">
-                                            <div>
-                                                <label htmlFor="delivery-recipient">{t('recipient_name')}</label>
-                                                <input
-                                                    id="delivery-recipient"
-                                                    className="form-control"
-                                                    name="recipientName"
-                                                    type="text"
-                                                    autoComplete="name"
-                                                    value={this.state.delivery.recipientName}
-                                                    onChange={this.handleDeliveryChange}
-                                                    required
-                                                />
-                                            </div>
-                                            <div>
-                                                <label htmlFor="delivery-address">{t('address')}</label>
-                                                <input
-                                                    id="delivery-address"
-                                                    className="form-control"
-                                                    name="address"
-                                                    type="text"
-                                                    autoComplete="street-address"
-                                                    value={this.state.delivery.address}
-                                                    onChange={this.handleDeliveryChange}
-                                                    required
-                                                />
-                                            </div>
-                                            <div>
-                                                <label htmlFor="delivery-complement">{t('address_complement')}</label>
-                                                <input
-                                                    id="delivery-complement"
-                                                    className="form-control"
-                                                    name="addressComplement"
-                                                    type="text"
-                                                    placeholder="Casa 34, unidad 4, apto. 204"
-                                                    value={this.state.delivery.addressComplement}
-                                                    onChange={this.handleDeliveryChange}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label htmlFor="delivery-phone">{t('contact_phone')}</label>
-                                                <input
-                                                    id="delivery-phone"
-                                                    className="form-control"
-                                                    name="contactPhone"
-                                                    type="tel"
-                                                    autoComplete="tel"
-                                                    value={this.state.delivery.contactPhone}
-                                                    onChange={this.handleDeliveryChange}
-                                                    required
-                                                />
+                                {!isUserLoggedIn ? (
+                                    <div className="text-center py-4">
+                                        <div className="alert alert-warning mb-3" style={{ fontSize: '14px' }}>
+                                            {t('checkout_login_required')}
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            className="btn btn-primary font-weight-bold py-2 px-4 text-uppercase"
+                                            onClick={() => this.props.navigate('/login')}
+                                        >
+                                            {t('sign_in')}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <form onSubmit={this.handleCheckout}>
+                                        <div className="cart-delivery-form border-bottom pb-3 mb-3">
+                                            <h6>{t('delivery_details')}</h6>
+                                            <div className="cart-delivery-fields">
+                                                
+                                                <div className="form-group mb-2 mt-2">
+                                                    <div className="custom-control custom-checkbox">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            className="custom-control-input" 
+                                                            id="isOtherRecipient" 
+                                                            checked={this.state.isOtherRecipient}
+                                                            onChange={(e) => {
+                                                                const checked = e.target.checked;
+                                                                const user = AuthenticationService.getLoggedInUser();
+                                                                this.setState({ 
+                                                                    isOtherRecipient: checked,
+                                                                    delivery: {
+                                                                        ...this.state.delivery,
+                                                                        recipientName: checked ? '' : `${user?.nombre || ''} ${user?.apellido || ''}`.trim()
+                                                                    }
+                                                                });
+                                                            }}
+                                                        />
+                                                        <label className="custom-control-label font-weight-bold text-dark" htmlFor="isOtherRecipient" style={{ cursor: 'pointer', fontSize: '14px' }}>
+                                                            {t('other_recipient')}
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                {this.state.isOtherRecipient && (
+                                                    <div className="mb-2">
+                                                        <label htmlFor="delivery-recipient-other">{t('other_recipient_name')} *</label>
+                                                        <input
+                                                            id="delivery-recipient-other"
+                                                            className="form-control"
+                                                            name="recipientName"
+                                                            type="text"
+                                                            value={this.state.delivery.recipientName}
+                                                            onChange={this.handleDeliveryChange}
+                                                            required
+                                                        />
+                                                    </div>
+                                                )}
+
+                                                <div>
+                                                    <label htmlFor="delivery-address">{t('address')} *</label>
+                                                    <input
+                                                        id="delivery-address"
+                                                        className="form-control"
+                                                        name="address"
+                                                        type="text"
+                                                        autoComplete="street-address"
+                                                        value={this.state.delivery.address}
+                                                        onChange={this.handleDeliveryChange}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label htmlFor="delivery-complement">{t('address_complement')}</label>
+                                                    <input
+                                                        id="delivery-complement"
+                                                        className="form-control"
+                                                        name="addressComplement"
+                                                        type="text"
+                                                        placeholder="Casa 34, unidad 4, apto. 204"
+                                                        value={this.state.delivery.addressComplement}
+                                                        onChange={this.handleDeliveryChange}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label htmlFor="delivery-phone">{t('contact_phone')} *</label>
+                                                    <input
+                                                        id="delivery-phone"
+                                                        className="form-control"
+                                                        name="contactPhone"
+                                                        type="tel"
+                                                        autoComplete="tel"
+                                                        value={this.state.delivery.contactPhone}
+                                                        onChange={this.handleDeliveryChange}
+                                                        required
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                <div className="border-bottom pb-2">
-                                    <div className="d-flex justify-content-between mb-3">
-                                        <h6>{t('subtotal')}</h6>
-                                        <h6>{formatCOP(subtotal)}</h6>
-                                    </div>
-                                    <div className="d-flex justify-content-between">
-                                        <h6 className="font-weight-medium">{t('tax')} ({taxPercentage}%)</h6>
-                                        <h6 className="font-weight-medium">{formatCOP(taxAmount)}</h6>
-                                    </div>
-                                </div>
-                                <div className="pt-2">
-                                    <div className="d-flex justify-content-between mt-2">
-                                        <h5>{t('total')}</h5>
-                                        <h5>{formatCOP(total)}</h5>
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        className="btn btn-block btn-primary font-weight-bold my-3 py-3"
-                                        disabled={items.length === 0}
-                                    >
-                                        {t('proceed_checkout')}
-                                    </button>
-                                    </div>
-                                </form>
+                                        <div className="border-bottom pb-2">
+                                            <div className="d-flex justify-content-between mb-3">
+                                                <h6>{t('subtotal')}</h6>
+                                                <h6>{formatCOP(subtotal)}</h6>
+                                            </div>
+                                            <div className="d-flex justify-content-between">
+                                                <h6 className="font-weight-medium">{t('tax')} ({taxPercentage}%)</h6>
+                                                <h6 className="font-weight-medium">{formatCOP(taxAmount)}</h6>
+                                            </div>
+                                        </div>
+                                        <div className="pt-2">
+                                            <div className="d-flex justify-content-between mt-2">
+                                                <h5>{t('total')}</h5>
+                                                <h5>{formatCOP(total)}</h5>
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                className="btn btn-block btn-primary font-weight-bold my-3 py-3"
+                                                disabled={items.length === 0}
+                                            >
+                                                {t('proceed_checkout')}
+                                            </button>
+                                        </div>
+                                    </form>
+                                )}
                             </div>
                         </div>
                     </div>

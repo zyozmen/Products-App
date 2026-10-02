@@ -93,6 +93,16 @@ class TranslationService {
                 hello_friend: '¡Hola, Amigo!',
                 journey_text: 'Ingresa tus datos personales y comienza tu viaje con nosotros',
                 invalid_credentials: 'Credenciales inválidas',
+                user_inactive: 'El usuario está inactivo. Por favor contacte al administrador.',
+                manage_users: 'Administrar Usuarios',
+                register_success: '¡Usuario registrado con éxito!',
+                underage_warning: 'Este sitio contiene contenido exclusivo para mayores de 18 años.',
+                yes_over_18: 'Sí, soy mayor de 18 años',
+                no_under_18: 'No, soy menor de 18 años',
+                must_be_over_18: 'Debes ser mayor de 18 años para acceder.',
+                other_recipient: '¿Recibe otra persona?',
+                other_recipient_name: 'Nombre de la persona que recibe',
+                checkout_login_required: 'Debes iniciar sesión para realizar una compra.',
                 user_name_label: 'Nombre de usuario',
 
                 // Create Product
@@ -246,6 +256,16 @@ class TranslationService {
                 hello_friend: 'Hello, Friend!',
                 journey_text: 'Enter your personal details and start journey with us',
                 invalid_credentials: 'Invalid Credentials',
+                user_inactive: 'The user is inactive. Please contact the administrator.',
+                manage_users: 'Manage Users',
+                register_success: 'User registered successfully!',
+                underage_warning: 'This site contains content exclusive to people over 18 years of age.',
+                yes_over_18: 'Yes, I am over 18 years old',
+                no_under_18: 'No, I am under 18 years old',
+                must_be_over_18: 'You must be over 18 years old to access.',
+                other_recipient: 'Is someone else receiving?',
+                other_recipient_name: 'Name of the person receiving',
+                checkout_login_required: 'You must log in to make a purchase.',
                 user_name_label: 'User Name',
 
                 // Create Product
