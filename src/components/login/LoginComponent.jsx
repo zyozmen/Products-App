@@ -217,7 +217,7 @@ class LoginForm extends Component {
         );
     }
 
-    handleSignUp(e) {
+    async handleSignUp(e) {
         e.preventDefault();
         const {
             regUsername,
@@ -249,7 +249,7 @@ class LoginForm extends Component {
                 mayorDeEdad: true
             };
 
-            UserService.registerUser(newUser);
+            await UserService.registerUser(newUser);
 
             this.setState({
                 regSuccessMessage: '¡Usuario registrado con éxito! Ya puedes iniciar sesión.',
@@ -279,32 +279,30 @@ class LoginForm extends Component {
         }
     }
 
-    handleSignIn(e) {
+    async handleSignIn(e) {
         e.preventDefault();
         const { username, password } = this.state;
 
-        const user = UserService.findUserByUsername(username);
+        try {
+            await AuthenticationService.login(username, password);
+            this.props.navigate(`/welcome/${username}`);
+        } catch (error) {
+            console.log("Login failed", error);
+            const t = (key) => translationService.t(key);
+            let errorMessage = t('invalid_credentials');
 
-        if (user && user.password === password) {
-            if (!user.active) {
-                const t = (key) => translationService.t(key);
-                this.setState({ 
-                    showSuccessMessage: false, 
-                    hasLoginFailed: true,
-                    loginErrorMessage: t('user_inactive')
-                });
-                return;
+            if (error.response && error.response.status === 403) {
+                if (error.response.data && error.response.data.error === 'user_inactive') {
+                    errorMessage = t('user_inactive');
+                }
+            } else if (error.response && error.response.data && error.response.data.message) {
+                errorMessage = error.response.data.message;
             }
 
-            AuthenticationService.registerSuccessfulLogin(user.username, user.password);
-            this.props.navigate(`/welcome/${user.username}`);
-        } else {
-            console.log("Login failed");
-            const t = (key) => translationService.t(key);
             this.setState({ 
                 showSuccessMessage: false, 
                 hasLoginFailed: true,
-                loginErrorMessage: t('invalid_credentials')
+                loginErrorMessage: errorMessage
             });
         }
     }

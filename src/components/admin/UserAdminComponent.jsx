@@ -17,13 +17,18 @@ class UserAdminComponent extends Component {
         this.unsubscribeFromLanguage = null;
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         if (!AuthenticationService.isUserAdmin()) {
             this.props.navigate('/welcome');
             return;
         }
 
-        this.setState({ users: UserService.getUsers() });
+        try {
+            const users = await UserService.getUsers();
+            this.setState({ users });
+        } catch (error) {
+            console.error('Error loading users:', error);
+        }
 
         this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
             this.setState({ currentLanguage: lang });
@@ -36,9 +41,14 @@ class UserAdminComponent extends Component {
         }
     }
 
-    handleToggleStatus(username) {
-        UserService.toggleUserStatus(username);
-        this.setState({ users: UserService.getUsers() });
+    async handleToggleStatus(username) {
+        try {
+            await UserService.toggleUserStatus(username);
+            const users = await UserService.getUsers();
+            this.setState({ users });
+        } catch (error) {
+            console.error('Error toggling status:', error);
+        }
     }
 
     render() {

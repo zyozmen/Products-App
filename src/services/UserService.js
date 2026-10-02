@@ -1,87 +1,62 @@
-const USERS_STORAGE_KEY = 'growShopUsers';
+import axios from 'axios';
 
-const DEFAULT_USERS = [
-    {
-        username: 'admin',
-        password: 'admin',
-        role: 'admin',
-        nombre: 'Administrador',
-        apellido: 'Sistema',
-        direccion: 'Calle Principal 123',
-        telefono: '3124058166',
-        tipoIdentificacion: 'CC',
-        numeroIdentificacion: '11111111',
-        mayorDeEdad: true,
-        active: true
+const rawProductsApiUrl = String(import.meta.env.VITE_APP_PRODUCTS_API_URL ?? '').trim();
+const nodeEnv = String(import.meta.env.NODE_ENV ?? import.meta.env.PROD ?? '').toLowerCase();
+const isProduction = nodeEnv === 'true' || nodeEnv === 'production';
+
+const resolveApiBaseUrl = () => {
+    if (rawProductsApiUrl) {
+        return rawProductsApiUrl.replace(/\/productos\/?$/, '');
     }
-];
+
+    if (!isProduction) {
+        return 'http://localhost:8080/api';
+    }
+
+    return '/api';
+};
+
+const apiBaseUrl = resolveApiBaseUrl();
 
 class UserService {
-    constructor() {
-        this.users = this.loadUsers();
-    }
-
-    loadUsers() {
+    async getUsers() {
         try {
-            const raw = localStorage.getItem(USERS_STORAGE_KEY);
-            if (!raw) {
-                localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(DEFAULT_USERS));
-                return DEFAULT_USERS;
-            }
-            const parsed = JSON.parse(raw);
-            return Array.isArray(parsed) ? parsed : DEFAULT_USERS;
+            const token = sessionStorage.getItem('token');
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            const response = await axios.get(`${apiBaseUrl}/admin/users`, { headers });
+            return response.data || [];
         } catch (error) {
-            console.error('Error loading users from storage:', error);
-            return DEFAULT_USERS;
+            console.error('Error getting users:', error);
+            throw error;
         }
     }
 
-    saveUsers(usersList) {
+    async registerUser(user) {
         try {
-            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersList));
-            this.users = usersList;
+            const response = await axios.post(`${apiBaseUrl}/auth/register`, user);
+            return response.data;
         } catch (error) {
-            console.error('Error saving users to storage:', error);
-        }
-    }
-
-    getUsers() {
-        return this.loadUsers();
-    }
-
-    findUserByUsername(username) {
-        const users = this.getUsers();
-        return users.find(u => u.username.toLowerCase() === username.toLowerCase());
-    }
-
-    registerUser(user) {
-        const users = this.getUsers();
-        const exists = users.some(u => u.username.toLowerCase() === user.username.toLowerCase());
-        if (exists) {
-            throw new Error('El nombre de usuario ya está registrado.');
-        }
-
-        const newUser = {
-            ...user,
-            role: 'cliente',
-            active: true
-        };
-
-        users.push(newUser);
-        this.saveUsers(users);
-        return newUser;
-    }
-
-    toggleUserStatus(username) {
-        const users = this.getUsers();
-        const updated = users.map(u => {
-            if (u.username.toLowerCase() === username.toLowerCase()) {
-                if (u.role === 'admin') return u;
-                return { ...u, active: !u.active };
+            console.error('Error registering user:', error);
+            if (error.response && error.response.data && error.response.data.message) {
+                throw new Error(error.response.data.message);
             }
-            return u;
-        });
-        this.saveUsers(updated);
+            throw new Error('Ocurrió un error en el servidor al registrar el usuario.');
+        }
+    }
+
+    async toggleUserStatus(username) {
+        try {
+            const token = sessionStorage.getItem('token');
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            const response = await axios.put(`${apiBaseUrl}/admin/users/${username}/toggle-status`, {}, { headers });
+            return response.data;
+        } catch (error) {
+            console.error(`Error toggling status for user ${username}:`, error);
+            if (error.response && error.response.data && error.response.data.message) {
+                throw new Error(error.response.data.message);
+            }
+            throw error;
+        }
     }
 }
 
