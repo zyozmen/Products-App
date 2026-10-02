@@ -192,6 +192,7 @@ class TranslationService {
                 flor_en_sale: 'Flower on Sale',
                 hidroponia: 'Hydroponics',
                 contacto: 'Contact',
+                legal: 'Legal',
 
                 // Welcome / Dashboard / Carousel / Categories / Featured
                 save_20: 'Save 20%',

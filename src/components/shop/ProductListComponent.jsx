@@ -282,10 +282,6 @@ class ProductListComponent extends Component {
                                         </h6>
                                     )}
                                 </div>
-                                <div className="d-flex align-items-center justify-content-center mb-1">
-                                    {this.renderStars(product.average_rating)}
-                                    <small>({product.total_reviews})</small>
-                                </div>
                             </div>
                         </div>
                     </div>

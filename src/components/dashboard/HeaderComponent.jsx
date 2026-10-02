@@ -58,7 +58,7 @@ class HeaderComponent extends Component {
 
     handleSignOut(e) {
         AuthenticationService.logout();
-        this.props.navigate(`/welcome/guest`);
+        this.props.navigate(`/welcome`);
     }
 
     handleCreateProduct(e) {
@@ -109,8 +109,10 @@ class HeaderComponent extends Component {
     render() {
         const isUserLoggedIn = AuthenticationService.isUserLoggedIn();
         const isUserAdmin = AuthenticationService.isUserAdmin();
+        const loggedInUser = AuthenticationService.getLoggedInUser();
         const { searchTerm, cartItemCount, currentLanguage } = this.state;
         const t = (key) => translationService.t(key);
+        const usernameLabel = isUserLoggedIn && loggedInUser ? loggedInUser.username : t('sign_in');
         console.log("isUserLoggedIn:", isUserLoggedIn);
 
         return (
@@ -122,7 +124,7 @@ class HeaderComponent extends Component {
                         </div>
                         <div className="col-lg-6 text-center text-lg-right">
                             <div className="d-inline-flex align-items-center">
-                                <DropdownMenu label={t('my_account')}>
+                                <DropdownMenu label={usernameLabel}>
                                     {!isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleSignIn}>
                                         {t('sign_in')}
                                     </button>}
@@ -132,7 +134,7 @@ class HeaderComponent extends Component {
                                     {isUserAdmin && <button className="dropdown-item text-primary" type="button" onClick={this.handleManageUsers}>
                                         {t('manage_users')}
                                     </button>}
-                                    {isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleCreateProduct}>
+                                    {isUserAdmin && <button className="dropdown-item" type="button" onClick={this.handleCreateProduct}>
                                         {t('create_product')}
                                     </button>}
                                     {isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleSignOut}>
@@ -226,8 +228,8 @@ class HeaderComponent extends Component {
                                         <NavLink to="/shop" className="nav-item nav-link">
                                             {t('hidroponia')}
                                         </NavLink>
-                                        <NavLink to="/contact" className="nav-item nav-link">
-                                            {t('contacto')}
+                                        <NavLink to="/Legal" className="nav-item nav-link">
+                                            {t('legal')}
                                         </NavLink> 
                                         <div className="nav-item px-lg-3 d-flex align-items-center">
                                             <form onSubmit={this.handleSearchSubmit}>

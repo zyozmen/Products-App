@@ -8,8 +8,10 @@ class ShopListComponent extends Component {
     super(props);
     const queryParams = new URLSearchParams(props.location?.search || "");
     const initialNameFilter = queryParams.get("name") || "";
+    const initialCategory = queryParams.get("category") || queryParams.get("category_id") || "";
+    const selectedCategoryIds = initialCategory ? [initialCategory] : [];
     this.state = {
-      selectedCategoryIds: [],
+      selectedCategoryIds,
       sortBy: "",
       minPrice: null,
       maxPrice: null,
@@ -29,9 +31,16 @@ class ShopListComponent extends Component {
     const currentQuery = new URLSearchParams(this.props.location?.search || "");
     const previousName = previousQuery.get("name") || "";
     const currentName = currentQuery.get("name") || "";
+    const previousCategory = previousQuery.get("category") || previousQuery.get("category_id") || "";
+    const currentCategory = currentQuery.get("category") || currentQuery.get("category_id") || "";
 
     if (previousName !== currentName && this.state.nameFilter !== currentName) {
       this.setState({ nameFilter: currentName });
+    }
+
+    if (previousCategory !== currentCategory) {
+      const selectedCategoryIds = currentCategory ? [currentCategory] : [];
+      this.setState({ selectedCategoryIds });
     }
   }
 
