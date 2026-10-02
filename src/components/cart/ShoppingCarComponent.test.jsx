@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import cartService from '../../services/CartService';
+import orderService from '../../services/OrderService';
 import ShoppingCarComponent, { createWhatsAppCheckoutUrl } from './ShoppingCarComponent';
 
 afterEach(() => {
@@ -31,7 +32,7 @@ describe('createWhatsAppCheckoutUrl', () => {
         expect(url.searchParams.get('text')).toContain('Total: $23');
     });
 
-    it('opens checkout in a new tab without replacing the cart', () => {
+    it('opens checkout in a new tab without replacing the cart', async () => {
         vi.spyOn(cartService, 'getCart').mockReturnValue([
             { id: '1', name: 'Mochila', price: 10, quantity: 1 },
         ]);
@@ -39,14 +40,16 @@ describe('createWhatsAppCheckoutUrl', () => {
         vi.spyOn(cartService, 'getTaxAmount').mockReturnValue(1.6);
         vi.spyOn(cartService, 'getTotal').mockReturnValue(11.6);
         const clearCartSpy = vi.spyOn(cartService, 'clearCart').mockImplementation(() => {});
+        const createOrderSpy = vi.spyOn(orderService, 'createOrder').mockResolvedValue({ id: 1 });
         const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
         const component = new ShoppingCarComponent({});
         component.setState = (nextState) => {
             component.state = { ...component.state, ...nextState };
         };
 
-        component.handleCheckout({ preventDefault: vi.fn() });
+        await component.handleCheckout({ preventDefault: vi.fn() });
 
+        expect(createOrderSpy).toHaveBeenCalledOnce();
         expect(openSpy).toHaveBeenCalledWith(
             expect.stringContaining('https://wa.me/'),
             '_blank',
@@ -54,6 +57,26 @@ describe('createWhatsAppCheckoutUrl', () => {
         );
         expect(clearCartSpy).toHaveBeenCalledOnce();
         expect(component.state.isOrderConfirmed).toBe(true);
+    });
+
+    it('keeps the cart when the order cannot be saved', async () => {
+        vi.spyOn(cartService, 'getCart').mockReturnValue([
+            { id: '1', name: 'Mochila', price: 10, quantity: 1 },
+        ]);
+        vi.spyOn(cartService, 'getSubtotal').mockReturnValue(10);
+        vi.spyOn(cartService, 'getTaxAmount').mockReturnValue(1.6);
+        vi.spyOn(cartService, 'getTotal').mockReturnValue(11.6);
+        const clearCartSpy = vi.spyOn(cartService, 'clearCart').mockImplementation(() => {});
+        vi.spyOn(orderService, 'createOrder').mockRejectedValue(new Error('fail'));
+        vi.stubGlobal('alert', vi.fn());
+        const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+        const component = new ShoppingCarComponent({});
+
+        await component.handleCheckout({ preventDefault: vi.fn() });
+
+        expect(openSpy).not.toHaveBeenCalled();
+        expect(clearCartSpy).not.toHaveBeenCalled();
+        vi.unstubAllGlobals();
     });
 
     it('returns to the welcome page when confirmation is accepted', () => {

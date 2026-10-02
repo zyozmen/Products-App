@@ -134,6 +134,15 @@ class HeaderComponent extends Component {
                                     {isUserAdmin && <button className="dropdown-item text-primary" type="button" onClick={this.handleManageUsers}>
                                         {t('manage_users')}
                                     </button>}
+                                    {isUserLoggedIn && !isUserAdmin && <button className="dropdown-item" type="button" onClick={() => this.props.navigate('/orders')}>
+                                        {t('my_orders')}
+                                    </button>}
+                                    {isUserAdmin && <button className="dropdown-item text-primary" type="button" onClick={() => this.props.navigate('/admin/orders')}>
+                                        {t('manage_orders')}
+                                    </button>}
+                                    {isUserAdmin && <button className="dropdown-item" type="button" onClick={() => this.props.navigate('/admin/orders/report')}>
+                                        {t('orders_report')}
+                                    </button>}
                                     {isUserAdmin && <button className="dropdown-item" type="button" onClick={this.handleCreateProduct}>
                                         {t('create_product')}
                                     </button>}

@@ -4,6 +4,7 @@ import FooterComponent from "../dashboard/FooterComponent";
 import navigationComponent from "../navigation/NavigationComponent";
 import cartService, { DEFAULT_TAX_RATE } from "../../services/CartService";
 import translationService from "../../services/TranslationService";
+import orderService from "../../services/OrderService";
 import AuthenticationService from "../../services/AuthenticationService";
 import { formatCOP } from "../../Interfaces/ProductInterface";
 import './ShoppingCarComponent.css';
@@ -119,10 +120,23 @@ class ShoppingCarComponent extends Component {
         }));
     }
 
-    handleCheckout(event) {
+    async handleCheckout(event) {
         event.preventDefault();
         const items = cartService.getCart();
         if (items.length === 0) {
+            return;
+        }
+
+        try {
+            await orderService.createOrder({
+                items,
+                delivery: this.state.delivery,
+                subtotal: cartService.getSubtotal(),
+                taxAmount: cartService.getTaxAmount(),
+                total: cartService.getTotal(),
+            });
+        } catch (error) {
+            alert(`${translationService.t('order_register_error')}\n${error.message}`);
             return;
         }
 

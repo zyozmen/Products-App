@@ -12,6 +12,9 @@ import CreateProductComponent from './admin/CreateProductComponent.jsx';
 import ShoppingCarComponent from './cart/ShoppingCarComponent.jsx';
 import UserAdminComponent from './admin/UserAdminComponent.jsx';
 import ProfileComponent from './profile/ProfileComponent.jsx';
+import OrdersKanbanComponent from './admin/OrdersKanbanComponent.jsx';
+import OrdersReportComponent from './admin/OrdersReportComponent.jsx';
+import MyOrdersComponent from './orders/MyOrdersComponent.jsx';
 import AgeVerificationModal from './ui/AgeVerificationModal.jsx';
 import AuthenticationService from '../services/AuthenticationService.js';
 
@@ -49,6 +52,9 @@ class GrowShopApp extends Component {
         const ShoppingCarComponentWithNavigation = navigationComponent(ShoppingCarComponent);
         const UserAdminComponentWithNavigation = navigationComponent(UserAdminComponent);
         const ProfileComponentWithNavigation = navigationComponent(ProfileComponent);
+        const OrdersKanbanComponentWithNavigation = navigationComponent(OrdersKanbanComponent);
+        const OrdersReportComponentWithNavigation = navigationComponent(OrdersReportComponent);
+        const MyOrdersComponentWithNavigation = navigationComponent(MyOrdersComponent);
         return (
             <div className="App">
                 <BrowserRouter>
@@ -65,6 +71,9 @@ class GrowShopApp extends Component {
                         <Route path="/createProduct" element={<RequireAuth><CreateProductComponentWithNavigation /></RequireAuth>} />
                         <Route path="/editProduct/:productId" element={<RequireAuth><CreateProductComponentWithNavigation /></RequireAuth>} />
                         <Route path="/admin/users" element={<RequireAuth><UserAdminComponentWithNavigation /></RequireAuth>} />
+                        <Route path="/admin/orders" element={<RequireAuth><OrdersKanbanComponentWithNavigation /></RequireAuth>} />
+                        <Route path="/admin/orders/report" element={<RequireAuth><OrdersReportComponentWithNavigation /></RequireAuth>} />
+                        <Route path="/orders" element={<RequireAuth><MyOrdersComponentWithNavigation /></RequireAuth>} />
                         <Route path="/profile" element={<RequireAuth><ProfileComponentWithNavigation /></RequireAuth>} />
                         <Route path="*" element={<ErrorComponent />} />
                     </Routes>
