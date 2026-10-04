@@ -24,22 +24,15 @@ class AuthenticationService {
             const response = await axios.post(`${apiBaseUrl}/auth/login`, { username, password });
             if (response.data) {
                 const data = response.data;
-                sessionStorage.setItem('authenticatedUser', data.username || username);
+                sessionStorage.setItem('authenticatedUser', data.username || data.user?.username || username);
                 if (data.token) {
                     sessionStorage.setItem('token', data.token);
                 }
-                const profile = data.user || {
-                    username: data.username || username,
-                    nombre: data.nombre || '',
-                    apellido: data.apellido || '',
-                    direccion: data.direccion || '',
-                    telefono: data.telefono || '',
-                    tipoIdentificacion: data.tipoIdentificacion || 'CC',
-                    numeroIdentificacion: data.numeroIdentificacion || '',
-                    role: data.role || 'cliente',
-                    active: data.active !== undefined ? data.active : true
-                };
-                sessionStorage.setItem('userProfile', JSON.stringify(profile));
+                const profile = data.user || data;
+                const profileWithRole = profile.role === undefined && data.role !== undefined
+                    ? { ...profile, role: data.role }
+                    : profile;
+                sessionStorage.setItem('userProfile', JSON.stringify(profileWithRole));
                 return data;
             }
         } catch (error) {
