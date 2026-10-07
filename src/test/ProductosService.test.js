@@ -19,7 +19,7 @@ describe('ProductosService', () => {
     vi.stubEnv('VITE_APP_PRODUCTS_API_URL', 'http://3.14.127.28:8080/api/productos');
     vi.stubEnv('NODE_ENV', 'production');
 
-    const { default: productosService } = await import('./ProductosService');
+    const { default: productosService } = await import('../services/ProductosService');
 
     expect(productosService.url).toBe('/api/productos');
     expect(productosService.categoriesUrl).toBe('/api/productos/categories');
@@ -29,7 +29,7 @@ describe('ProductosService', () => {
     vi.stubEnv('VITE_APP_PRODUCTS_API_URL', 'http://127.0.0.1:8080/api/productos');
     vi.stubEnv('NODE_ENV', 'development');
 
-    const { default: productosService } = await import('./ProductosService');
+    const { default: productosService } = await import('../services/ProductosService');
 
     expect(productosService.url).toBe('/api/productos');
     expect(productosService.categoriesUrl).toBe('/api/productos/categories');
@@ -40,7 +40,7 @@ describe('ProductosService', () => {
     vi.stubEnv('NODE_ENV', 'development');
     axios.get.mockRejectedValueOnce(new Error('network down'));
 
-    const { default: productosService } = await import('./ProductosService');
+    const { default: productosService } = await import('../services/ProductosService');
 
     await expect(productosService.listarProductos(0, 5, {})).rejects.toThrow('network down');
   });

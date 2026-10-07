@@ -1,4 +1,5 @@
 import axios from 'axios';
+import translationService from './TranslationService.js';
 
 const rawProductsApiUrl = String(import.meta.env.VITE_APP_PRODUCTS_API_URL ?? '').trim();
 const nodeEnv = String(import.meta.env.NODE_ENV ?? import.meta.env.PROD ?? '').toLowerCase();
@@ -68,7 +69,7 @@ class OrderService {
             const response = await axios.post(`${apiBaseUrl}/orders`, payload, { headers: authHeaders() });
             return response.data;
         } catch (error) {
-            throw toError(error, 'Ocurrió un error al registrar la orden.');
+            throw toError(error, translationService.t('order_create_failed'));
         }
     }
 
@@ -77,7 +78,7 @@ class OrderService {
             const response = await axios.get(`${apiBaseUrl}/orders/mine`, { headers: authHeaders() });
             return response.data || [];
         } catch (error) {
-            throw toError(error, 'Ocurrió un error al consultar sus órdenes.');
+            throw toError(error, translationService.t('my_orders_load_failed'));
         }
     }
 
@@ -86,7 +87,7 @@ class OrderService {
             const response = await axios.get(`${apiBaseUrl}/admin/orders`, { headers: authHeaders() });
             return response.data || [];
         } catch (error) {
-            throw toError(error, 'Ocurrió un error al consultar las órdenes.');
+            throw toError(error, translationService.t('orders_load_failed'));
         }
     }
 
@@ -99,7 +100,7 @@ class OrderService {
             );
             return response.data;
         } catch (error) {
-            throw toError(error, 'Ocurrió un error al actualizar el estado de la orden.');
+            throw toError(error, translationService.t('order_status_update_failed'));
         }
     }
 }

@@ -53,19 +53,20 @@ class UserAdminComponent extends Component {
     }
 
     async handleResetPassword(username) {
-        const newPassword = window.prompt(`Ingrese la nueva contraseña para el usuario "${username}":`);
+        const t = (key) => translationService.t(key);
+        const newPassword = window.prompt(`${t('reset_password_prompt')} "${username}":`);
         if (newPassword === null) return;
         if (newPassword.trim() === '') {
-            alert('La contraseña no puede estar vacía.');
+            alert(t('password_empty_error'));
             return;
         }
 
         try {
             await UserService.resetPassword(username, newPassword);
-            alert(`¡Contraseña restablecida con éxito para el usuario "${username}"!`);
+            alert(`${t('password_reset_success')} "${username}".`);
         } catch (error) {
             console.error('Error resetting password:', error);
-            alert(`Ocurrió un error al restablecer la contraseña: ${error.message}`);
+            alert(`${t('password_reset_error')}: ${error.message}`);
         }
     }
 
@@ -82,7 +83,7 @@ class UserAdminComponent extends Component {
                     <div className="row px-xl-5">
                         <div className="col-12">
                             <nav className="breadcrumb bg-light mb-30">
-                                <span className="breadcrumb-item text-dark">Admin</span>
+                                <span className="breadcrumb-item text-dark">{t('admin_section')}</span>
                                 <span className="breadcrumb-item active">{t('manage_users')}</span>
                             </nav>
                         </div>
@@ -99,14 +100,14 @@ class UserAdminComponent extends Component {
                                 <table className="table table-bordered table-striped table-hover text-center align-middle">
                                     <thead className="thead-dark">
                                         <tr>
-                                            <th>Usuario</th>
-                                            <th>Nombre Completo</th>
-                                            <th>Dirección</th>
-                                            <th>Teléfono</th>
-                                            <th>Identificación</th>
-                                            <th>Rol</th>
-                                            <th>Estado</th>
-                                            <th>Acción</th>
+                                            <th>{t('user_label')}</th>
+                                            <th>{t('full_name')}</th>
+                                            <th>{t('address')}</th>
+                                            <th>{t('contact_phone')}</th>
+                                            <th>{t('identification')}</th>
+                                            <th>{t('role')}</th>
+                                            <th>{t('status')}</th>
+                                            <th>{t('action')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -121,12 +122,12 @@ class UserAdminComponent extends Component {
                                                     <td className="align-middle">{u.tipoIdentificacion} - {u.numeroIdentificacion}</td>
                                                     <td className="align-middle">
                                                         <span className={`badge ${u.role === 'admin' ? 'badge-primary' : 'badge-secondary'} py-2 px-3`}>
-                                                            {u.role.toUpperCase()}
+                                                            {u.role === 'admin' ? t('role_admin') : t('role_user')}
                                                         </span>
                                                     </td>
                                                     <td className="align-middle">
                                                         <span className={`badge ${u.active ? 'badge-success' : 'badge-danger'} py-2 px-3`}>
-                                                            {u.active ? 'ACTIVO' : 'INACTIVO'}
+                                                            {u.active ? t('active_label') : t('inactive_label')}
                                                         </span>
                                                     </td>
                                                     <td className="align-middle">
@@ -136,17 +137,17 @@ class UserAdminComponent extends Component {
                                                                 className={`btn btn-sm ${u.active ? 'btn-danger' : 'btn-success'} font-weight-bold px-2`}
                                                                 onClick={() => this.handleToggleStatus(u.username)}
                                                                 disabled={isSelf}
-                                                                title={isSelf ? "No se puede inactivar al Administrador principal" : ""}
+                                                                title={isSelf ? t('cannot_disable_admin') : ""}
                                                             >
-                                                                {u.active ? 'Inactivar' : 'Activar'}
+                                                                {u.active ? t('deactivate') : t('activate')}
                                                             </button>
                                                             <button
                                                                 type="button"
                                                                 className="btn btn-sm btn-warning font-weight-bold px-2"
                                                                 onClick={() => this.handleResetPassword(u.username)}
-                                                                title="Restablecer contraseña de usuario"
+                                                                title={t('reset_password')}
                                                             >
-                                                                Restablecer Clave
+                                                                {t('reset_password_button')}
                                                             </button>
                                                         </div>
                                                     </td>

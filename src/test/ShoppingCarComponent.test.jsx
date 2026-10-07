@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import cartService from '../../services/CartService';
-import orderService from '../../services/OrderService';
-import ShoppingCarComponent, { createWhatsAppCheckoutUrl } from './ShoppingCarComponent';
+import cartService from '../services/CartService';
+import orderService from '../services/OrderService';
+import ShoppingCarComponent, { createWhatsAppCheckoutUrl } from '../components/cart/ShoppingCarComponent';
 
 afterEach(() => {
     vi.restoreAllMocks();

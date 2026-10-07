@@ -231,7 +231,7 @@ class ProductListComponent extends Component {
 
         return (
 
-            <div className="col-lg-9 col-md-8">
+            <div className="col-lg-9 col-md-8 product-list-component">
                 <div className="row pb-3">
                     <FilterProducts
                         selectedPageSize={pageSize}
@@ -249,27 +249,30 @@ class ProductListComponent extends Component {
                     {!loading && !error && products.map((product) => (
                     <div key={product.id} className="col-lg-4 col-md-6 col-sm-6 pb-1">
                         <div className="product-item bg-light mb-4">
-                            <div className="product-img position-relative overflow-hidden">
+                            <NavLink to={`/product/${product.id}`}>
+                            <div className="product-img position-relative overflow-hidden" >
+                                
                                 <img 
                                     className="img-fluid w-100" 
-                                    src={product.foto_principal || "img/product-1.jpg"} 
+                                    src={product.foto_principal || "img/no_image.jpg"} 
                                     alt={product.name} 
                                     style={{ height: "280px", objectFit: "cover" }}
                                 />
                                 <div className="product-action">
-                                    <button type="button" className="btn btn-outline-dark btn-square" onClick={(event) => this.handleAddToCart(event, product)} aria-label="Agregar al carrito">
+                                    <NavLink type="button" className="btn btn-outline-dark btn-square" onClick={(event) => this.handleAddToCart(event, product)} aria-label={t('add_to_cart')}>
                                         <i className="fa fa-shopping-cart" />
-                                    </button>
-                                    <NavLink className="btn btn-outline-dark btn-square" to={`/product/${product.id}`} aria-label="Ver detalles">
+                                    </NavLink>
+                                    <NavLink className="btn btn-outline-dark btn-square" to={`/product/${product.id}`} aria-label={t('view_details')}>
                                         <i className="fa fa-search" />
                                     </NavLink>
                                     {isUserAdmin && (
-                                        <NavLink className="btn btn-outline-dark btn-square" to={`/editProduct/${product.id}`} aria-label="Editar producto">
+                                        <NavLink className="btn btn-outline-dark btn-square" to={`/editProduct/${product.id}`} aria-label={t('edit_product_title')}>
                                             <i className="fa fa-edit" />
                                         </NavLink>
                                     )}
                                 </div>
                             </div>
+                            </NavLink>
                             <div className="text-center py-4">
                                 <NavLink className="h6 text-decoration-none text-truncate" to={`/product/${product.id}`}>
                                     {product.name}

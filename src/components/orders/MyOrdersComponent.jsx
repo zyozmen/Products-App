@@ -3,7 +3,7 @@ import HeaderComponent from '../dashboard/HeaderComponent.jsx';
 import FooterComponent from '../dashboard/FooterComponent.jsx';
 import navigationComponent from '../navigation/NavigationComponent.jsx';
 import translationService from '../../services/TranslationService.js';
-import orderService, { ORDER_STATUS_LABELS, ORDER_STATUS_BADGES } from '../../services/OrderService.js';
+import orderService, { ORDER_STATUS_BADGES } from '../../services/OrderService.js';
 import { formatCOP } from '../../Interfaces/ProductInterface';
 
 class MyOrdersComponent extends Component {
@@ -38,13 +38,18 @@ class MyOrdersComponent extends Component {
 
     render() {
         const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
-        const { orders, loading, error } = this.state;
+        const { orders, loading, error, currentLanguage } = this.state;
         const t = (key) => translationService.t(key);
+        const getOrderStatusLabel = (status) => {
+            const key = `order_status_${String(status).toLowerCase()}`;
+            const label = t(key);
+            return label === key ? status : label;
+        };
 
         return (
             <>
                 <HeaderComponentWithNavigation />
-                <div className="container-fluid pb-5">
+                <div className="container-fluid pb-5 my-orders-page">
                     <div className="row px-xl-5">
                         <div className="col">
                             <h2 className="section-title position-relative text-uppercase my-4">
@@ -52,28 +57,28 @@ class MyOrdersComponent extends Component {
                             </h2>
                             {error && <div className="alert alert-danger">{error}</div>}
                             {loading ? (
-                                <p>Cargando...</p>
+                                <p>{t('loading')}</p>
                             ) : orders.length === 0 && !error ? (
-                                <div className="bg-light p-30">Aún no has realizado órdenes.</div>
+                                <div className="bg-light p-30">{t('orders_empty')}</div>
                             ) : (
                                 orders.map((order) => (
                                     <div key={order.id} className="bg-light p-30 mb-4 table-responsive">
                                         <div className="d-flex justify-content-between align-items-center mb-2">
                                             <h5 className="mb-0">Orden #{order.id}</h5>
                                             <span className={`badge ${ORDER_STATUS_BADGES[order.status] || 'badge-secondary'} py-2 px-3`}>
-                                                {ORDER_STATUS_LABELS[order.status] || order.status}
+                                                {getOrderStatusLabel(order.status)}
                                             </span>
                                         </div>
                                         <div className="text-muted mb-2">
-                                            {order.createdAt ? new Date(order.createdAt).toLocaleString('es-CO') : ''}
+                                            {order.createdAt ? new Date(order.createdAt).toLocaleString(currentLanguage === 'EN' ? 'en-US' : 'es-CO') : ''}
                                         </div>
                                         <table className="table table-bordered text-center mb-2">
                                             <thead className="thead-dark">
                                                 <tr>
-                                                    <th>Producto</th>
-                                                    <th>Cantidad</th>
-                                                    <th>Valor unitario</th>
-                                                    <th>Subtotal</th>
+                                                    <th>{t('product')}</th>
+                                                    <th>{t('quantity')}</th>
+                                                    <th>{t('unit_price')}</th>
+                                                    <th>{t('subtotal')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -87,7 +92,7 @@ class MyOrdersComponent extends Component {
                                                 ))}
                                             </tbody>
                                         </table>
-                                        <h6 className="text-right mb-0">Total: {formatCOP(order.total)}</h6>
+                                        <h6 className="text-right mb-0">{t('total')}: {formatCOP(order.total)}</h6>
                                     </div>
                                 ))
                             )}

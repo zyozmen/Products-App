@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import translationService from '../../services/TranslationService';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
@@ -7,6 +8,10 @@ import 'swiper/css/pagination';
 import './SwiperCarousel.css';
 
 const SwiperCarousel = ({ items }) => {
+  const [, setCurrentLanguage] = useState(translationService.getLanguage());
+
+  useEffect(() => translationService.subscribe(setCurrentLanguage), []);
+
   return (
     <Swiper
       modules={[Navigation, Pagination, Autoplay]}
@@ -26,7 +31,7 @@ const SwiperCarousel = ({ items }) => {
               <div className="p-3 text-center swiper-hero-content">
                 <h1 className="display-4 text-white mb-3">{item.title}</h1>
                 <p className="mx-md-5 px-5 text-white">{item.description}</p>
-                <button type="button" className="btn btn-outline-light py-2 px-4 mt-3">Shop Now</button>
+                <button type="button" className="btn btn-outline-light py-2 px-4 mt-3">{translationService.t('shop_now')}</button>
               </div>
             </div>
           </div>

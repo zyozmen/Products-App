@@ -166,14 +166,14 @@ class HeaderComponent extends Component {
                                         borderRadius: '20px', 
                                         padding: '4px 10px', 
                                         fontSize: '12px',
-                                        backgroundColor: this.state.theme === 'dark' ? '#ffc107' : '#3D464D',
+                                        backgroundColor: this.state.theme === 'dark' ? 'var(--primary)' : 'var(--dark)',
                                         color: this.state.theme === 'dark' ? '#000' : '#fff',
                                         border: 'none',
                                         fontWeight: '700'
                                     }}
                                 >
                                     <i className={this.state.theme === 'dark' ? 'fas fa-sun mr-1' : 'fas fa-moon mr-1'} />
-                                    {this.state.theme === 'dark' ? 'CLARO' : 'OSCURO'}
+                                    {this.state.theme === 'dark' ? t('switch_to_light') : t('switch_to_dark')}
                                 </button>
                             </div>
                             <div className="d-inline-flex align-items-center d-block d-lg-none">

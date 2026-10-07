@@ -41,8 +41,8 @@ class CarrouselComponent extends Component {
                             <SwiperCarousel
                                 items={this.state.carrousel.map((carrousel, index) => ({
                                     id: carrousel.id,
-                                    title: carrousel.Description,
-                                    description: 'Lorem rebum magna amet lorem magna erat diam stet. Sadips duo stet amet amet ndiam elitr ipsum diam',
+                                    title: t('special_offer'),
+                                    description: t('hero_description'),
                                     image: `/img/carousel-${index + 1}.jpg`,
                                 }))}
                             />

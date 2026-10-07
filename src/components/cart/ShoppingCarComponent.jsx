@@ -171,7 +171,7 @@ class ShoppingCarComponent extends Component {
         return (
             <>
                 <HeaderComponentWithNavigation />
-                <div className="container-fluid">
+                <div className="container-fluid shopping-cart-page">
                     <div className="row px-xl-5">
                         <div className="col-lg-8 table-responsive mb-5">
                             <table className="table table-light table-borderless table-hover text-center mb-0">
@@ -328,7 +328,7 @@ class ShoppingCarComponent extends Component {
                                                         className="form-control"
                                                         name="addressComplement"
                                                         type="text"
-                                                        placeholder="Casa 34, unidad 4, apto. 204"
+                                                        placeholder={t('cart_address_example')}
                                                         value={this.state.delivery.addressComplement}
                                                         onChange={this.handleDeliveryChange}
                                                     />

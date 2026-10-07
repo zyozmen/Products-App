@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import DropdownMenu from './DropdownMenu';
+import DropdownMenu from '../components/ui/DropdownMenu';
 
 describe('DropdownMenu', () => {
   it('shows and hides the menu content when the trigger is clicked', async () => {

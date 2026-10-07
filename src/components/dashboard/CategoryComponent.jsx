@@ -40,8 +40,8 @@ class CategoryComponent extends Component {
 
     render() {
         const t = (key) => translationService.t(key);
-        const { category, currentLanguage } = this.state;
-        const productsLabel = currentLanguage === 'EN' ? 'Products' : 'Productos';
+        const { category } = this.state;
+        const productsLabel = t('products_label');
 
         return (
             <div className="container-fluid pt-5">
@@ -71,7 +71,7 @@ class CategoryComponent extends Component {
                     ))}
                     {category.length === 0 && (
                         <div className="col text-center py-4">
-                            <p className="text-muted">Cargando categorías...</p>
+                            <p className="text-muted">{t('loading_categories')}</p>
                         </div>
                     )}
                 </div>

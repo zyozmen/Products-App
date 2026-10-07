@@ -87,7 +87,7 @@ class AgeVerificationModal extends Component {
                                 {t('underage_warning')}
                             </h3>
                             <p className="text-muted mb-4" style={{ fontSize: '15px' }}>
-                                Para continuar navegando por nuestro catálogo de Grow Shop, por favor confirma tu edad.
+                                {t('underage_confirmation_details')}
                             </p>
                             <div className="d-flex flex-column" style={{ gap: '10px' }}>
                                 <button 
@@ -110,13 +110,13 @@ class AgeVerificationModal extends Component {
                                 {t('must_be_over_18')}
                             </h3>
                             <p className="text-muted mb-4" style={{ fontSize: '15px' }}>
-                                No se permite el acceso a menores de edad a este sitio. Serás redirigido.
+                                {t('underage_exit_message')}
                             </p>
                             <button 
                                 className="btn btn-secondary btn-block font-weight-bold py-3" 
                                 onClick={() => window.location.href = 'https://www.google.com'}
                             >
-                                Salir
+                                {t('exit')}
                             </button>
                         </>
                     )}

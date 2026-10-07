@@ -122,7 +122,7 @@ class FooterComponent extends Component {
             <p className="mb-md-0 text-center text-md-left text-secondary">
               ©{" "}
               <button type="button" className="btn btn-link text-primary p-0">
-                Domain
+                Zona Green
               </button>
               . {t('all_rights_reserved')}
               <a className="text-primary" href="https://htmlcodex.com">

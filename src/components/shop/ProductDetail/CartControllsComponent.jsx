@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import cartService from "../../../services/CartService";
-import { formatCOP } from "../../../Interfaces/ProductInterface.js";
+import translationService from "../../../services/TranslationService";
 import './CartControllsComponent.css';
 
 class ShareComponent extends Component {
@@ -8,11 +8,25 @@ class ShareComponent extends Component {
         super(props);
         this.state = {
             quantity: 1,
+            currentLanguage: translationService.getLanguage(),
         };
+        this.unsubscribeFromLanguage = null;
         this.handleIncrement = this.handleIncrement.bind(this);
         this.handleDecrement = this.handleDecrement.bind(this);
         this.handleQuantityChange = this.handleQuantityChange.bind(this);
         this.handleAddToCart = this.handleAddToCart.bind(this);
+    }
+
+    componentDidMount() {
+        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+            this.setState({ currentLanguage: lang });
+        });
+    }
+
+    componentWillUnmount() {
+        if (this.unsubscribeFromLanguage) {
+            this.unsubscribeFromLanguage();
+        }
     }
 
     handleIncrement() {
@@ -46,12 +60,13 @@ class ShareComponent extends Component {
 
     render() {
         const { quantity } = this.state;
+        const t = (key) => translationService.t(key);
 
         return (
             <>
-                <div className="d-flex align-items-center mb-4 pt-2">
-                    <div className=" mr-1">
-                        <h3 className="font-weight-semi-bold mb-4 text-primary">{formatCOP(this.props.product.price?.current ?? 0)}</h3>
+                <div className="d-flex align-items-center pt-2">
+                    <div className=" mr-1 mt-10">
+                        <h2 className="font-weight-semi-bold text-primary mt-10 p-30 ">{formatCOP(this.props.product.price?.current ?? 0)}</h2>
                     </div>
 
                     <div className="input-group quantity mr-3 quantity-control">
@@ -73,7 +88,7 @@ class ShareComponent extends Component {
                         </div>
                     </div>
                     <button type="button" className="btn btn-primary px-3" onClick={this.handleAddToCart}>
-                        <i className="fa fa-shopping-cart mr-1" /> Add To Cart
+                        <i className="fa fa-shopping-cart mr-1" /> {t('add_to_cart')}
                     </button>
                 </div>
             </>

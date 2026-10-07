@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import productosService from "../../../services/ProductosService.js";
+import translationService from "../../../services/TranslationService.js";
 
 const createInitialForm = () => ({
     name: "",
@@ -20,10 +21,24 @@ class CreateProduct extends Component {
             form: createInitialForm(),
             error: "",
             isSaving: false,
+            currentLanguage: translationService.getLanguage(),
         };
 
+        this.unsubscribeFromLanguage = null;
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+    }
+
+    componentDidMount() {
+        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+            this.setState({ currentLanguage: lang });
+        });
+    }
+
+    componentWillUnmount() {
+        if (this.unsubscribeFromLanguage) {
+            this.unsubscribeFromLanguage();
+        }
     }
 
     handleChange(event) {
@@ -64,7 +79,7 @@ class CreateProduct extends Component {
             .catch((error) => {
                 const errorMessage = error.response?.data?.message
                     || error.message
-                    || "The product could not be created.";
+                    || translationService.t("error_product_creation");
 
                 this.setState({ error: errorMessage, isSaving: false });
             });
@@ -72,21 +87,22 @@ class CreateProduct extends Component {
 
     validateForm() {
         const { name, description, price, originalPrice } = this.state.form;
+        const t = (key) => translationService.t(key);
 
         if (!name.trim()) {
-            return "Product name is required.";
+            return t('error_product_name_required');
         }
 
         if (!description.trim()) {
-            return "Product description is required.";
+            return t('error_product_description_required');
         }
 
         if (Number(price) <= 0) {
-            return "Current price must be greater than zero.";
+            return t('error_current_price_positive');
         }
 
         if (originalPrice && Number(originalPrice) < Number(price)) {
-            return "Original price must be greater than or equal to the current price.";
+            return t('error_original_price_minimum');
         }
 
         return "";
@@ -125,14 +141,15 @@ class CreateProduct extends Component {
 
     render() {
         const { form, error, isSaving } = this.state;
+        const t = (key) => translationService.t(key);
 
         return (
             <div className="container-fluid pt-5">
                 <div className="row px-xl-5 justify-content-center">
                     <div className="col-lg-8">
                         <div className="bg-light p-30 mb-5">
-                            <h2 className="mb-4">Create Product</h2>
-                            <p className="mb-4">Add a new product and publish it to the catalog.</p>
+                            <h2 className="mb-4">{t('create_product_title')}</h2>
+                            <p className="mb-4">{t('create_product_subtitle')}</p>
 
                             {error && (
                                 <div className="alert alert-danger" role="alert">
@@ -143,7 +160,7 @@ class CreateProduct extends Component {
                             <form onSubmit={this.handleSubmit}>
                                 <div className="form-row">
                                     <div className="form-group col-md-6">
-                                        <label htmlFor="name">Name</label>
+                                        <label htmlFor="name">{t('name_label')}</label>
                                         <input
                                             id="name"
                                             name="name"
@@ -154,7 +171,7 @@ class CreateProduct extends Component {
                                         />
                                     </div>
                                     <div className="form-group col-md-6">
-                                        <label htmlFor="sku">SKU</label>
+                                        <label htmlFor="sku">{t('sku_label')}</label>
                                         <input
                                             id="sku"
                                             name="sku"
@@ -167,7 +184,7 @@ class CreateProduct extends Component {
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="description">Description</label>
+                                    <label htmlFor="description">{t('description_label')}</label>
                                     <textarea
                                         id="description"
                                         name="description"
@@ -180,7 +197,7 @@ class CreateProduct extends Component {
 
                                 <div className="form-row">
                                     <div className="form-group col-md-6">
-                                        <label htmlFor="slug">Slug</label>
+                                        <label htmlFor="slug">{t('slug_label')}</label>
                                         <input
                                             id="slug"
                                             name="slug"
@@ -188,11 +205,11 @@ class CreateProduct extends Component {
                                             className="form-control"
                                             value={form.slug}
                                             onChange={this.handleChange}
-                                            placeholder="Generated from the name if left empty"
+                                            placeholder={t('generated_slug_placeholder')}
                                         />
                                     </div>
                                     <div className="form-group col-md-6">
-                                        <label htmlFor="status">Status</label>
+                                        <label htmlFor="status">{t('status_label')}</label>
                                         <select
                                             id="status"
                                             name="status"
@@ -200,16 +217,16 @@ class CreateProduct extends Component {
                                             value={form.status}
                                             onChange={this.handleChange}
                                         >
-                                            <option value="ACTIVE">ACTIVE</option>
-                                            <option value="DRAFT">DRAFT</option>
-                                            <option value="INACTIVE">INACTIVE</option>
+                                            <option value="ACTIVE">{t('status_active')}</option>
+                                            <option value="DRAFT">{t('status_draft')}</option>
+                                            <option value="INACTIVE">{t('status_inactive')}</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div className="form-row">
                                     <div className="form-group col-md-4">
-                                        <label htmlFor="price">Current Price</label>
+                                        <label htmlFor="price">{t('current_price_label')}</label>
                                         <input
                                             id="price"
                                             name="price"
@@ -222,7 +239,7 @@ class CreateProduct extends Component {
                                         />
                                     </div>
                                     <div className="form-group col-md-4">
-                                        <label htmlFor="originalPrice">Original Price</label>
+                                        <label htmlFor="originalPrice">{t('original_price')}</label>
                                         <input
                                             id="originalPrice"
                                             name="originalPrice"
@@ -235,7 +252,7 @@ class CreateProduct extends Component {
                                         />
                                     </div>
                                     <div className="form-group col-md-4">
-                                        <label htmlFor="currency">Currency</label>
+                                        <label htmlFor="currency">{t('currency_label')}</label>
                                         <input
                                             id="currency"
                                             name="currency"
@@ -257,12 +274,12 @@ class CreateProduct extends Component {
                                         onChange={this.handleChange}
                                     />
                                     <label className="form-check-label" htmlFor="taxInclusive">
-                                        Tax inclusive price
+                                        {t('tax_inclusive_label')}
                                     </label>
                                 </div>
 
                                 <button type="submit" className="btn btn-primary px-4" disabled={isSaving}>
-                                    {isSaving ? "Saving..." : "Create Product"}
+                                    {isSaving ? t('saving_btn') : t('create_product_btn')}
                                 </button>
                             </form>
                         </div>

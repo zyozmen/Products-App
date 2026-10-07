@@ -4,10 +4,12 @@ import FooterComponent from '../dashboard/FooterComponent.jsx';
 import navigationComponent from '../navigation/NavigationComponent.jsx';
 import AuthenticationService from '../../services/AuthenticationService.js';
 import translationService from '../../services/TranslationService.js';
-import orderService, { ORDER_STATUSES, ORDER_STATUS_LABELS, ORDER_STATUS_BADGES } from '../../services/OrderService.js';
+import orderService, { ORDER_STATUSES, ORDER_STATUS_BADGES } from '../../services/OrderService.js';
 import { formatCOP } from '../../Interfaces/ProductInterface';
 
-const formatDateTime = (value) => (value ? new Date(value).toLocaleString('es-CO') : '');
+const formatDateTime = (value, language) => (
+    value ? new Date(value).toLocaleString(language === 'EN' ? 'en-US' : 'es-CO') : ''
+);
 
 class OrdersKanbanComponent extends Component {
     constructor(props) {
@@ -67,6 +69,12 @@ class OrdersKanbanComponent extends Component {
     }
 
     renderCard(order) {
+        const t = (key) => translationService.t(key);
+        const getOrderStatusLabel = (status) => {
+            const key = `order_status_${String(status).toLowerCase()}`;
+            const label = t(key);
+            return label === key ? status : label;
+        };
         return (
             <div
                 key={order.id}
@@ -79,11 +87,11 @@ class OrdersKanbanComponent extends Component {
                     <div className="d-flex justify-content-between">
                         <strong>#{order.id}</strong>
                         <span className={`badge ${ORDER_STATUS_BADGES[order.status] || 'badge-secondary'}`}>
-                            {ORDER_STATUS_LABELS[order.status] || order.status}
+                            {getOrderStatusLabel(order.status)}
                         </span>
                     </div>
-                    <div className="small text-muted">{formatDateTime(order.createdAt)}</div>
-                    <div className="small">Cliente: <strong>{order.username}</strong></div>
+                    <div className="small text-muted">{formatDateTime(order.createdAt, this.state.currentLanguage)}</div>
+                    <div className="small">{t('customer')}: <strong>{order.username}</strong></div>
                     <ul className="small pl-3 mb-1 mt-1">
                         {(order.items || []).map((item, index) => (
                             <li key={`${order.id}-${item.productId}-${index}`}>
@@ -91,15 +99,15 @@ class OrdersKanbanComponent extends Component {
                             </li>
                         ))}
                     </ul>
-                    <div className="font-weight-bold">Total: {formatCOP(order.total)}</div>
+                    <div className="font-weight-bold">{t('total')}: {formatCOP(order.total)}</div>
                     <select
                         className="form-control form-control-sm mt-2"
                         value={order.status}
                         onChange={(e) => this.handleStatusChange(order, e.target.value)}
-                        aria-label={`Estado de la orden ${order.id}`}
+                        aria-label={`${t('status')} ${order.id}`}
                     >
                         {ORDER_STATUSES.map((status) => (
-                            <option key={status} value={status}>{ORDER_STATUS_LABELS[status]}</option>
+                            <option key={status} value={status}>{getOrderStatusLabel(status)}</option>
                         ))}
                     </select>
                 </div>
@@ -111,6 +119,11 @@ class OrdersKanbanComponent extends Component {
         const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
         const { orders, loading, error, dragOverStatus } = this.state;
         const t = (key) => translationService.t(key);
+        const getOrderStatusLabel = (status) => {
+            const key = `order_status_${String(status).toLowerCase()}`;
+            const label = t(key);
+            return label === key ? status : label;
+        };
 
         return (
             <>
@@ -119,7 +132,7 @@ class OrdersKanbanComponent extends Component {
                     <div className="row px-xl-5">
                         <div className="col-12">
                             <nav className="breadcrumb bg-light mb-30">
-                                <span className="breadcrumb-item text-dark">Admin</span>
+                                <span className="breadcrumb-item text-dark">{t('admin_section')}</span>
                                 <span className="breadcrumb-item active">{t('manage_orders')}</span>
                             </nav>
                         </div>
@@ -134,12 +147,12 @@ class OrdersKanbanComponent extends Component {
                                     <span className="bg-secondary pr-3">{t('manage_orders')}</span>
                                 </h2>
                                 <button type="button" className="btn btn-sm btn-primary" onClick={this.loadOrders}>
-                                    Actualizar
+                                    {t('update')}
                                 </button>
                             </div>
                             {error && <div className="alert alert-danger">{error}</div>}
                             {loading ? (
-                                <p>Cargando...</p>
+                                <p>{t('loading')}</p>
                             ) : (
                                 <div className="d-flex" style={{ gap: '12px', overflowX: 'auto' }}>
                                     {ORDER_STATUSES.map((status) => {
@@ -167,7 +180,7 @@ class OrdersKanbanComponent extends Component {
                                                 }}
                                             >
                                                 <h6 className="text-uppercase d-flex justify-content-between">
-                                                    <span>{ORDER_STATUS_LABELS[status]}</span>
+                                                    <span>{getOrderStatusLabel(status)}</span>
                                                     <span className={`badge ${ORDER_STATUS_BADGES[status]}`}>{columnOrders.length}</span>
                                                 </h6>
                                                 {columnOrders.map((order) => this.renderCard(order))}

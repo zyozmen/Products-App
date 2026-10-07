@@ -63,7 +63,7 @@ class ProfileComponent extends Component {
 
         const user = AuthenticationService.getLoggedInUser();
         if (!user) {
-            this.setState({ isSaving: false, errorMessage: 'No se encuentra logueado.' });
+            this.setState({ isSaving: false, errorMessage: translationService.t('profile_login_required') });
             return;
         }
 
@@ -86,7 +86,7 @@ class ProfileComponent extends Component {
             sessionStorage.setItem('userProfile', JSON.stringify(mergedProfile));
 
             this.setState({
-                successMessage: translationService.t('profile_update_success') || '¡Perfil actualizado con éxito!',
+                successMessage: translationService.t('profile_update_success'),
                 password: '',
                 isSaving: false
             });
@@ -110,8 +110,8 @@ class ProfileComponent extends Component {
                     <div className="row px-xl-5">
                         <div className="col-12">
                             <nav className="breadcrumb bg-light mb-30">
-                                <span className="breadcrumb-item text-dark">Mi Cuenta</span>
-                                <span className="breadcrumb-item active">{t('profile_title') || 'Administrar Mi Perfil'}</span>
+                                <span className="breadcrumb-item text-dark">{t('my_account')}</span>
+                                <span className="breadcrumb-item active">{t('profile_title')}</span>
                             </nav>
                         </div>
                     </div>
@@ -120,7 +120,7 @@ class ProfileComponent extends Component {
                 <div className="container pb-5" style={{ maxWidth: '600px' }}>
                     <div className="bg-light p-30 rounded shadow-sm">
                         <h2 className="section-title position-relative text-uppercase mb-4 text-center">
-                            <span className="bg-secondary pr-3 px-3">{t('profile_title') || 'Administrar Perfil'}</span>
+                            <span className="bg-secondary pr-3 px-3">{t('profile_title')}</span>
                         </h2>
 
                         {this.state.successMessage && (
@@ -137,7 +137,7 @@ class ProfileComponent extends Component {
                         <form onSubmit={this.handleSubmit}>
                             <div className="row">
                                 <div className="col-md-6 form-group">
-                                    <label htmlFor="nombre">Nombre *</label>
+                                    <label htmlFor="nombre">{t('first_name')} *</label>
                                     <input
                                         id="nombre"
                                         className="form-control"
@@ -149,7 +149,7 @@ class ProfileComponent extends Component {
                                     />
                                 </div>
                                 <div className="col-md-6 form-group">
-                                    <label htmlFor="apellido">Apellido *</label>
+                                    <label htmlFor="apellido">{t('last_name')} *</label>
                                     <input
                                         id="apellido"
                                         className="form-control"
@@ -163,7 +163,7 @@ class ProfileComponent extends Component {
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="direccion">Dirección *</label>
+                                <label htmlFor="direccion">{t('address')} *</label>
                                 <input
                                     id="direccion"
                                     className="form-control"
@@ -176,7 +176,7 @@ class ProfileComponent extends Component {
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="telefono">Teléfono *</label>
+                                <label htmlFor="telefono">{t('contact_phone')} *</label>
                                 <input
                                     id="telefono"
                                     className="form-control"
@@ -195,7 +195,7 @@ class ProfileComponent extends Component {
                                     className="form-control"
                                     type="password"
                                     name="password"
-                                    placeholder="Dejar vacío para mantener la actual"
+                                    placeholder={t('profile_password_placeholder')}
                                     value={this.state.password}
                                     onChange={this.handleChange}
                                 />
@@ -206,7 +206,7 @@ class ProfileComponent extends Component {
                                 className="btn btn-primary btn-block font-weight-bold py-3 mt-4 text-uppercase"
                                 disabled={this.state.isSaving}
                             >
-                                {this.state.isSaving ? 'Guardando...' : (t('save_profile_btn') || 'Guardar Cambios')}
+                                {this.state.isSaving ? t('saving_btn') : t('save_profile_btn')}
                             </button>
                         </form>
                     </div>

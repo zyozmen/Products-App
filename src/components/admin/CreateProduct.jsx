@@ -329,7 +329,7 @@ class CreateProduct extends Component {
         const isEditMode = !!productId;
 
         return (
-            <div className="container-fluid pt-5">
+            <div className="container-fluid pt-5 create-product-page">
                 <div className="row px-xl-5 justify-content-center">
                     <div className="col-lg-10">
                         <div className="bg-light p-30 mb-5">
@@ -454,7 +454,7 @@ class CreateProduct extends Component {
                                             <div className="d-flex align-items-center mb-3 p-2 border rounded bg-white">
                                                 <img
                                                     src={this.state.principalImagePreview}
-                                                    alt="Principal Preview"
+                                                    alt={t('image_preview')}
                                                     style={{ width: "80px", height: "80px", objectFit: "cover", marginRight: "15px" }}
                                                     className="rounded"
                                                 />
@@ -499,7 +499,7 @@ class CreateProduct extends Component {
                                                 <div key={idx} className="d-flex align-items-center mb-2 p-2 border rounded bg-white">
                                                     <img
                                                         src={this.state.secundaryImagePreviews[idx]}
-                                                        alt={`Secundary Preview ${idx + 1}`}
+                                                        alt={`${t('secondary_image_preview')} ${idx + 1}`}
                                                         style={{ width: "60px", height: "60px", objectFit: "cover", marginRight: "15px" }}
                                                         className="rounded"
                                                     />
@@ -556,6 +556,7 @@ class CreateProduct extends Component {
                                         category={cat}
                                         index={idx}
                                         availableCategories={availableCategories}
+                                        t={t}
                                         onNameChange={(value) => this.handleCategoryNameChange(idx, value)}
                                         onIdChange={(value) => this.handleCategoryIdChange(idx, value)}
                                         onRemove={() => this.removeCategory(idx)}

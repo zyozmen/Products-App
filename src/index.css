@@ -94,3 +94,69 @@ body.dark-theme .status-slider-wrapper {
 body.dark-theme .status-slider-btn {
     color: #adb5bd !important;
 }
+
+body.dark-theme .LoginComponent .container,
+body.dark-theme .LoginComponent .LoginComponentForm,
+body.dark-theme .LoginComponent .form-container {
+    background-color: #212529 !important;
+    color: #e4e6eb;
+}
+
+body.dark-theme .LoginComponent .LoginInput,
+body.dark-theme .LoginComponent select.form-control {
+    background-color: #2c3034 !important;
+    border-color: #495057 !important;
+    color: #e4e6eb !important;
+}
+
+body.dark-theme .LoginComponent .LoginInput::placeholder {
+    color: #adb5bd;
+}
+
+body.dark-theme .LoginComponent .form-check-label,
+body.dark-theme .LoginComponent .forgot-password {
+    color: #e4e6eb !important;
+}
+
+body.dark-theme .create-product-page .text-muted,
+body.dark-theme .my-orders-page .text-muted,
+body.dark-theme .product-list-component .text-muted {
+    color: #adb5bd !important;
+}
+
+body.dark-theme .create-product-page .custom-file-label {
+    background-color: #2c3034;
+    border-color: #495057;
+    color: #e4e6eb;
+}
+
+body.dark-theme .create-product-page .custom-file-label::after {
+    background-color: #343a40;
+    border-color: #495057;
+    color: #e4e6eb;
+}
+
+body.dark-theme .create-product-page .border-right {
+    border-color: #454d55 !important;
+}
+
+body.dark-theme .product-list-component .btn-outline-dark {
+    border-color: #adb5bd;
+    color: #e4e6eb;
+}
+
+body.dark-theme .product-list-component .btn-outline-dark:hover {
+    background-color: #e4e6eb;
+    color: #212529;
+}
+
+body.dark-theme .product-list-component .btn-light {
+    background-color: #343a40;
+    border-color: #495057;
+    color: #e4e6eb;
+}
+
+body.dark-theme .cart-checkout-modal {
+    background-color: #212529;
+    color: #e4e6eb;
+}

@@ -105,7 +105,7 @@ class LoginForm extends Component {
                         <input 
                             className="LoginInput py-1 my-1" 
                             type="text" 
-                            placeholder="Nombre *" 
+                            placeholder={`${t('first_name')} *`}
                             value={this.state.regNombre} 
                             onChange={e => this.setState({ regNombre: e.target.value })} 
                             required 
@@ -113,7 +113,7 @@ class LoginForm extends Component {
                         <input 
                             className="LoginInput py-1 my-1" 
                             type="text" 
-                            placeholder="Apellido *" 
+                            placeholder={`${t('last_name')} *`}
                             value={this.state.regApellido} 
                             onChange={e => this.setState({ regApellido: e.target.value })} 
                             required 
@@ -121,7 +121,7 @@ class LoginForm extends Component {
                         <input 
                             className="LoginInput py-1 my-1" 
                             type="text" 
-                            placeholder="Dirección *" 
+                            placeholder={`${t('address')} *`}
                             value={this.state.regDireccion} 
                             onChange={e => this.setState({ regDireccion: e.target.value })} 
                             required 
@@ -129,7 +129,7 @@ class LoginForm extends Component {
                         <input 
                             className="LoginInput py-1 my-1" 
                             type="tel" 
-                            placeholder="Teléfono *" 
+                            placeholder={`${t('contact_phone')} *`}
                             value={this.state.regTelefono} 
                             onChange={e => this.setState({ regTelefono: e.target.value })} 
                             required 
@@ -144,14 +144,14 @@ class LoginForm extends Component {
                             >
                                 <option value="CC">CC</option>
                                 <option value="CE">CE</option>
-                                <option value="Pasaporte">Pasaporte</option>
+                                <option value="Pasaporte">{t('passport')}</option>
                                 <option value="NIT">NIT</option>
                             </select>
                             <input 
                                 className="LoginInput py-1 m-0" 
                                 style={{ width: '60%' }}
                                 type="text" 
-                                placeholder="Nº Identificación *" 
+                                placeholder={`${t('identification_number')} *`}
                                 value={this.state.regNumeroIdentificacion} 
                                 onChange={e => this.setState({ regNumeroIdentificacion: e.target.value })} 
                                 required 
@@ -168,7 +168,7 @@ class LoginForm extends Component {
                                 required
                             />
                             <label className="form-check-label text-muted" htmlFor="regMayorDeEdad" style={{ fontSize: '11px', lineHeight: '1.2' }}>
-                                Declaro que soy mayor de 18 años y doy mi consentimiento. *
+                                {t('age_consent_text')}
                             </label>
                         </div>
 
@@ -232,7 +232,10 @@ class LoginForm extends Component {
         } = this.state;
 
         if (!regMayorDeEdad) {
-            this.setState({ regErrorMessage: 'Debe declarar que es mayor de 18 años.', regSuccessMessage: '' });
+            this.setState({
+                regErrorMessage: translationService.t('register_requires_age'),
+                regSuccessMessage: ''
+            });
             return;
         }
 
@@ -252,7 +255,7 @@ class LoginForm extends Component {
             await UserService.registerUser(newUser);
 
             this.setState({
-                regSuccessMessage: '¡Usuario registrado con éxito! Ya puedes iniciar sesión.',
+                regSuccessMessage: translationService.t('register_success_login_prompt'),
                 regErrorMessage: '',
                 // Clear fields
                 regUsername: '',

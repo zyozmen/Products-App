@@ -14,8 +14,8 @@
 /* The Main Tag Body */
 .product-categories > li .label-custom {
     position: relative;
-    background-color: #6BBF23; 
-    color: #222;               
+    background-color: var(--primary); 
+    color: var(--dark);               
     font-size: 12px;
     font-weight: 700;          
     text-transform: uppercase; 
@@ -44,12 +44,12 @@
     border-radius: 50%;
     
     /* Creates the plastic/metal reinforcement ring around the hole */
-    box-shadow: 0 0 0 3px #8de118; 
+    box-shadow: 0 0 0 3px var(--primary-dark); 
 }
 
 /* Optional Hover Effect */
 .product-categories > li .label-custom:hover {
-    background-color: #6BB800;
+    background-color: var(--primary-dark);
     cursor: pointer;
 }
 
@@ -102,7 +102,7 @@
 
 .status-slider-wrapper[data-status="ACTIVE"] .status-slider-indicator {
     transform: translateX(0);
-    background-color: #28a745;
+    background-color: var(--primary);
 }
 
 .status-slider-wrapper[data-status="ACTIVE"] .btn-ACTIVE {
@@ -120,7 +120,7 @@
 
 .status-slider-wrapper[data-status="INACTIVE"] .status-slider-indicator {
     transform: translateX(200%);
-    background-color: #dc3545;
+    background-color: var(--primary-dark);
 }
 
 .status-slider-wrapper[data-status="INACTIVE"] .btn-INACTIVE {

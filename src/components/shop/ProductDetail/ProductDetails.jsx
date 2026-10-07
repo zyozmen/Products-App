@@ -1,21 +1,34 @@
 import React, { Component } from "react";
 import productosService from "../../../services/ProductosService.js";
+import translationService from "../../../services/TranslationService.js";
 import CartControllsComponent from "./CartControllsComponent";
 import { toProduct } from "../../../Interfaces/ProductInterface.js";
 import ImageCarousel from "../../ui/ImageCarousel";
+import { formatCOP } from "../../../Interfaces/ProductInterface.js";
 
 class ProductDetails extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            product: {}
+            product: {},
+            currentLanguage: translationService.getLanguage(),
         }
+        this.unsubscribeFromLanguage = null;
         this.getProductDetails = this.getProductDetails.bind(this);
     }
 
     componentDidMount() {
+        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
+            this.setState({ currentLanguage: lang });
+        });
         this.getProductDetails();
         console.log(this.state.product);
+    }
+
+    componentWillUnmount() {
+        if (this.unsubscribeFromLanguage) {
+            this.unsubscribeFromLanguage();
+        }
     }
 
     renderStars(rating) {
@@ -36,6 +49,7 @@ class ProductDetails extends Component {
     }
 
     render() {
+        const t = (key) => translationService.t(key);
         const ranking = this.state.product.ranking || {};
         const price = this.state.product.price || {};
         const categories = Array.isArray(this.state.product.categories)
@@ -65,15 +79,17 @@ class ProductDetails extends Component {
                     <div className="col-lg-5 mb-30">
                         <ImageCarousel
                             items={itemImages}
-                            altPrefix="Product view"
+                            altPrefix={t('product_image')}
+                            previousLabel={t('image_navigation_previous')}
+                            nextLabel={t('image_navigation_next')}
                         />
                     </div>
                     <div className="col-lg-7 h-auto mb-30">
                         <div className="h-25 bg-light p-30">
                             <h3>{this.state.product.name}</h3>
-                            <p className="mb-4">
-                                {this.state.product.LongDescription}
-                            </p>
+                            <div className="mr-1 mt-10">
+                                <h3 className="font-weight-semi-bold text-primary mt-10 p-30 ">{formatCOP(this.state.product.price?.current ?? 0)}</h3>
+                            </div>
                             <div className="d-flex mb-3 categories-container">
                                 <ul className="product-categories">
                                     {categories.length > 0 ? (
@@ -81,22 +97,22 @@ class ProductDetails extends Component {
                                             <li key={`${category.name || 'category'}-${index}`}><span className="label label-custom">{category.name}</span></li>
                                         ))
                                     ) : (
-                                        <small className="text-muted">No categories available</small>
+                                        <small className="text-muted">{t('no_categories_available')}</small>
                                     )}
                                 </ul>
                             </div>
                         </div>
+                        <CartControllsComponent product={this.state.product} />
                         <div className="d-flex h-50 bg-light p-30">
                             <div className="d-block mb-3 categories-container">
                                 <div className="d-block mb-3">
-                                <h4 className="mb-1">Product Description</h4>
+                                    <h4 className="mb-1">{t('product_description')}</h4>
                                 </div>
                                 <div className="mb-3">
-                                <p>{this.state.product.description}</p>
+                                    <p>{this.state.product.description}</p>
                                 </div>
                             </div>
                         </div>
-                        <CartControllsComponent product={this.state.product} />
                     </div>
                 </div>
             </div>

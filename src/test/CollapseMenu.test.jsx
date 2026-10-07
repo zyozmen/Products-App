@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import CollapseMenu from './CollapseMenu';
+import CollapseMenu from '../components/ui/CollapseMenu';
 
 describe('CollapseMenu', () => {
   it('renders the content container and shows it when opened', async () => {

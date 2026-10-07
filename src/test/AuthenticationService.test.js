@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import AuthenticationService from './AuthenticationService.js';
+import AuthenticationService from '../services/AuthenticationService.js';
 
 afterEach(() => {
     sessionStorage.clear();
