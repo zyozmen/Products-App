@@ -1,9 +1,10 @@
 import React, { Component } from "react";
 import cartService from "../../../services/CartService";
 import translationService from "../../../services/TranslationService";
+import { formatCOP } from "../../../Interfaces/ProductInterface";
 import './CartControllsComponent.css';
 
-class ShareComponent extends Component {
+class CartControllsComponent extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -65,22 +66,20 @@ class ShareComponent extends Component {
         return (
             <>
                 <div className="d-flex align-items-center pt-2">
-                    <div className=" mr-1 mt-10">
-                        <h2 className="font-weight-semi-bold text-primary mt-10 p-30 ">{formatCOP(this.props.product.price?.current ?? 0)}</h2>
-                    </div>
-
                     <div className="input-group quantity mr-3 quantity-control">
-                        <div className="input-group-btn">
+                        <div className="quantity">
                             <button type="button" className="btn btn-primary btn-minus" onClick={this.handleDecrement}>
                                 <i className="fa fa-minus" />
                             </button>
                         </div>
+                        <div className="input-group">
                         <input
                             type="text"
                             className="form-control bg-secondary border-0 text-center"
                             value={quantity}
                             onChange={this.handleQuantityChange}
                         />
+                        </div>
                         <div className="input-group-btn">
                             <button type="button" className="btn btn-primary btn-plus" onClick={this.handleIncrement}>
                                 <i className="fa fa-plus" />
@@ -96,4 +95,4 @@ class ShareComponent extends Component {
     }
 }
 
-export default ShareComponent;
+export default CartControllsComponent;

@@ -259,14 +259,14 @@ class ProductListComponent extends Component {
                                     style={{ height: "280px", objectFit: "cover" }}
                                 />
                                 <div className="product-action">
-                                    <NavLink type="button" className="btn btn-outline-dark btn-square" onClick={(event) => this.handleAddToCart(event, product)} aria-label={t('add_to_cart')}>
+                                    <NavLink className="btn btn-outline-dark btn-square active" onClick={(event) => this.handleAddToCart(event, product)} aria-label={t('add_to_cart')}>
                                         <i className="fa fa-shopping-cart" />
                                     </NavLink>
-                                    <NavLink className="btn btn-outline-dark btn-square" to={`/product/${product.id}`} aria-label={t('view_details')}>
+                                    <NavLink className="btn btn-outline-dark btn-square active" to={`/product/${product.id}`} aria-label={t('view_details')}>
                                         <i className="fa fa-search" />
                                     </NavLink>
                                     {isUserAdmin && (
-                                        <NavLink className="btn btn-outline-dark btn-square" to={`/editProduct/${product.id}`} aria-label={t('edit_product_title')}>
+                                        <NavLink className="btn btn-outline-dark btn-square active" to={`/editProduct/${product.id}`} aria-label={t('edit_product_title')}>
                                             <i className="fa fa-edit" />
                                         </NavLink>
                                     )}
