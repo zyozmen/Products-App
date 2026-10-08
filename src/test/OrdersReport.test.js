@@ -1,6 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { canTransition, getAllowedTransitions, getOrderStatus } from '../services/OrderService.js';
-import { buildOrdersReport, getPeriodRange, monthInputToDate, toMonthInputValue, toWeekInputValue, weekInputToDate } from '../components/admin/OrdersReportHelper.js';
+import { buildOrdersReport, filterOrders, getPeriodRange, monthInputToDate, toMonthInputValue, toWeekInputValue, weekInputToDate } from '../components/admin/OrdersReportHelper.js';
+
+describe('order search', () => {
+    const orders = [
+        { id: 10, username: 'María', status: 'CREADA', items: [{ name: 'Fertilizante' }] },
+        { id: 11, username: 'juan', status: 'PAGADA', pqr: true, items: [{ name: 'Maceta' }] },
+    ];
+    it('filters by id, customer (accent-insensitive), product and status', () => {
+        expect(filterOrders(orders, '')).toHaveLength(2);
+        expect(filterOrders(orders, '11').map((o) => o.id)).toEqual([11]);
+        expect(filterOrders(orders, 'maria').map((o) => o.id)).toEqual([10]);
+        expect(filterOrders(orders, 'macet').map((o) => o.id)).toEqual([11]);
+        expect(filterOrders(orders, 'pagada pqr').map((o) => o.id)).toEqual([11]);
+        expect(filterOrders(orders, 'zzz')).toHaveLength(0);
+    });
+});
 
 describe('week and month pickers', () => {
     it('converts dates to week and month input values and back', () => {

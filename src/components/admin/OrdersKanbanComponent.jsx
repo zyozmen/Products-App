@@ -14,6 +14,7 @@ import orderService, {
 import OrderStatusDialog from './OrderStatusDialog.jsx';
 import PqrOrderDialog from './PqrOrderDialog.jsx';
 import { formatCOP } from '../../Interfaces/ProductInterface';
+import { filterOrders, getPeriodRange, toDateInputValue } from './OrdersReportHelper.js';
 
 const formatDateTime = (value, language) => (
     value ? new Date(value).toLocaleString(language === 'EN' ? 'en-US' : 'es-CO') : ''
@@ -29,6 +30,8 @@ class OrdersKanbanComponent extends Component {
             dragOverStatus: null,
             pendingChange: null,
             showPqrDialog: false,
+            searchTerm: '',
+            selectedDate: toDateInputValue(new Date()),
             currentLanguage: translationService.getLanguage(),
         };
         this.unsubscribeFromLanguage = null;
@@ -156,13 +159,19 @@ class OrdersKanbanComponent extends Component {
 
     render() {
         const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
-        const { orders, loading, error, dragOverStatus, pendingChange, showPqrDialog } = this.state;
+        const { orders, loading, error, dragOverStatus, pendingChange, showPqrDialog, searchTerm, selectedDate } = this.state;
         const t = (key) => translationService.t(key);
         const getOrderStatusLabel = (status) => {
             const key = `order_status_${String(status).toLowerCase()}`;
             const label = t(key);
             return label === key ? status : label;
         };
+        const dayRange = getPeriodRange(selectedDate, 'day');
+        const dayOrders = orders.filter((o) => {
+            const createdAt = new Date(o.createdAt);
+            return createdAt >= dayRange.start && createdAt < dayRange.end;
+        });
+        const visibleOrders = filterOrders(dayOrders, searchTerm, getOrderStatusLabel);
 
         return (
             <>
@@ -194,13 +203,60 @@ class OrdersKanbanComponent extends Component {
                                     </button>
                                 </div>
                             </div>
+                            <div className="form-row align-items-end mb-3">
+                                <div className="form-group col-md-3 mb-2">
+                                    <label htmlFor="orders-day" className="mb-1">{t('orders_day')}</label>
+                                    <div className="input-group">
+                                        <input
+                                            id="orders-day"
+                                            type="date"
+                                            className="form-control"
+                                            value={selectedDate}
+                                            onChange={(e) => e.target.value && this.setState({ selectedDate: e.target.value })}
+                                        />
+                                        <div className="input-group-append">
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary"
+                                                onClick={() => this.setState({ selectedDate: toDateInputValue(new Date()) })}
+                                            >
+                                                {t('orders_today')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="form-group col-md-9 mb-2">
+                                    <div className="input-group">
+                                        <input
+                                            type="search"
+                                            className="form-control"
+                                            placeholder={t('search_orders_placeholder')}
+                                            aria-label={t('search_orders_placeholder')}
+                                            value={searchTerm}
+                                            onChange={(e) => this.setState({ searchTerm: e.target.value })}
+                                        />
+                                        {searchTerm && (
+                                            <div className="input-group-append">
+                                                <button type="button" className="btn btn-secondary" onClick={() => this.setState({ searchTerm: '' })}>
+                                                    {t('clear_btn')}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                             {error && <div className="alert alert-danger">{error}</div>}
+                            {!loading && visibleOrders.length === 0 && (
+                                <div className="alert alert-info">
+                                    {searchTerm && dayOrders.length > 0 ? t('search_orders_no_results') : t('orders_no_orders_day')}
+                                </div>
+                            )}
                             {loading ? (
                                 <p>{t('loading')}</p>
                             ) : (
                                 <div className="d-flex" style={{ gap: '12px', overflowX: 'auto' }}>
                                     {ORDER_STATUSES.map((status) => {
-                                        const columnOrders = orders.filter((o) => getOrderStatus(o) === status);
+                                        const columnOrders = visibleOrders.filter((o) => getOrderStatus(o) === status);
                                         return (
                                             <div
                                                 key={status}

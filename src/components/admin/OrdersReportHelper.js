@@ -55,6 +55,31 @@ export const getPeriodRange = (dateValue, period) => {
     return { start: new Date(year, month, day), end: new Date(year, month, day + 1) };
 };
 
+const normalizeText = (value) =>
+    String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+// Busca por # de orden, cliente, productos y estado (etiqueta traducida o código).
+export const filterOrders = (orders, query, getStatusLabel = (s) => s) => {
+    const terms = normalizeText(query).split(/\s+/).filter(Boolean);
+    const list = Array.isArray(orders) ? orders : [];
+    if (terms.length === 0) {
+        return list;
+    }
+    return list.filter((order) => {
+        const status = getOrderStatus(order);
+        const haystack = normalizeText([
+            order.id,
+            order.username,
+            status,
+            getStatusLabel(status),
+            order.pqr ? 'pqr' : '',
+            order.cashOnDelivery ? 'contra entrega' : '',
+            ...(order.items || []).map((item) => item.name),
+        ].join(' '));
+        return terms.every((term) => haystack.includes(term));
+    });
+};
+
 const toAmount = (value) => {
     const amount = Number(value);
     return Number.isFinite(amount) && amount > 0 ? amount : 0;
