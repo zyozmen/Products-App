@@ -3,7 +3,7 @@ import HeaderComponent from '../dashboard/HeaderComponent.jsx';
 import FooterComponent from '../dashboard/FooterComponent.jsx';
 import navigationComponent from '../navigation/NavigationComponent.jsx';
 import translationService from '../../services/TranslationService.js';
-import orderService, { ORDER_STATUS_BADGES } from '../../services/OrderService.js';
+import orderService, { ORDER_STATUS_BADGES, getOrderStatus } from '../../services/OrderService.js';
 import { formatCOP } from '../../Interfaces/ProductInterface';
 
 class MyOrdersComponent extends Component {
@@ -65,8 +65,8 @@ class MyOrdersComponent extends Component {
                                     <div key={order.id} className="bg-light p-30 mb-4 table-responsive">
                                         <div className="d-flex justify-content-between align-items-center mb-2">
                                             <h5 className="mb-0">Orden #{order.id}</h5>
-                                            <span className={`badge ${ORDER_STATUS_BADGES[order.status] || 'badge-secondary'} py-2 px-3`}>
-                                                {getOrderStatusLabel(order.status)}
+                                            <span className={`badge ${ORDER_STATUS_BADGES[getOrderStatus(order)] || 'badge-secondary'} py-2 px-3`}>
+                                                {getOrderStatusLabel(getOrderStatus(order))}
                                             </span>
                                         </div>
                                         <div className="text-muted mb-2">

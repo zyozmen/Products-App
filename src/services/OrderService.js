@@ -19,12 +19,12 @@ const resolveApiBaseUrl = () => {
 
 const apiBaseUrl = resolveApiBaseUrl();
 
-export const ORDER_STATUSES = ['CREADA', 'PAGADA', 'DESPACHADA', 'ENTREGADA', 'CANCELADA'];
+export const ORDER_STATUSES = ['CREADA', 'PAGADA', 'EMPACADA', 'ENTREGADA', 'CANCELADA'];
 
 export const ORDER_STATUS_LABELS = {
     CREADA: 'Creada',
     PAGADA: 'Pagada',
-    DESPACHADA: 'Despachada',
+    EMPACADA: 'Empacada',
     ENTREGADA: 'Entregada',
     CANCELADA: 'Cancelada',
 };
@@ -32,10 +32,37 @@ export const ORDER_STATUS_LABELS = {
 export const ORDER_STATUS_BADGES = {
     CREADA: 'badge-info',
     PAGADA: 'badge-primary',
-    DESPACHADA: 'badge-warning',
+    EMPACADA: 'badge-warning',
     ENTREGADA: 'badge-success',
     CANCELADA: 'badge-danger',
 };
+
+// Las órdenes anteriores al cambio de flujo usaban DESPACHADA, equivalente a EMPACADA.
+export const getOrderStatus = (order) => {
+    const status = String(order?.status ?? '').toUpperCase();
+    return status === 'DESPACHADA' ? 'EMPACADA' : status;
+};
+
+/**
+ * Flujos permitidos:
+ *  CREADA -> PAGADA (opcional marca contra entrega) -> EMPACADA -> ENTREGADA
+ *  CREADA con marca PQR (valor 0) -> EMPACADA -> ENTREGADA
+ * Cualquier orden no finalizada puede cancelarse.
+ */
+export const getAllowedTransitions = (order) => {
+    switch (getOrderStatus(order)) {
+        case 'CREADA':
+            return order?.pqr ? ['EMPACADA', 'CANCELADA'] : ['PAGADA', 'CANCELADA'];
+        case 'PAGADA':
+            return ['EMPACADA', 'CANCELADA'];
+        case 'EMPACADA':
+            return ['ENTREGADA', 'CANCELADA'];
+        default:
+            return [];
+    }
+};
+
+export const canTransition = (order, status) => getAllowedTransitions(order).includes(status);
 
 const authHeaders = () => {
     const token = sessionStorage.getItem('token');
@@ -91,11 +118,36 @@ class OrderService {
         }
     }
 
-    async updateOrderStatus(orderId, status) {
+    async createPqrOrder({ username, productName, quantity, delivery, notes }) {
+        try {
+            const payload = {
+                username,
+                pqr: true,
+                items: [{
+                    name: productName,
+                    quantity,
+                    unitPrice: 0,
+                    lineTotal: 0,
+                }],
+                delivery,
+                notes,
+                subtotal: 0,
+                taxAmount: 0,
+                total: 0,
+            };
+            const response = await axios.post(`${apiBaseUrl}/admin/orders/pqr`, payload, { headers: authHeaders() });
+            return response.data;
+        } catch (error) {
+            throw toError(error, translationService.t('pqr_create_failed'));
+        }
+    }
+
+    // extra: { cashOnDelivery } al pasar a PAGADA; { cashAmount, cardAmount } al pasar a ENTREGADA.
+    async updateOrderStatus(orderId, status, extra = {}) {
         try {
             const response = await axios.put(
                 `${apiBaseUrl}/admin/orders/${orderId}/status`,
-                { status },
+                { status, ...extra },
                 { headers: authHeaders() }
             );
             return response.data;

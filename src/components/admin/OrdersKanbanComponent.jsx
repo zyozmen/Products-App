@@ -4,7 +4,15 @@ import FooterComponent from '../dashboard/FooterComponent.jsx';
 import navigationComponent from '../navigation/NavigationComponent.jsx';
 import AuthenticationService from '../../services/AuthenticationService.js';
 import translationService from '../../services/TranslationService.js';
-import orderService, { ORDER_STATUSES, ORDER_STATUS_BADGES } from '../../services/OrderService.js';
+import orderService, {
+    ORDER_STATUSES,
+    ORDER_STATUS_BADGES,
+    canTransition,
+    getAllowedTransitions,
+    getOrderStatus,
+} from '../../services/OrderService.js';
+import OrderStatusDialog from './OrderStatusDialog.jsx';
+import PqrOrderDialog from './PqrOrderDialog.jsx';
 import { formatCOP } from '../../Interfaces/ProductInterface';
 
 const formatDateTime = (value, language) => (
@@ -19,11 +27,15 @@ class OrdersKanbanComponent extends Component {
             loading: true,
             error: '',
             dragOverStatus: null,
+            pendingChange: null,
+            showPqrDialog: false,
             currentLanguage: translationService.getLanguage(),
         };
         this.unsubscribeFromLanguage = null;
         this.loadOrders = this.loadOrders.bind(this);
         this.handleStatusChange = this.handleStatusChange.bind(this);
+        this.applyStatusChange = this.applyStatusChange.bind(this);
+        this.handleCreatePqr = this.handleCreatePqr.bind(this);
     }
 
     async componentDidMount() {
@@ -53,19 +65,38 @@ class OrdersKanbanComponent extends Component {
         }
     }
 
-    async handleStatusChange(order, status) {
-        if (!status || status === order.status) {
+    handleStatusChange(order, status) {
+        if (!status || status === getOrderStatus(order)) {
             return;
         }
+        if (!canTransition(order, status)) {
+            this.setState({ error: translationService.t('transition_not_allowed') });
+            return;
+        }
+        if (status === 'PAGADA' || status === 'ENTREGADA') {
+            this.setState({ pendingChange: { order, status }, error: '' });
+            return;
+        }
+        this.applyStatusChange(order, status);
+    }
+
+    async applyStatusChange(order, status, extra = {}) {
         try {
-            const updated = await orderService.updateOrderStatus(order.id, status);
+            const updated = await orderService.updateOrderStatus(order.id, status, extra);
             this.setState((prev) => ({
-                orders: prev.orders.map((o) => (o.id === order.id ? { ...o, ...(updated || {}), status } : o)),
+                orders: prev.orders.map((o) => (o.id === order.id ? { ...o, ...extra, ...(updated || {}), status } : o)),
+                pendingChange: null,
                 error: '',
             }));
         } catch (error) {
-            this.setState({ error: error.message });
+            this.setState({ error: error.message, pendingChange: null });
         }
+    }
+
+    async handleCreatePqr(data) {
+        await orderService.createPqrOrder(data);
+        this.setState({ showPqrDialog: false });
+        await this.loadOrders();
     }
 
     renderCard(order) {
@@ -75,6 +106,7 @@ class OrdersKanbanComponent extends Component {
             const label = t(key);
             return label === key ? status : label;
         };
+        const currentStatus = getOrderStatus(order);
         return (
             <div
                 key={order.id}
@@ -86,10 +118,16 @@ class OrdersKanbanComponent extends Component {
                 <div className="card-body p-2">
                     <div className="d-flex justify-content-between">
                         <strong>#{order.id}</strong>
-                        <span className={`badge ${ORDER_STATUS_BADGES[order.status] || 'badge-secondary'}`}>
-                            {getOrderStatusLabel(order.status)}
+                        <span className={`badge ${ORDER_STATUS_BADGES[currentStatus] || 'badge-secondary'}`}>
+                            {getOrderStatusLabel(currentStatus)}
                         </span>
                     </div>
+                    {(order.pqr || order.cashOnDelivery) && (
+                        <div className="mt-1">
+                            {order.pqr && <span className="badge badge-dark mr-1">{t('order_flag_pqr')}</span>}
+                            {order.cashOnDelivery && <span className="badge badge-warning">{t('order_flag_cash_on_delivery')}</span>}
+                        </div>
+                    )}
                     <div className="small text-muted">{formatDateTime(order.createdAt, this.state.currentLanguage)}</div>
                     <div className="small">{t('customer')}: <strong>{order.username}</strong></div>
                     <ul className="small pl-3 mb-1 mt-1">
@@ -102,11 +140,12 @@ class OrdersKanbanComponent extends Component {
                     <div className="font-weight-bold">{t('total')}: {formatCOP(order.total)}</div>
                     <select
                         className="form-control form-control-sm mt-2"
-                        value={order.status}
+                        value={currentStatus}
                         onChange={(e) => this.handleStatusChange(order, e.target.value)}
                         aria-label={`${t('status')} ${order.id}`}
+                        disabled={getAllowedTransitions(order).length === 0}
                     >
-                        {ORDER_STATUSES.map((status) => (
+                        {ORDER_STATUSES.filter((status) => status === currentStatus || canTransition(order, status)).map((status) => (
                             <option key={status} value={status}>{getOrderStatusLabel(status)}</option>
                         ))}
                     </select>
@@ -117,7 +156,7 @@ class OrdersKanbanComponent extends Component {
 
     render() {
         const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
-        const { orders, loading, error, dragOverStatus } = this.state;
+        const { orders, loading, error, dragOverStatus, pendingChange, showPqrDialog } = this.state;
         const t = (key) => translationService.t(key);
         const getOrderStatusLabel = (status) => {
             const key = `order_status_${String(status).toLowerCase()}`;
@@ -146,9 +185,14 @@ class OrdersKanbanComponent extends Component {
                                 <h2 className="section-title position-relative text-uppercase mb-0">
                                     <span className="bg-secondary pr-3">{t('manage_orders')}</span>
                                 </h2>
-                                <button type="button" className="btn btn-sm btn-primary" onClick={this.loadOrders}>
-                                    {t('update')}
-                                </button>
+                                <div className="d-flex" style={{ gap: '8px' }}>
+                                    <button type="button" className="btn btn-sm btn-dark" onClick={() => this.setState({ showPqrDialog: true })}>
+                                        {t('create_pqr_order')}
+                                    </button>
+                                    <button type="button" className="btn btn-sm btn-primary" onClick={this.loadOrders}>
+                                        {t('update')}
+                                    </button>
+                                </div>
                             </div>
                             {error && <div className="alert alert-danger">{error}</div>}
                             {loading ? (
@@ -156,7 +200,7 @@ class OrdersKanbanComponent extends Component {
                             ) : (
                                 <div className="d-flex" style={{ gap: '12px', overflowX: 'auto' }}>
                                     {ORDER_STATUSES.map((status) => {
-                                        const columnOrders = orders.filter((o) => o.status === status);
+                                        const columnOrders = orders.filter((o) => getOrderStatus(o) === status);
                                         return (
                                             <div
                                                 key={status}
@@ -192,6 +236,23 @@ class OrdersKanbanComponent extends Component {
                         </div>
                     </div>
                 </div>
+                {pendingChange && (
+                    <OrderStatusDialog
+                        key={`${pendingChange.order.id}-${pendingChange.status}`}
+                        order={pendingChange.order}
+                        status={pendingChange.status}
+                        t={t}
+                        onCancel={() => this.setState({ pendingChange: null })}
+                        onConfirm={(extra) => this.applyStatusChange(pendingChange.order, pendingChange.status, extra)}
+                    />
+                )}
+                {showPqrDialog && (
+                    <PqrOrderDialog
+                        t={t}
+                        onCancel={() => this.setState({ showPqrDialog: false })}
+                        onCreate={this.handleCreatePqr}
+                    />
+                )}
                 <FooterComponent />
             </>
         );
