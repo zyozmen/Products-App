@@ -12,12 +12,12 @@ const translations = {
                 customer_service_num: '+57 312 4058166',
 
                 // NavBar
-                cafe_premium: 'Café Premium',
-                flor_premium: 'Flor Premium',
+                menu_marketplace: 'Marketplace',
+                menu_cursos_online: 'Cursos Online',
                 flor_en_sale: 'Flor en Oferta',
-                hidroponia: 'Hidroponía',
+                menu_legal: 'Legal',
                 contacto: 'Contacto',
-                legal: 'Legal',
+                menu_blog: 'Blog',
 
                 // Welcome / Dashboard / Carousel / Categories / Featured
                 save_20: 'Ahorra 20%',
@@ -218,6 +218,7 @@ const translations = {
                 review_sample_heading: '1 reseña para «Nombre del producto»',
                 review_sample_text: 'Excelente producto, la calidad y el servicio fueron muy buenos.',
                 error_generic: 'Ocurrió un error. Contacta al soporte técnico.',
+                page_not_found: 'Página no encontrada',
                 error_product_name_required: 'El nombre del producto es obligatorio.',
                 error_product_description_required: 'La descripción del producto es obligatoria.',
                 error_current_price_positive: 'El precio actual debe ser mayor que cero.',
@@ -246,6 +247,8 @@ const translations = {
                 status_active: 'ACTIVO',
                 status_draft: 'BORRADOR',
                 status_inactive: 'INACTIVO',
+                confirm_delete_product: '¿Está seguro que desea borrar el producto',
+                product_delete_error: 'No se pudo borrar el producto',
                 price_title: 'Precio',
                 current_price_label: 'Precio Actual *',
                 currency_label: 'Moneda',

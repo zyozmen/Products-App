@@ -6,6 +6,7 @@ import cartService from "../../services/CartService";
 import translationService from "../../services/TranslationService";
 import AuthenticationService from "../../services/AuthenticationService";
 import { formatCOP } from "../../Interfaces/ProductInterface";
+import ConfirmationModal from "../ui/ConfirmationModal";
 
 class ProductListComponent extends Component {
     constructor(props) {
@@ -42,7 +43,7 @@ class ProductListComponent extends Component {
             id: product.id,
             name: product.name,
             price: product.current_price,
-            image: `/img/product-${product.id}.jpg`,
+            image: product.image
         });
         this.setState({ isOrderConfirmed: true });
     }
@@ -88,6 +89,7 @@ class ProductListComponent extends Component {
             searchTerm: effectiveSearchTerm,
             categoryIds: selectedCategoryIds,
             sortBy: filters.sortBy,
+            sortDir: filters.sortDir,
             minPrice: filters.minPrice,
             maxPrice: filters.maxPrice,
             minRating: filters.minRating,
@@ -246,25 +248,29 @@ class ProductListComponent extends Component {
                     {!loading && !error && products.length === 0 && (
                         <div className="col-12 text-center py-4"><h1>{t('product_not_found')}</h1></div>
                     )}
-                    {!loading && !error && products.map((product) => (
-                    <div key={product.id} className="col-lg-4 col-md-6 col-sm-6 pb-1">
-                        <div className="product-item bg-light mb-4">
-                            <NavLink to={`/product/${product.id}`}>
+                    {!loading && !error && products.map((product) => {
+                        const status = String(product.status ?? "").toUpperCase();
+                        const isInactive = status === "INACTIVE";
+                        const isDraft = status === "DRAFT";
+                        const productImage = (
                             <div className="product-img position-relative overflow-hidden" >
-                                
-                                <img 
-                                    className="img-fluid w-100" 
-                                    src={product.foto_principal || "img/no_image.jpg"} 
-                                    alt={product.name} 
+                                <img
+                                    className="img-fluid w-100"
+                                    src={product.foto_principal || "img/no_image.jpg"}
+                                    alt={product.name}
                                     style={{ height: "280px", objectFit: "cover" }}
                                 />
                                 <div className="product-action">
-                                    <NavLink className="btn btn-outline-dark btn-square active" onClick={(event) => this.handleAddToCart(event, product)} aria-label={t('add_to_cart')}>
-                                        <i className="fa fa-shopping-cart" />
-                                    </NavLink>
-                                    <NavLink className="btn btn-outline-dark btn-square active" to={`/product/${product.id}`} aria-label={t('view_details')}>
-                                        <i className="fa fa-search" />
-                                    </NavLink>
+                                    {!isInactive && !isDraft && (
+                                        <NavLink className="btn btn-outline-dark btn-square active" onClick={(event) => this.handleAddToCart(event, product)} aria-label={t('add_to_cart')}>
+                                            <i className="fa fa-shopping-cart" />
+                                        </NavLink>
+                                    )}
+                                    {!isInactive && (
+                                        <NavLink className="btn btn-outline-dark btn-square active" to={`/product/${product.id}`} aria-label={t('view_details')}>
+                                            <i className="fa fa-search" />
+                                        </NavLink>
+                                    )}
                                     {isUserAdmin && (
                                         <NavLink className="btn btn-outline-dark btn-square active" to={`/editProduct/${product.id}`} aria-label={t('edit_product_title')}>
                                             <i className="fa fa-edit" />
@@ -272,11 +278,20 @@ class ProductListComponent extends Component {
                                     )}
                                 </div>
                             </div>
-                            </NavLink>
+                        );
+
+                        return (
+                    <div key={product.id} className="col-lg-4 col-md-6 col-sm-6 pb-1">
+                        <div className={`product-item bg-light mb-4${isInactive ? " product-item-inactive" : ""}${isDraft ? " product-item-draft" : ""}`}>
+                            {isInactive ? productImage : <NavLink to={`/product/${product.id}`}>{productImage}</NavLink>}
                             <div className="text-center py-4">
-                                <NavLink className="h6 text-decoration-none text-truncate" to={`/product/${product.id}`}>
-                                    {product.name}
-                                </NavLink>
+                                {isInactive ? (
+                                    <span className="h6 text-truncate d-block">{product.name}</span>
+                                ) : (
+                                    <NavLink className="h6 text-decoration-none text-truncate" to={`/product/${product.id}`}>
+                                        {product.name}
+                                    </NavLink>
+                                )}
                                 <div className="d-flex align-items-center justify-content-center mt-2">
                                     <h5>{formatCOP(product.current_price)}</h5>
                                     {product.original_price && Number(product.original_price) !== Number(product.current_price) && (
@@ -288,7 +303,8 @@ class ProductListComponent extends Component {
                             </div>
                         </div>
                     </div>
-                    ))}
+                        );
+                    })}
 
                     {!loading && !error && products.length > 0 && (
                         this.renderPaginationControls(visiblePages)
@@ -296,25 +312,11 @@ class ProductListComponent extends Component {
                 </div>
 
                 {this.state.isOrderConfirmed && (
-                    <div className="cart-checkout-modal-backdrop">
-                        <section
-                            className="cart-checkout-modal"
-                            role="alertdialog"
-                            aria-modal="true"
-                            aria-labelledby="checkout-confirmation-title"
-                            aria-describedby="checkout-confirmation-message"
-                        >
-                            <h2 id="checkout-confirmation-title">{t('product_added_to_cart')}</h2>
-                            <button
-                                type="button"
-                                className="btn btn-primary"
-                                onClick={(event) => this.handleConfirmationAccept(event)}
-                                autoFocus
-                            >
-                                {t('accept')}
-                            </button>
-                        </section>
-                    </div>
+                    <ConfirmationModal
+                        title={t('product_added_to_cart')}
+                        acceptLabel={t('accept')}
+                        onAccept={(event) => this.handleConfirmationAccept(event)}
+                    />
                 )}
             </div>
         );

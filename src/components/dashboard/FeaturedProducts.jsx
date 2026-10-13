@@ -4,6 +4,7 @@ import productosService from '../../services/ProductosService';
 import cartService from '../../services/CartService';
 import translationService from '../../services/TranslationService';
 import { formatCOP } from '../../Interfaces/ProductInterface';
+import ConfirmationModal from '../ui/ConfirmationModal';
 
 
 class FeaturedProducts extends Component {
@@ -11,6 +12,7 @@ class FeaturedProducts extends Component {
         super(props);
         this.state = {
             featuredProducts:[],
+            isProductAdded: false,
             currentLanguage: translationService.getLanguage(),
         };
         this.callBackendService = this.callBackendService.bind(this);
@@ -26,6 +28,7 @@ class FeaturedProducts extends Component {
             price: featuredProduct.price?.current ?? 0,
             image: `/img/product-${featuredProduct.id}.jpg`,
         });
+        this.setState({ isProductAdded: true });
     }
 
     componentDidMount() {
@@ -94,6 +97,13 @@ class FeaturedProducts extends Component {
                     </div>
                     ))}
                 </div>
+                {this.state.isProductAdded && (
+                    <ConfirmationModal
+                        title={t('product_added_to_cart')}
+                        acceptLabel={t('accept')}
+                        onAccept={() => this.setState({ isProductAdded: false })}
+                    />
+                )}
             </div>
 
 

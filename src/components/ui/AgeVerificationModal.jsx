@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import translationService from '../../services/TranslationService.js';
+import './AgeVerificationModal.css';
 
 class AgeVerificationModal extends Component {
     constructor(props) {
@@ -34,6 +35,7 @@ class AgeVerificationModal extends Component {
     handleAccept() {
         sessionStorage.setItem('age_verified', 'true');
         this.setState({ isOpen: false });
+        this.props.navigate('/login');
     }
 
     handleDecline() {
@@ -46,32 +48,8 @@ class AgeVerificationModal extends Component {
         const t = (key) => translationService.t(key);
 
         return (
-            <div 
-                style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                    zIndex: 9999,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    padding: '20px'
-                }}
-            >
-                <div 
-                    style={{
-                        backgroundColor: '#fff',
-                        borderRadius: '10px',
-                        padding: '40px 30px',
-                        maxWidth: '500px',
-                        width: '100%',
-                        textAlign: 'center',
-                        boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
-                    }}
-                >
+            <div className="age-verification-overlay">
+                <div className="age-verification-modal">
                     <div className="mb-4">
                         <span className="h1 text-uppercase text-dark bg-light px-2">
                             Zona
@@ -83,13 +61,13 @@ class AgeVerificationModal extends Component {
 
                     {!this.state.declined ? (
                         <>
-                            <h3 className="mb-3 text-dark font-weight-bold" style={{ fontSize: '22px' }}>
+                            <h3 className="age-verification-title mb-3 text-dark font-weight-bold">
                                 {t('underage_warning')}
                             </h3>
-                            <p className="text-muted mb-4" style={{ fontSize: '15px' }}>
+                            <p className="age-verification-description text-muted mb-4">
                                 {t('underage_confirmation_details')}
                             </p>
-                            <div className="d-flex flex-column" style={{ gap: '10px' }}>
+                            <div className="age-verification-actions d-flex flex-column">
                                 <button 
                                     className="btn btn-primary btn-block font-weight-bold py-3 text-uppercase" 
                                     onClick={this.handleAccept}
@@ -106,10 +84,10 @@ class AgeVerificationModal extends Component {
                         </>
                     ) : (
                         <>
-                            <h3 className="mb-3 text-danger font-weight-bold" style={{ fontSize: '22px' }}>
+                            <h3 className="age-verification-title mb-3 text-danger font-weight-bold">
                                 {t('must_be_over_18')}
                             </h3>
-                            <p className="text-muted mb-4" style={{ fontSize: '15px' }}>
+                            <p className="age-verification-description text-muted mb-4">
                                 {t('underage_exit_message')}
                             </p>
                             <button 

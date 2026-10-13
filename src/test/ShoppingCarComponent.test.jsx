@@ -7,6 +7,24 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
+describe('cart product images', () => {
+    it('uses the placeholder image when a product image is empty', () => {
+        const productId = `image-fallback-${Date.now()}`;
+
+        cartService.addToCart({
+            id: productId,
+            name: 'Product without image',
+            price: 10,
+            image: ' ',
+        });
+
+        const item = cartService.getCart().find((cartItem) => cartItem.id === productId);
+
+        expect(item.image).toBe('/img/no_image.jpg');
+        cartService.removeFromCart(productId);
+    });
+});
+
 describe('createWhatsAppCheckoutUrl', () => {
     it('creates a WhatsApp link with the order and totals in the message', () => {
         const url = new URL(createWhatsAppCheckoutUrl({

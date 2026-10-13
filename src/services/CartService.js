@@ -51,11 +51,12 @@ class CartService {
         if (existingItem) {
             existingItem.quantity += normalizedQuantity;
         } else {
+            const image = String(product.image ?? '').trim();
             this.items.push({
                 id: productId,
                 name: String(product.name ?? ''),
                 price: Number(product.price ?? 0),
-                image: String(product.image ?? `/img/product-${productId}.jpg`),
+                image: image || '/img/no_image.jpg',
                 quantity: normalizedQuantity,
             });
         }

@@ -53,10 +53,15 @@ class ShopListComponent extends Component {
   }
 
   handlePriceRangeChange(range) {
-    this.setState({
-      minPrice: range?.minPrice ?? null,
-      maxPrice: range?.maxPrice ?? null,
-    });
+    const minPrice = range?.minPrice ?? null;
+    const maxPrice = range?.maxPrice ?? null;
+    const hasRange = minPrice !== null || maxPrice !== null;
+
+    this.setState((prev) => ({
+      minPrice,
+      maxPrice,
+      sortBy: hasRange ? "price" : (prev.sortBy === "price" ? "" : prev.sortBy),
+    }));
   }
 
   handleNameFilterChange(nameFilter) {
@@ -78,6 +83,7 @@ class ShopListComponent extends Component {
     const { selectedCategoryIds, sortBy, minPrice, maxPrice, minRating, maxRating, nameFilter } = this.state;
     const filters = {
       sortBy,
+      sortDir: sortBy === "price" ? "asc" : undefined,
       minPrice,
       maxPrice,
       minRating,

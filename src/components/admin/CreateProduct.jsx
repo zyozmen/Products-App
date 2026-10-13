@@ -36,8 +36,12 @@ class CreateProduct extends Component {
             secundaryImages: [],
             principalImagePreview: "",
             secundaryImagePreviews: [],
+            pendingDeleteFromStatus: null,
         };
 
+        this.handleStatusChange = this.handleStatusChange.bind(this);
+        this.cancelDelete = this.cancelDelete.bind(this);
+        this.confirmDelete = this.confirmDelete.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
         this.focusErrorAlert = this.focusErrorAlert.bind(this);
@@ -180,6 +184,49 @@ class CreateProduct extends Component {
                     availableCategories: [],
                     categoriesError: translationService.t("categories_load_error"),
                 });
+            });
+    }
+
+    handleStatusChange(status) {
+        const productId = this.props.params?.productId;
+        const currentStatus = this.state.form.status;
+
+        if (status === 'INACTIVE' && !productId) {
+            return;
+        }
+
+        if (status === 'INACTIVE' && currentStatus !== 'INACTIVE') {
+            this.setState({ pendingDeleteFromStatus: currentStatus || 'ACTIVE' });
+        }
+        this.handleChange({ target: { name: 'status', value: status } });
+    }
+
+    cancelDelete() {
+        const previous = this.state.pendingDeleteFromStatus;
+        this.setState({ pendingDeleteFromStatus: null });
+        this.handleChange({ target: { name: 'status', value: previous } });
+    }
+
+    confirmDelete() {
+        const productId = this.props.params?.productId;
+        const previous = this.state.pendingDeleteFromStatus;
+        this.setState({ isSaving: true, pendingDeleteFromStatus: null });
+        productosService
+            .eliminarProducto(productId)
+            .then(() => {
+                this.setState({ isSaving: false });
+                this.props.navigate("/shop");
+            })
+            .catch((err) => {
+                const errorMessage =
+                    err.response?.data?.message ||
+                    err.message ||
+                    translationService.t("product_delete_error");
+                this.setState((prev) => ({
+                    error: errorMessage,
+                    isSaving: false,
+                    form: { ...prev.form, status: previous || prev.form.status },
+                }), this.focusErrorAlert);
             });
     }
 
@@ -382,21 +429,22 @@ class CreateProduct extends Component {
                                                 <button
                                                     type="button"
                                                     className="status-slider-btn btn-ACTIVE"
-                                                    onClick={() => this.handleChange({ target: { name: 'status', value: 'ACTIVE' } })}
+                                                    onClick={() => this.handleStatusChange('ACTIVE')}
                                                 >
                                                     {t('status_active')}
                                                 </button>
                                                 <button
                                                     type="button"
                                                     className="status-slider-btn btn-DRAFT"
-                                                    onClick={() => this.handleChange({ target: { name: 'status', value: 'DRAFT' } })}
+                                                    onClick={() => this.handleStatusChange('DRAFT')}
                                                 >
                                                     {t('status_draft')}
                                                 </button>
                                                 <button
                                                     type="button"
                                                     className="status-slider-btn btn-INACTIVE"
-                                                    onClick={() => this.handleChange({ target: { name: 'status', value: 'INACTIVE' } })}
+                                                    onClick={() => this.handleStatusChange('INACTIVE')}
+                                                    disabled={!isEditMode}
                                                 >
                                                     {t('status_inactive')}
                                                 </button>
@@ -585,6 +633,23 @@ class CreateProduct extends Component {
                         </div>
                     </div>
                 </div>
+                {this.state.pendingDeleteFromStatus && (
+                    <div className="confirm-delete-overlay" role="dialog" aria-modal="true">
+                        <div className="confirm-delete-modal">
+                            <p className="mb-0">
+                                {t('confirm_delete_product')} <strong>{form.name}</strong>?
+                            </p>
+                            <div className="confirm-delete-actions">
+                                <button type="button" className="btn btn-danger" onClick={this.confirmDelete}>
+                                    {t('accept')}
+                                </button>
+                                <button type="button" className="btn btn-secondary" onClick={this.cancelDelete}>
+                                    {t('cancel')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }

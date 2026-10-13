@@ -36,7 +36,7 @@ const AgeVerificationRouteWrapper = navigationComponent(class extends Component 
         const isUserLoggedIn = AuthenticationService.isUserLoggedIn();
 
         if (!isUserLoggedIn && isAllowedPath) {
-            return <AgeVerificationModal />;
+            return <AgeVerificationModal navigate={this.props.navigate} />;
         }
         return null;
     }

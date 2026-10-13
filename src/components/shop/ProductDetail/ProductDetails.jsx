@@ -1,6 +1,8 @@
 import React, { Component } from "react";
 import productosService from "../../../services/ProductosService.js";
 import translationService from "../../../services/TranslationService.js";
+import AuthenticationService from "../../../services/AuthenticationService";
+import { NavLink } from "react-router-dom";
 import CartControllsComponent from "./CartControllsComponent";
 import { toProduct } from "../../../Interfaces/ProductInterface.js";
 import ImageCarousel from "../../ui/ImageCarousel";
@@ -70,7 +72,7 @@ class ProductDetails extends Component {
         }
         // Fallback si no tiene imágenes cargadas
         if (itemImages.length === 0) {
-            itemImages.push({ id: 'f1', src: '/img/product-1.jpg' });
+            itemImages.push({ id: 'f1', src: '/img/no_image.jpg' });
         }
 
         return (
@@ -103,6 +105,14 @@ class ProductDetails extends Component {
                             </div>
                         </div>
                         <CartControllsComponent product={this.state.product} />
+                        {AuthenticationService.isUserAdmin() && this.state.product.id && (
+                            <div className="bg-light px-30 pb-3">
+                                <NavLink className="btn btn-outline-primary" to={`/editProduct/${this.state.product.id}`}>
+                                    <i className="fa fa-edit mr-2" />
+                                    {t('edit_product_title')}
+                                </NavLink>
+                            </div>
+                        )}
                         <div className="d-flex h-auto bg-light p-30">
                             <div className="d-block mb-3 categories-container">
                                 <div className="d-block mb-3">

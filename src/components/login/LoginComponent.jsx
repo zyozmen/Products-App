@@ -184,7 +184,7 @@ class LoginForm extends Component {
                                         <span className="h1 text-uppercase text-dark bg-light px-2">
                                             Zona
                                         </span>
-                                        <span className="h1 text-uppercase text-dark bg-primary px-2 ml-n1">
+                                        <span className="h1 text-uppercase text-light bg-primary px-2 ml-n1">
                                             Green
                                         </span>
                                     </NavLink>

@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import cartService from "../../../services/CartService";
 import translationService from "../../../services/TranslationService";
 import { formatCOP } from "../../../Interfaces/ProductInterface";
+import ConfirmationModal from "../../ui/ConfirmationModal";
 import './CartControllsComponent.css';
 
 class CartControllsComponent extends Component {
@@ -9,6 +10,7 @@ class CartControllsComponent extends Component {
         super(props);
         this.state = {
             quantity: 1,
+            isProductAdded: false,
             currentLanguage: translationService.getLanguage(),
         };
         this.unsubscribeFromLanguage = null;
@@ -54,9 +56,9 @@ class CartControllsComponent extends Component {
             id: product.id,
             name: product.name,
             price: product.price?.current ?? 0,
-            image: `/img/product-${product.id}.jpg`,
+            image: product.foto_principal || '/img/no_image.jpg',
         }, this.state.quantity);
-        this.setState({ quantity: 1 });
+        this.setState({ quantity: 1, isProductAdded: true });
     }
 
     render() {
@@ -67,11 +69,12 @@ class CartControllsComponent extends Component {
             <>
                 <div className="d-flex align-items-center pt-2">
                     <div className="input-group quantity mr-3 quantity-control">
-                        <div className="quantity">
-                            <button type="button" className="btn btn-primary btn-minus" onClick={this.handleDecrement}>
-                                <i className="fa fa-minus" />
+                        <div className="input-group-btn">
+                             <button type="button" className="btn btn-primary btn-plus" onClick={this.handleIncrement}>
+                                <i className="fa fa-plus" />
                             </button>
                         </div>
+                        
                         <div className="input-group">
                         <input
                             type="text"
@@ -81,8 +84,8 @@ class CartControllsComponent extends Component {
                         />
                         </div>
                         <div className="input-group-btn">
-                            <button type="button" className="btn btn-primary btn-plus" onClick={this.handleIncrement}>
-                                <i className="fa fa-plus" />
+                            <button type="button" className="btn btn-primary btn-minus" onClick={this.handleDecrement}>
+                                <i className="fa fa-minus" />
                             </button>
                         </div>
                     </div>
@@ -90,6 +93,13 @@ class CartControllsComponent extends Component {
                         <i className="fa fa-shopping-cart mr-1" /> {t('add_to_cart')}
                     </button>
                 </div>
+                {this.state.isProductAdded && (
+                    <ConfirmationModal
+                        title={t('product_added_to_cart')}
+                        acceptLabel={t('accept')}
+                        onAccept={() => this.setState({ isProductAdded: false })}
+                    />
+                )}
             </>
         );
     }

@@ -159,18 +159,9 @@ class HeaderComponent extends Component {
                                     </button> 
                                 </DropdownMenu>
                                 <button 
-                                    className="btn btn-sm btn-dark ml-2 d-inline-flex align-items-center" 
+                                    className={`btn btn-sm btn-dark ml-2 d-inline-flex align-items-center header-theme-toggle ${this.state.theme === 'dark' ? 'header-theme-toggle-dark' : 'header-theme-toggle-light'}`}
                                     type="button"
                                     onClick={this.toggleTheme}
-                                    style={{ 
-                                        borderRadius: '20px', 
-                                        padding: '4px 10px', 
-                                        fontSize: '12px',
-                                        backgroundColor: this.state.theme === 'dark' ? 'var(--primary)' : 'var(--dark)',
-                                        color: this.state.theme === 'dark' ? '#000' : '#fff',
-                                        border: 'none',
-                                        fontWeight: '700'
-                                    }}
                                 >
                                     <i className={this.state.theme === 'dark' ? 'fas fa-sun mr-1' : 'fas fa-moon mr-1'} />
                                     {this.state.theme === 'dark' ? t('switch_to_light') : t('switch_to_dark')}
@@ -198,13 +189,13 @@ class HeaderComponent extends Component {
                 <div className="container-fluid bg-dark mb-30">
                     <div className="row px-xl-5">
                         <div className="col-lg-3 d-none d-lg-block">
-                            <div className="row align-items-center bg-dark py-3 px-xl-5 d-none d-lg-flex" style={{ height: "100%" }}>
+                            <div className="row align-items-center bg-dark py-3 px-xl-5 d-none d-lg-flex header-logo-row">
                                 <div className="col-lg-12">
                                     <NavLink to="/welcome" className="btn btn-link text-decoration-none p-0">
                                         <span className="h1 text-uppercase text-dark bg-light px-2">
                                             Zona
                                         </span>
-                                        <span className="h1 text-uppercase text-dark bg-primary px-2 ml-n1">
+                                        <span className="h1 text-uppercase text-light bg-primary px-2 ml-n1">
                                             Green
                                         </span>
                                     </NavLink>
@@ -229,27 +220,26 @@ class HeaderComponent extends Component {
                                 >
                                     <div className="navbar-nav mr-auto py-0">
                                         <NavLink to="/shop" className="nav-item nav-link">
-                                            {t('cafe_premium')}
+                                            {t('menu_marketplace')}
                                         </NavLink>
                                         <NavLink to="/shop" className="nav-item nav-link">
-                                            {t('flor_premium')}
+                                            {t('menu_cursos_online')}
                                         </NavLink>
                                         <NavLink to="/shop" className="nav-item nav-link">
-                                            {t('hidroponia')}
+                                            {t('menu_legal')}
                                         </NavLink>
                                         <NavLink to="/Legal" className="nav-item nav-link">
-                                            {t('legal')}
+                                            {t('menu_blog')}
                                         </NavLink> 
                                         <div className="nav-item px-lg-3 d-flex align-items-center">
                                             <form onSubmit={this.handleSearchSubmit}>
                                                 <div className="input-group">
                                                     <input
                                                         type="text"
-                                                        className="form-control"
+                                                        className="form-control header-search-input"
                                                         placeholder={t('search_placeholder')}
                                                         value={searchTerm}
                                                         onChange={this.handleSearchChange}
-                                                        style={{ width: "200px" }}
                                                     />
                                                     <div className="input-group-append">
                                                         <button type="submit" className="input-group-text bg-transparent text-primary border-left-0">

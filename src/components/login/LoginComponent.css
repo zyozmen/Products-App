@@ -126,13 +126,13 @@ input.LoginInput {
 }
 
 .overlay {
-	background: #6BBF23;
-	background: -webkit-linear-gradient(to right, #6BBB2B, #6BBF23);
-	background: linear-gradient(to right, #6BBB2B, #6BBF23);
+	background: var(--primary);
+	background: -webkit-linear-gradient(to right, var(--secondary-green), var(--primary));
+	background: linear-gradient(to right, var(--secondary-green), var(--primary));
 	background-repeat: no-repeat;
 	background-size: cover;
 	background-position: 0 0;
-	color: #FFFFFF;
+	color: var(--dark);
 	position: relative;
 	left: -100%;
 	height: 100%;

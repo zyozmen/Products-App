@@ -5,6 +5,21 @@ class BaseRequestService {
         this.executeGetRequest = this.executeGetRequest.bind(this);
         this.executePostRequest = this.executePostRequest.bind(this);
         this.executePutRequest = this.executePutRequest.bind(this);
+        this.executeDeleteRequest = this.executeDeleteRequest.bind(this);
+    }
+
+    async executeDeleteRequest(url) {
+        try {
+            const response = await axios.delete(url);
+            if (response.status >= 200 && response.status < 300) {
+                return response.data;
+            }
+
+            throw new Error('Error requesting url: ' + url + ', status code: ' + response.status);
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
     }
 
     async executeGetRequest(url) {

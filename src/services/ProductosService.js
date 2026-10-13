@@ -70,6 +70,7 @@ class ProductosService extends BaseRequestService {
             searchTerm = '',
             categoryIds = [],
             sortBy = '',
+            sortDir = '',
             minPrice,
             maxPrice,
             minRating,
@@ -90,6 +91,9 @@ class ProductosService extends BaseRequestService {
         const normalizedSortBy = String(sortBy ?? '').trim();
         if (normalizedSortBy) {
             queryParams.set('sort_by', normalizedSortBy);
+            if (String(sortDir ?? '').toLowerCase() === 'asc') {
+                queryParams.set('sort_dir', 'asc');
+            }
         }
 
         if (minPrice !== undefined && minPrice !== null) {
@@ -120,6 +124,7 @@ class ProductosService extends BaseRequestService {
                     const products = toProductList(data).map((product) => ({
                     id: product.id,
                     name: product.name,
+                    status: product.status,
                     category_ids: product.category_ids,
                     current_price: product.price.current,
                     original_price: product.price.original,
@@ -127,6 +132,7 @@ class ProductosService extends BaseRequestService {
                     average_rating: product.ranking.average_rating,
                     total_reviews: product.ranking.total_reviews,
                     foto_principal: product.foto_principal || '',
+                    image: product.foto_principal || '',
                     }));
 
                     return {
@@ -171,6 +177,14 @@ class ProductosService extends BaseRequestService {
     actualizarProducto(id, product) {
         return this.executePutRequest(`${this.url}/${id}`, product)
             .then(data => toProduct(data))
+            .catch(error => {
+                console.error(error);
+                throw error;
+            });
+    }
+
+    eliminarProducto(id) {
+        return this.executeDeleteRequest(`${this.url}/${id}`)
             .catch(error => {
                 console.error(error);
                 throw error;

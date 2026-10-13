@@ -7,6 +7,7 @@ import translationService from "../../services/TranslationService";
 import orderService from "../../services/OrderService";
 import AuthenticationService from "../../services/AuthenticationService";
 import { formatCOP } from "../../Interfaces/ProductInterface";
+import ConfirmationModal from "../ui/ConfirmationModal";
 import './ShoppingCarComponent.css';
 
 const whatsappPhoneNumber = String(import.meta.env.VITE_WHATSAPP_NUMBER ?? '573124058166').trim();
@@ -195,7 +196,11 @@ class ShoppingCarComponent extends Component {
                                     {items.map((item) => (
                                         <tr key={item.id}>
                                             <td className="align-middle">
-                                                <img src={item.image} alt={item.name} className="cart-product-image" />{" "}
+                                                <img
+                                                    src={String(item.image ?? '').trim() || '/img/no_image.jpg'}
+                                                    alt={item.name}
+                                                    className="cart-product-image"
+                                                />{" "}
                                                 {item.name}
                                             </td>
                                             <td className="align-middle">{formatCOP(item.price)}</td>
@@ -379,26 +384,12 @@ class ShoppingCarComponent extends Component {
                 </div>
                 <FooterComponent />
                 {this.state.isOrderConfirmed && (
-                    <div className="cart-checkout-modal-backdrop">
-                        <section
-                            className="cart-checkout-modal"
-                            role="alertdialog"
-                            aria-modal="true"
-                            aria-labelledby="checkout-confirmation-title"
-                            aria-describedby="checkout-confirmation-message"
-                        >
-                            <h2 id="checkout-confirmation-title">{t('thank_you_purchase')}</h2>
-                            <p id="checkout-confirmation-message">{t('order_opened_whatsapp')}</p>
-                            <button
-                                type="button"
-                                className="btn btn-primary"
-                                onClick={this.handleConfirmationAccept}
-                                autoFocus
-                            >
-                                {t('accept')}
-                            </button>
-                        </section>
-                    </div>
+                    <ConfirmationModal
+                        title={t('thank_you_purchase')}
+                        message={t('order_opened_whatsapp')}
+                        acceptLabel={t('accept')}
+                        onAccept={this.handleConfirmationAccept}
+                    />
                 )}
             </>
         );

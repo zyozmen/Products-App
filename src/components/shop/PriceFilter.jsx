@@ -1,6 +1,16 @@
 
 import React, { Component } from "react";
 import translationService from "../../services/TranslationService";
+import { formatCOP } from "../../Interfaces/ProductInterface";
+
+const PRICE_RANGES = [
+    { id: "price-1", minPrice: 0, maxPrice: 50000 },
+    { id: "price-2", minPrice: 50000, maxPrice: 100000 },
+    { id: "price-3", minPrice: 100000, maxPrice: 150000 },
+    { id: "price-4", minPrice: 150000, maxPrice: 200000 },
+    { id: "price-5", minPrice: 200000, maxPrice: 250000 },
+    { id: "price-6", minPrice: 250000, maxPrice: 300000 },
+];
 
 class PriceFilter extends Component {
     constructor(props) {
@@ -42,13 +52,7 @@ class PriceFilter extends Component {
     render() {
         const { minPrice, maxPrice } = this.props;
         const t = (key) => translationService.t(key);
-        const priceRanges = [
-            { id: "price-1", label: "$0 - $100", minPrice: 0, maxPrice: 100 },
-            { id: "price-2", label: "$100 - $200", minPrice: 100, maxPrice: 200 },
-            { id: "price-3", label: "$200 - $300", minPrice: 200, maxPrice: 300 },
-            { id: "price-4", label: "$300 - $400", minPrice: 300, maxPrice: 400 },
-            { id: "price-5", label: "$400 - $500", minPrice: 400, maxPrice: 500 },
-        ];
+        const priceRanges = PRICE_RANGES;
         const isAllSelected = minPrice === null && maxPrice === null;
 
         return (
@@ -65,7 +69,6 @@ class PriceFilter extends Component {
                         <label className="custom-control-label" htmlFor="price-all">
                             {t('all_price')}
                         </label>
-                        <span className="badge border font-weight-normal">1000</span>
                     </div>
                     {priceRanges.map((range, index) => (
                         <div
@@ -80,9 +83,8 @@ class PriceFilter extends Component {
                                 id={range.id}
                             />
                             <label className="custom-control-label" htmlFor={range.id}>
-                                {range.label}
+                                {formatCOP(range.minPrice)} - {formatCOP(range.maxPrice)}
                             </label>
-                            <span className="badge border font-weight-normal">-</span>
                         </div>
                     ))}
                 </form>
