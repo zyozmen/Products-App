@@ -1,56 +1,64 @@
-import axios from 'axios';
+import authService from './authService.js';
+import { isTokenExpired } from './tokenUtils.js';
 
-const rawProductsApiUrl = String(import.meta.env.VITE_APP_PRODUCTS_API_URL ?? '').trim();
-const nodeEnv = String(import.meta.env.NODE_ENV ?? import.meta.env.PROD ?? '').toLowerCase();
-const isProduction = nodeEnv === 'true' || nodeEnv === 'production';
-
-const resolveApiBaseUrl = () => {
-    if (rawProductsApiUrl) {
-        return rawProductsApiUrl.replace(/\/productos\/?$/, '');
-    }
-
-    if (!isProduction) {
-        return 'http://localhost:8080/api';
-    }
-
-    return '/api';
+const buildProfile = (data) => {
+    const profile = data.user || data;
+    return profile.role === undefined && data.role !== undefined
+        ? { ...profile, role: data.role }
+        : profile;
 };
 
-const apiBaseUrl = resolveApiBaseUrl();
-
 class AuthenticationService {
-    async login(username, password) {
+    async login(email, password) {
         try {
-            const response = await axios.post(`${apiBaseUrl}/auth/login`, { username, password });
-            if (response.data) {
-                const data = response.data;
-                sessionStorage.setItem('authenticatedUser', data.username || data.user?.username || username);
+            const data = await authService.login(email, password);
+            if (data) {
+                sessionStorage.setItem('authenticatedUser', data.username || data.user?.username || email);
                 if (data.token) {
                     sessionStorage.setItem('token', data.token);
                 }
-                const profile = data.user || data;
-                const profileWithRole = profile.role === undefined && data.role !== undefined
-                    ? { ...profile, role: data.role }
-                    : profile;
-                sessionStorage.setItem('userProfile', JSON.stringify(profileWithRole));
+                sessionStorage.setItem('userProfile', JSON.stringify(buildProfile(data)));
                 return data;
             }
         } catch (error) {
-            console.error('Error in login API:', error);
+            // No se registra el error completo: incluye la configuración de la petición (credenciales).
+            console.error('Error in login API:', error?.response?.status ?? error?.message);
             throw error;
         }
     }
 
-    logout() {
-        console.log("logout");
+    // Reemplaza el token (y el perfil, si viene) tras un POST /refresh.
+    updateSession(data) {
+        if (data?.token) {
+            sessionStorage.setItem('token', data.token);
+        }
+        if (data?.user) {
+            sessionStorage.setItem('userProfile', JSON.stringify(buildProfile(data)));
+        }
+    }
+
+    getToken() {
+        return sessionStorage.getItem('token');
+    }
+
+    clearSession() {
         sessionStorage.removeItem('authenticatedUser');
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('userProfile');
     }
 
+    logout() {
+        this.clearSession();
+    }
+
     isUserLoggedIn() {
-        let user = sessionStorage.getItem('authenticatedUser');
-        if (user === null) return false;
+        if (sessionStorage.getItem('authenticatedUser') === null) return false;
+
+        const token = this.getToken();
+        if (token && isTokenExpired(token)) {
+            this.clearSession();
+            return false;
+        }
         return true;
     }
 

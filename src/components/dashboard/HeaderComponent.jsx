@@ -57,6 +57,11 @@ class HeaderComponent extends Component {
     }
 
     handleSignOut(e) {
+        if (this.props.auth) {
+            // Revoca el token en el backend, limpia la sesión y redirige a /login
+            this.props.auth.logout('USER');
+            return;
+        }
         AuthenticationService.logout();
         this.props.navigate(`/welcome`);
     }

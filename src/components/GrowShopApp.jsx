@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import './GrowShop.css';
 import LoginComponent from './login/LoginComponent.jsx';
-import {BrowserRouter, Route, Routes, Navigate} from 'react-router-dom';
+import {BrowserRouter, Route, Routes} from 'react-router-dom';
 import navigationComponent from './navigation/NavigationComponent.jsx'  
 import paramsComponent from './navigation/NavigationParamsComponent.jsx';
 import ErrorComponent from './login/ErrorComponent.jsx';
@@ -17,15 +17,10 @@ import OrdersReportComponent from './admin/OrdersReportComponent.jsx';
 import MyOrdersComponent from './orders/MyOrdersComponent.jsx';
 import AgeVerificationModal from './ui/AgeVerificationModal.jsx';
 import AuthenticationService from '../services/AuthenticationService.js';
+import { AuthProvider } from '../context/AuthContext.jsx';
+import ProtectedRoute from './auth/ProtectedRoute.jsx';
 
-class RequireAuth extends Component {
-    render() {
-        if (!AuthenticationService.isUserLoggedIn()) {
-            return <Navigate to="/login" replace />;
-        }
-        return this.props.children;
-    }
-}
+const ADMIN_ROLES = ['admin'];
 
 const AgeVerificationRouteWrapper = navigationComponent(class extends Component {
     render() {
@@ -58,6 +53,7 @@ class GrowShopApp extends Component {
         return (
             <div className="App">
                 <BrowserRouter>
+                    <AuthProvider>
                     <AgeVerificationRouteWrapper />
                     <Routes>
                         <Route path="/login" element={<LoginComponentWithNavigation />} />
@@ -66,17 +62,18 @@ class GrowShopApp extends Component {
                         <Route path="/shop" element={<ShopComponentWithNavigation />} />
                         <Route path="/cart" element={<ShoppingCarComponentWithNavigation />} />
                         
-                        <Route path="/welcome/:name" element={<RequireAuth><WelcomeComponentWithParams /></RequireAuth>} />
-                        <Route path="/product/:id" element={<RequireAuth><ProductDetailComponentWithParams /></RequireAuth>} />
-                        <Route path="/createProduct" element={<RequireAuth><CreateProductComponentWithNavigation /></RequireAuth>} />
-                        <Route path="/editProduct/:productId" element={<RequireAuth><CreateProductComponentWithNavigation /></RequireAuth>} />
-                        <Route path="/admin/users" element={<RequireAuth><UserAdminComponentWithNavigation /></RequireAuth>} />
-                        <Route path="/admin/orders" element={<RequireAuth><OrdersKanbanComponentWithNavigation /></RequireAuth>} />
-                        <Route path="/admin/orders/report" element={<RequireAuth><OrdersReportComponentWithNavigation /></RequireAuth>} />
-                        <Route path="/orders" element={<RequireAuth><MyOrdersComponentWithNavigation /></RequireAuth>} />
-                        <Route path="/profile" element={<RequireAuth><ProfileComponentWithNavigation /></RequireAuth>} />
+                        <Route path="/welcome/:name" element={<ProtectedRoute><WelcomeComponentWithParams /></ProtectedRoute>} />
+                        <Route path="/product/:id" element={<ProtectedRoute><ProductDetailComponentWithParams /></ProtectedRoute>} />
+                        <Route path="/createProduct" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CreateProductComponentWithNavigation /></ProtectedRoute>} />
+                        <Route path="/editProduct/:productId" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CreateProductComponentWithNavigation /></ProtectedRoute>} />
+                        <Route path="/admin/users" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><UserAdminComponentWithNavigation /></ProtectedRoute>} />
+                        <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><OrdersKanbanComponentWithNavigation /></ProtectedRoute>} />
+                        <Route path="/admin/orders/report" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><OrdersReportComponentWithNavigation /></ProtectedRoute>} />
+                        <Route path="/orders" element={<ProtectedRoute><MyOrdersComponentWithNavigation /></ProtectedRoute>} />
+                        <Route path="/profile" element={<ProtectedRoute><ProfileComponentWithNavigation /></ProtectedRoute>} />
                         <Route path="*" element={<ErrorComponent />} />
                     </Routes>
+                    </AuthProvider>
                 </BrowserRouter>
             </div>
         );

@@ -4,24 +4,36 @@ import { NavLink } from 'react-router-dom';
 import AuthenticationService from '../../services/AuthenticationService.js';
 import translationService from '../../services/TranslationService.js';
 import UserService from '../../services/UserService.js';
+import { LOGOUT_NOTICES } from '../../context/AuthContext.jsx';
+import { getErrorCode } from '../../services/httpClient.js';
+import { sanitizeMessage } from '../../services/messageUtils.js';
 
 class LoginComponent extends Component {
     render() {
         return (
             <div className="LoginComponent">
-                <LoginForm navigate={this.props.navigate} />
+                <LoginForm navigate={this.props.navigate} auth={this.props.auth} location={this.props.location} />
             </div>
         );
     }
 }
 
+// Solo se aceptan avisos conocidos: el estado de navegación no debe inyectar texto arbitrario.
+const ALLOWED_NOTICES = Object.values(LOGOUT_NOTICES);
+
 class LoginForm extends Component {
+
+    getNotice() {
+        const notice = this.props.location?.state?.notice;
+        return ALLOWED_NOTICES.includes(notice) ? translationService.t(notice) : '';
+    }
 
     constructor(props) {
         super(props);
         this.state = {
             // Sign In State
             username: '',
+            email: '',
             password: '',
             hasLoginFailed: false,
             loginErrorMessage: '',
@@ -30,6 +42,7 @@ class LoginForm extends Component {
 
             // Sign Up State
             regUsername: '',
+            regEmail: '',
             regPassword: '',
             regNombre: '',
             regApellido: '',
@@ -92,6 +105,15 @@ class LoginForm extends Component {
                             placeholder={t('user_name_label') + " *"} 
                             value={this.state.regUsername} 
                             onChange={e => this.setState({ regUsername: e.target.value })} 
+                            required 
+                        />
+                        <input 
+                            className="LoginInput py-1 my-1" 
+                            type="email" 
+                            autoComplete="email"
+                            placeholder={t('email') + " *"} 
+                            value={this.state.regEmail} 
+                            onChange={e => this.setState({ regEmail: e.target.value })} 
                             required 
                         />
                         <input 
@@ -189,13 +211,13 @@ class LoginForm extends Component {
                                         </span>
                                     </NavLink>
                         </div>
-                        <label htmlFor="username" className="d-block mt-2">{t('user_name_label')}</label>
-                        <input id="username" className="LoginInput" type="text" placeholder={t('user_name_label')} value={this.state.username} onChange={e => this.setState({ username: e.target.value })} required />
+                        <label htmlFor="email" className="d-block mt-2">{t('email')}</label>
+                        <input id="email" className="LoginInput" type="email" autoComplete="email" placeholder={t('email')} value={this.state.email} onChange={e => this.setState({ email: e.target.value })} required />
                         <label htmlFor="password" className="d-block mt-2">{t('password')}</label>
                         <input id="password" className="LoginInput" type="password" placeholder={t('password')} value={this.state.password} onChange={e => this.setState({ password: e.target.value })} required />
                         <button type="button" className="btn btn-link forgot-password p-0">{t('forgot_password')}</button>
                         <ShowInvalidCredentials hasLoginFailed={this.state.hasLoginFailed} errorMessage={this.state.loginErrorMessage} t={t} />
-                        <button type="submit" className="live">{t('sign_in')}</button>
+                        {this.getNotice() && <div className="alert alert-warning w-100 py-2 mt-2" role="status" style={{ fontSize: '13px' }}>{this.getNotice()}</div>}                        <button type="submit" className="live">{t('sign_in')}</button>
                     </form>
                 </div>
 
@@ -221,6 +243,7 @@ class LoginForm extends Component {
         e.preventDefault();
         const {
             regUsername,
+            regEmail,
             regPassword,
             regNombre,
             regApellido,
@@ -242,6 +265,7 @@ class LoginForm extends Component {
         try {
             const newUser = {
                 username: regUsername.trim(),
+                email: regEmail.trim(),
                 password: regPassword,
                 nombre: regNombre.trim(),
                 apellido: regApellido.trim(),
@@ -259,6 +283,7 @@ class LoginForm extends Component {
                 regErrorMessage: '',
                 // Clear fields
                 regUsername: '',
+                regEmail: '',
                 regPassword: '',
                 regNombre: '',
                 regApellido: '',
@@ -284,22 +309,28 @@ class LoginForm extends Component {
 
     async handleSignIn(e) {
         e.preventDefault();
-        const { username, password } = this.state;
+        const { email, password } = this.state;
 
         try {
-            await AuthenticationService.login(username, password);
-            this.props.navigate(`/welcome/${username}`);
+            const login = this.props.auth
+                ? this.props.auth.login
+                : AuthenticationService.login.bind(AuthenticationService);
+            const data = await login(email.trim(), password);
+            const username = data?.user?.username || data?.username || email.trim();
+            this.props.navigate(`/welcome/${encodeURIComponent(username)}`);
         } catch (error) {
-            console.log("Login failed", error);
             const t = (key) => translationService.t(key);
+            const status = error.response?.status;
+            const data = error.response?.data;
             let errorMessage = t('invalid_credentials');
 
-            if (error.response && error.response.status === 403) {
-                if (error.response.data && error.response.data.error === 'user_inactive') {
+            if (status === 403) {
+                if (getErrorCode(data) === 'user_inactive') {
                     errorMessage = t('user_inactive');
                 }
-            } else if (error.response && error.response.data && error.response.data.message) {
-                errorMessage = error.response.data.message;
+            } else if (status !== 401) {
+                // 401 = credenciales inválidas; otros errores pueden traer un mensaje del servidor
+                errorMessage = sanitizeMessage(data?.message, errorMessage);
             }
 
             this.setState({ 

@@ -8,6 +8,18 @@ afterEach(() => {
 });
 
 describe('AuthenticationService', () => {
+    it('sends the email (not username) to the login endpoint', async () => {
+        const post = vi.spyOn(axios, 'post').mockResolvedValue({
+            data: { token: 't', user: { username: 'maria', email: 'maria@example.com', role: 'cliente' } },
+        });
+
+        await AuthenticationService.login('maria@example.com', 'secret');
+
+        expect(post.mock.calls[0][0]).toMatch(/\/auth\/login$/);
+        expect(post.mock.calls[0][1]).toEqual({ email: 'maria@example.com', password: 'secret' });
+        expect(sessionStorage.getItem('authenticatedUser')).toBe('maria');
+    });
+
     it('stores the role returned with the login response', async () => {
         vi.spyOn(axios, 'post').mockResolvedValue({
             data: {
