@@ -1,59 +1,55 @@
 import axios from 'axios';
+import AuthenticationService from './AuthenticationService.js';
+import { getApiBaseUrl } from './apiConfig.js';
+import { isValidUserState, normalizeUserState } from './userState.js';
 
-const rawProductsApiUrl = String(import.meta.env.VITE_APP_PRODUCTS_API_URL ?? '').trim();
-const nodeEnv = String(import.meta.env.NODE_ENV ?? import.meta.env.PROD ?? '').toLowerCase();
-const isProduction = nodeEnv === 'true' || nodeEnv === 'production';
+const serverMessage = (error) => error?.response?.data?.message;
 
-const resolveApiBaseUrl = () => {
-    if (rawProductsApiUrl) {
-        return rawProductsApiUrl.replace(/\/productos\/?$/, '');
-    }
-
-    if (!isProduction) {
-        return 'http://localhost:8080/api';
-    }
-
-    return '/api';
-};
-
-const apiBaseUrl = resolveApiBaseUrl();
-
+// El header Authorization lo agrega el interceptor global (ver httpClient.js).
 class UserService {
     async getUsers() {
         try {
-            const token = sessionStorage.getItem('token');
-            const headers = token ? { Authorization: `Bearer ${token}` } : {};
-            const response = await axios.get(`${apiBaseUrl}/admin/users`, { headers });
+            const response = await axios.get(`${getApiBaseUrl()}/admin/users`);
             return response.data || [];
         } catch (error) {
-            console.error('Error getting users:', error);
+            console.error('Error getting users:', error?.response?.status ?? error?.message);
             throw error;
         }
     }
 
     async registerUser(user) {
         try {
-            const response = await axios.post(`${apiBaseUrl}/auth/register`, user);
+            const response = await axios.post(`${getApiBaseUrl()}/auth/register`, user);
             return response.data;
         } catch (error) {
-            console.error('Error registering user:', error);
-            if (error.response && error.response.data && error.response.data.message) {
-                throw new Error(error.response.data.message);
+            console.error('Error registering user:', error?.response?.status ?? error?.message);
+            if (serverMessage(error)) {
+                throw new Error(serverMessage(error));
             }
             throw new Error('Ocurrió un error en el servidor al registrar el usuario.');
         }
     }
 
-    async toggleUserStatus(username) {
+    // Solo el rol ADMIN puede cambiar el estado (ACTIVO | INACTIVO | PENDIENTE); el backend debe validarlo también.
+    async updateUserState(username, state) {
+        const nextState = normalizeUserState(state);
+        if (!isValidUserState(nextState)) {
+            throw new Error(`Estado de usuario inválido: ${state}`);
+        }
+        if (!AuthenticationService.isUserAdmin()) {
+            throw new Error('Solo un administrador puede cambiar el estado de un usuario.');
+        }
+
         try {
-            const token = sessionStorage.getItem('token');
-            const headers = token ? { Authorization: `Bearer ${token}` } : {};
-            const response = await axios.put(`${apiBaseUrl}/admin/users/${username}/toggle-status`, {}, { headers });
+            const response = await axios.put(
+                `${getApiBaseUrl()}/admin/users/${encodeURIComponent(username)}/state`,
+                { state: nextState },
+            );
             return response.data;
         } catch (error) {
-            console.error(`Error toggling status for user ${username}:`, error);
-            if (error.response && error.response.data && error.response.data.message) {
-                throw new Error(error.response.data.message);
+            console.error(`Error updating state for user ${username}:`, error?.response?.status ?? error?.message);
+            if (serverMessage(error)) {
+                throw new Error(serverMessage(error));
             }
             throw error;
         }
@@ -61,14 +57,12 @@ class UserService {
 
     async updateProfile(profileData) {
         try {
-            const token = sessionStorage.getItem('token');
-            const headers = token ? { Authorization: `Bearer ${token}` } : {};
-            const response = await axios.put(`${apiBaseUrl}/users/profile`, profileData, { headers });
+            const response = await axios.put(`${getApiBaseUrl()}/users/profile`, profileData);
             return response.data;
         } catch (error) {
-            console.error('Error updating profile:', error);
-            if (error.response && error.response.data && error.response.data.message) {
-                throw new Error(error.response.data.message);
+            console.error('Error updating profile:', error?.response?.status ?? error?.message);
+            if (serverMessage(error)) {
+                throw new Error(serverMessage(error));
             }
             throw new Error('Ocurrió un error al actualizar el perfil.');
         }
@@ -76,14 +70,15 @@ class UserService {
 
     async resetPassword(username, newPassword) {
         try {
-            const token = sessionStorage.getItem('token');
-            const headers = token ? { Authorization: `Bearer ${token}` } : {};
-            const response = await axios.put(`${apiBaseUrl}/admin/users/${username}/reset-password`, { password: newPassword }, { headers });
+            const response = await axios.put(
+                `${getApiBaseUrl()}/admin/users/${encodeURIComponent(username)}/reset-password`,
+                { password: newPassword },
+            );
             return response.data;
         } catch (error) {
-            console.error(`Error resetting password for user ${username}:`, error);
-            if (error.response && error.response.data && error.response.data.message) {
-                throw new Error(error.response.data.message);
+            console.error(`Error resetting password for user ${username}:`, error?.response?.status ?? error?.message);
+            if (serverMessage(error)) {
+                throw new Error(serverMessage(error));
             }
             throw error;
         }

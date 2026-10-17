@@ -229,7 +229,7 @@ class ProductListComponent extends Component {
         const { selectedSortBy, onSortByChange } = this.props;
         const visiblePages = this.getVisiblePageNumbers();
         const t = (key) => translationService.t(key);
-        const isUserAdmin = AuthenticationService.isUserLoggedIn() && sessionStorage.getItem('authenticatedUser') === "admin";
+        const isUserAdmin = AuthenticationService.isUserLoggedIn() && AuthenticationService.isUserAdmin();
 
         return (
 

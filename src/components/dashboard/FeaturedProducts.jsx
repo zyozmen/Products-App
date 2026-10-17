@@ -11,7 +11,7 @@ class FeaturedProducts extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            featuredProducts:[],
+            featuredProducts: [],
             isProductAdded: false,
             currentLanguage: translationService.getLanguage(),
         };
@@ -26,7 +26,7 @@ class FeaturedProducts extends Component {
             id: featuredProduct.id,
             name: featuredProduct.name,
             price: featuredProduct.price?.current ?? 0,
-            image: `/img/product-${featuredProduct.id}.jpg`,
+            image: featuredProduct.foto_principal || '/img/no_image.jpg',
         });
         this.setState({ isProductAdded: true });
     }
@@ -53,48 +53,41 @@ class FeaturedProducts extends Component {
                 </h2>
                 <div className="row px-xl-5">
                     {this.state.featuredProducts.map((featuredProduct) => (
-                    <div className="col-lg-3 col-md-4 col-sm-6 pb-1" key={featuredProduct.id}>
-                        <div className="product-item bg-light mb-4">
-                            <div className="product-img position-relative overflow-hidden">
-                                <img className="img-fluid w-100" src={`/img/product-${featuredProduct.id}.jpg`} alt={featuredProduct.description || featuredProduct.description} />
-                                <div className="product-action">
-                                    <button type="button" className="btn btn-outline-dark btn-square" onClick={(event) => this.handleAddToCart(event, featuredProduct)} aria-label={t('add_to_cart')}>
-                                        <i className="fa fa-shopping-cart" />
-                                    </button>
-                                    <button type="button" className="btn btn-outline-dark btn-square" aria-label={t('add_to_favorites')}>
-                                        <i className="far fa-heart" />
-                                    </button>
-                                    <button type="button" className="btn btn-outline-dark btn-square" aria-label={t('refresh_product')}>
-                                        <i className="fa fa-sync-alt" />
-                                    </button>
-                                    <Link className="btn btn-outline-dark btn-square" to={`/product/${featuredProduct.id}`}>
-                                        <i className="fa fa-search" />
+                        <div className="col-lg-3 col-md-4 col-sm-6 pb-1" key={featuredProduct.id}>
+                            <div className="product-item bg-light mb-4">
+                                <div className="product-img position-relative overflow-hidden">
+                                    <Link to={`/product/${featuredProduct.id}`}>
+                                        <img
+                                            className="img-fluid w-100"
+                                            src={featuredProduct.foto_principal || "/img/no_image.jpg"}
+                                            alt={featuredProduct.name}
+                                            style={{ height: "280px", objectFit: "cover" }}
+                                        />
                                     </Link>
+                                    <div className="product-action">
+                                        <button type="button" className="btn btn-outline-dark btn-square active" onClick={(event) => this.handleAddToCart(event, featuredProduct)} aria-label={t('add_to_cart')}>
+                                            <i className="fa fa-shopping-cart" />
+                                        </button>
+                                        <Link className="btn btn-outline-dark btn-square active" to={`/product/${featuredProduct.id}`} aria-label={t('view_details')}>
+                                            <i className="fa fa-search" />
+                                        </Link>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="text-center py-4">
-                                <Link className="h6 text-decoration-none text-truncate" to={`/product/${featuredProduct.id}`}>
-                                    {featuredProduct.name}
-                                </Link>
-                                <div className="d-flex align-items-center justify-content-center mt-2">
-                                    <h5>{formatCOP(featuredProduct.price.current)}</h5>
-                                    {featuredProduct.price.previous && (
-                                        <h6 className="text-muted ml-2">
-                                            <del>{formatCOP(featuredProduct.price.previous)}</del>
-                                        </h6>
-                                    )}
-                                </div>
-                                <div className="d-flex align-items-center justify-content-center mb-1">
-                                    <small className="fa fa-star text-primary mr-1" />
-                                    <small className="fa fa-star text-primary mr-1" />
-                                    <small className="fa fa-star text-primary mr-1" />
-                                    <small className="fa fa-star text-primary mr-1" />
-                                    <small className="fa fa-star text-primary mr-1" />
-                                    <small>(99)</small>
+                                <div className="text-center py-4">
+                                    <Link className="h6 text-decoration-none text-truncate" to={`/product/${featuredProduct.id}`}>
+                                        {featuredProduct.name}
+                                    </Link>
+                                    <div className="d-flex align-items-center justify-content-center mt-2">
+                                        <h5>{formatCOP(featuredProduct.price.current)}</h5>
+                                        {featuredProduct.price.previous && (
+                                            <h6 className="text-muted ml-2">
+                                                <del>{formatCOP(featuredProduct.price.previous)}</del>
+                                            </h6>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
                     ))}
                 </div>
                 {this.state.isProductAdded && (
@@ -111,9 +104,9 @@ class FeaturedProducts extends Component {
     }
 
     callBackendService() {
-    productosService.listarDestacados()
-      .then(response =>  this.setState({ featuredProducts: response }))
-      .catch(error => console.log(error));
-  }
+        productosService.listarDestacados()
+            .then(response => this.setState({ featuredProducts: response }))
+            .catch(error => console.log(error));
+    }
 }
 export default FeaturedProducts;

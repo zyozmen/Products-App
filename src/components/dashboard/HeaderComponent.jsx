@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import { NavLink } from 'react-router-dom';
 import AuthenticationService from '../../services/AuthenticationService.js';
+import UserService from '../../services/UserService.js';
+import { isPendingUser } from '../../services/userState.js';
 import cartService from '../../services/CartService.js';
 import translationService from '../../services/TranslationService.js';
 import DropdownMenu from '../ui/DropdownMenu';
@@ -13,6 +15,7 @@ class HeaderComponent extends Component {
         const savedTheme = localStorage.getItem('growShopTheme') || 'light';
         this.state = {
             searchTerm: '',
+            pendingCount: 0,
             cartItemCount: cartService.getItemCount(),
             currentLanguage: translationService.getLanguage(),
             theme: savedTheme
@@ -31,6 +34,9 @@ class HeaderComponent extends Component {
     }
 
     componentDidMount() {
+        this.loadPendingCount = this.loadPendingCount.bind(this);
+        this.loadPendingCount();
+        window.addEventListener('users-changed', this.loadPendingCount);
         this.unsubscribeFromCart = cartService.subscribe((items) => {
             const cartItemCount = items.reduce((total, item) => total + item.quantity, 0);
             this.setState({ cartItemCount });
@@ -47,7 +53,20 @@ class HeaderComponent extends Component {
         }
     }
 
+    async loadPendingCount() {
+        if (!AuthenticationService.isUserAdmin()) return;
+        try {
+            const users = await UserService.getUsers();
+            const pendingCount = users.filter((u) => isPendingUser(u)).length;
+            if (!this.unmounted) this.setState({ pendingCount });
+        } catch {
+            // El contador es informativo; un fallo no debe afectar al encabezado.
+        }
+    }
+
     componentWillUnmount() {
+        this.unmounted = true;
+        window.removeEventListener('users-changed', this.loadPendingCount);
         if (this.unsubscribeFromCart) {
             this.unsubscribeFromCart();
         }
@@ -138,6 +157,7 @@ class HeaderComponent extends Component {
                                     </button>}
                                     {isUserAdmin && <button className="dropdown-item text-primary" type="button" onClick={this.handleManageUsers}>
                                         {t('manage_users')}
+                                        {this.state.pendingCount > 0 && <span className="badge badge-warning ml-2">{this.state.pendingCount}</span>}
                                     </button>}
                                     {isUserLoggedIn && !isUserAdmin && <button className="dropdown-item" type="button" onClick={() => this.props.navigate('/orders')}>
                                         {t('my_orders')}

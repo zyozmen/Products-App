@@ -8,6 +8,38 @@ afterEach(() => {
 });
 
 describe('AuthenticationService', () => {
+    it('does not create a session for a user in PENDIENTE state', async () => {
+        vi.spyOn(axios, 'post').mockResolvedValue({
+            data: { token: 't', user: { username: 'nuevo', state: 'PENDIENTE', role: 'cliente' } },
+        });
+
+        await expect(AuthenticationService.login('nuevo@example.com', 'secret')).rejects.toMatchObject({
+            response: { status: 403, data: { error: 'user_pending_approval' } },
+        });
+        expect(sessionStorage.getItem('token')).toBeNull();
+        expect(AuthenticationService.isUserLoggedIn()).toBe(false);
+    });
+
+    it('does not create a session for a user in INACTIVO state', async () => {
+        vi.spyOn(axios, 'post').mockResolvedValue({
+            data: { token: 't', user: { username: 'baja', state: 'INACTIVO' } },
+        });
+
+        await expect(AuthenticationService.login('baja@example.com', 'secret')).rejects.toMatchObject({
+            response: { data: { error: 'user_inactive' } },
+        });
+        expect(sessionStorage.getItem('token')).toBeNull();
+    });
+
+    it('creates a session for a user in ACTIVO state', async () => {
+        vi.spyOn(axios, 'post').mockResolvedValue({
+            data: { token: 't', user: { username: 'maria', state: 'ACTIVO', role: 'cliente' } },
+        });
+
+        await AuthenticationService.login('maria@example.com', 'secret');
+        expect(AuthenticationService.isUserLoggedIn()).toBe(true);
+    });
+
     it('sends the email (not username) to the login endpoint', async () => {
         const post = vi.spyOn(axios, 'post').mockResolvedValue({
             data: { token: 't', user: { username: 'maria', email: 'maria@example.com', role: 'cliente' } },

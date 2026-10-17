@@ -121,4 +121,15 @@ describe('auth interceptors', () => {
         expect(onForbidden).toHaveBeenCalledTimes(1);
         expect(error.userMessage).toBe(ACCESS_DENIED_MESSAGE);
     });
+
+    it('does not log out on 403 user_pending_approval', async () => {
+        const onUserInactive = vi.fn();
+        const onSessionExpired = vi.fn();
+        const { client } = setup({ handlers: { onUserInactive, onSessionExpired } });
+
+        respondWith = () => ({ status: 403, data: { error: 'user_pending_approval' } });
+        await client.get('/api/orders').catch(() => {});
+        expect(onUserInactive).not.toHaveBeenCalled();
+        expect(onSessionExpired).not.toHaveBeenCalled();
+    });
 });

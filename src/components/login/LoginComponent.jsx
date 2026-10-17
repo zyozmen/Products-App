@@ -20,6 +20,7 @@ class LoginComponent extends Component {
 
 // Solo se aceptan avisos conocidos: el estado de navegación no debe inyectar texto arbitrario.
 const ALLOWED_NOTICES = Object.values(LOGOUT_NOTICES);
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 class LoginForm extends Component {
 
@@ -57,6 +58,7 @@ class LoginForm extends Component {
 
         this.handleSignIn = this.handleSignIn.bind(this);
         this.handleSignUp = this.handleSignUp.bind(this);
+        this.showLoginPanel = this.showLoginPanel.bind(this);
         this.unsubscribeFromLanguage = null;
     }
 
@@ -96,7 +98,12 @@ class LoginForm extends Component {
                     <form action="#" className="LoginComponentForm" onSubmit={this.handleSignUp}>
                         <h2 className="mb-2" style={{ fontSize: '24px' }}>{t('create_account')}</h2>
                         
-                        {this.state.regSuccessMessage && <div className="alert alert-success py-2 w-100" style={{ fontSize: '13px' }}>{this.state.regSuccessMessage}</div>}
+                        {this.state.regSuccessMessage && (
+                            <div className="alert alert-success py-2 w-100" role="status" style={{ fontSize: '13px' }}>
+                                {this.state.regSuccessMessage}{' '}
+                                <button type="button" className="btn btn-link p-0 align-baseline" style={{ fontSize: '13px' }} onClick={this.showLoginPanel}>{t('go_to_login')}</button>
+                            </div>
+                        )}
                         {this.state.regErrorMessage && <div className="alert alert-danger py-2 w-100" style={{ fontSize: '13px' }}>{this.state.regErrorMessage}</div>}
 
                         <input 
@@ -216,8 +223,9 @@ class LoginForm extends Component {
                         <label htmlFor="password" className="d-block mt-2">{t('password')}</label>
                         <input id="password" className="LoginInput" type="password" placeholder={t('password')} value={this.state.password} onChange={e => this.setState({ password: e.target.value })} required />
                         <button type="button" className="btn btn-link forgot-password p-0">{t('forgot_password')}</button>
-                        <ShowInvalidCredentials hasLoginFailed={this.state.hasLoginFailed} errorMessage={this.state.loginErrorMessage} t={t} />
-                        {this.getNotice() && <div className="alert alert-warning w-100 py-2 mt-2" role="status" style={{ fontSize: '13px' }}>{this.getNotice()}</div>}                        <button type="submit" className="live">{t('sign_in')}</button>
+                        <ShowInvalidCredentials hasLoginFailed={this.state.hasLoginFailed} errorMessage={this.state.loginErrorMessage} variant={this.state.loginErrorVariant} t={t} />
+                        {this.getNotice() && <div className="alert alert-warning w-100 py-2 mt-2" role="status" style={{ fontSize: '13px' }}>{this.getNotice()}</div>}
+                        <button type="submit" className="live">{t('sign_in')}</button>
                     </form>
                 </div>
 
@@ -262,6 +270,14 @@ class LoginForm extends Component {
             return;
         }
 
+        if (!EMAIL_PATTERN.test(regEmail.trim())) {
+            this.setState({
+                regErrorMessage: translationService.t('email_invalid'),
+                regSuccessMessage: ''
+            });
+            return;
+        }
+
         try {
             const newUser = {
                 username: regUsername.trim(),
@@ -278,9 +294,11 @@ class LoginForm extends Component {
 
             await UserService.registerUser(newUser);
 
+            // El usuario queda en estado PENDIENTE: no se inicia sesión hasta que un administrador lo apruebe.
             this.setState({
-                regSuccessMessage: translationService.t('register_success_login_prompt'),
+                regSuccessMessage: translationService.t('register_pending_approval'),
                 regErrorMessage: '',
+                email: regEmail.trim(),
                 // Clear fields
                 regUsername: '',
                 regEmail: '',
@@ -293,17 +311,15 @@ class LoginForm extends Component {
                 regNumeroIdentificacion: '',
                 regMayorDeEdad: false
             });
-
-            // Transition back to login
-            setTimeout(() => {
-                const container = document.getElementById('container');
-                if (container) {
-                    container.classList.remove("right-panel-active");
-                }
-            }, 2500);
-
         } catch (error) {
             this.setState({ regErrorMessage: error.message, regSuccessMessage: '' });
+        }
+    }
+
+    showLoginPanel() {
+        const container = document.getElementById('container');
+        if (container) {
+            container.classList.remove("right-panel-active");
         }
     }
 
@@ -322,11 +338,20 @@ class LoginForm extends Component {
             const t = (key) => translationService.t(key);
             const status = error.response?.status;
             const data = error.response?.data;
-            let errorMessage = t('invalid_credentials');
+            let errorMessage = t('login_failed');
+            let variant = 'danger';
 
+            // Se distingue por `error` (no por el texto de `message`); `message` solo es respaldo.
             if (status === 403) {
-                if (getErrorCode(data) === 'user_inactive') {
+                const code = getErrorCode(data);
+                if (code === 'user_pending_approval') {
+                    errorMessage = t('user_pending');
+                    variant = 'info';
+                } else if (code === 'user_inactive') {
                     errorMessage = t('user_inactive');
+                    variant = 'warning';
+                } else {
+                    errorMessage = sanitizeMessage(data?.message, errorMessage);
                 }
             } else if (status !== 401) {
                 // 401 = credenciales inválidas; otros errores pueden traer un mensaje del servidor
@@ -336,7 +361,8 @@ class LoginForm extends Component {
             this.setState({ 
                 showSuccessMessage: false, 
                 hasLoginFailed: true,
-                loginErrorMessage: errorMessage
+                loginErrorMessage: errorMessage,
+                loginErrorVariant: variant
             });
         }
     }
@@ -344,7 +370,7 @@ class LoginForm extends Component {
 
 function ShowInvalidCredentials(props) {
     if (props.hasLoginFailed) {
-        return <div className="alert alert-danger w-100 py-2 mt-2" style={{ fontSize: '13px' }}>{props.errorMessage || props.t('invalid_credentials')}</div>;
+        return <div className={`alert alert-${props.variant || 'danger'} w-100 py-2 mt-2`} role="alert" style={{ fontSize: '13px' }}>{props.errorMessage || props.t('login_failed')}</div>;
     }
     return null;
 }

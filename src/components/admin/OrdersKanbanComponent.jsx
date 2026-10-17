@@ -76,7 +76,8 @@ class OrdersKanbanComponent extends Component {
             this.setState({ error: translationService.t('transition_not_allowed') });
             return;
         }
-        if (status === 'PAGADA' || status === 'ENTREGADA') {
+        // Al entregar solo se piden los valores si la orden es contra entrega; una orden pagada se entrega directamente.
+        if (status === 'PAGADA' || (status === 'ENTREGADA' && order.cashOnDelivery)) {
             this.setState({ pendingChange: { order, status }, error: '' });
             return;
         }

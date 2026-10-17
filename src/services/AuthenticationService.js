@@ -1,5 +1,8 @@
 import authService from './authService.js';
 import { isTokenExpired } from './tokenUtils.js';
+import { isInactiveUser, isPendingUser } from './userState.js';
+
+export const USER_PENDING_CODE = 'user_pending_approval';
 
 const buildProfile = (data) => {
     const profile = data.user || data;
@@ -8,11 +11,21 @@ const buildProfile = (data) => {
         : profile;
 };
 
+// Un usuario PENDIENTE (o INACTIVO) solo puede usar el servicio de login: no se guarda ninguna sesión.
+const rejectBlockedUser = (data) => {
+    const profile = buildProfile(data);
+    const error = isPendingUser(profile) ? USER_PENDING_CODE : isInactiveUser(profile) ? 'user_inactive' : null;
+    if (error) {
+        throw Object.assign(new Error(error), { response: { status: 403, data: { error } } });
+    }
+};
+
 class AuthenticationService {
     async login(email, password) {
         try {
             const data = await authService.login(email, password);
             if (data) {
+                rejectBlockedUser(data);
                 sessionStorage.setItem('authenticatedUser', data.username || data.user?.username || email);
                 if (data.token) {
                     sessionStorage.setItem('token', data.token);
@@ -79,7 +92,7 @@ class AuthenticationService {
     }
 
     isUserAdmin() {
-        return this.getUserRole() === 'admin';
+        return String(this.getUserRole() ?? '').toLowerCase() === 'admin';
     }
 }
 export default new AuthenticationService();
