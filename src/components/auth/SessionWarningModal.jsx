@@ -28,7 +28,7 @@ const SessionWarningModal = ({ remainingMs, onContinue, onLogout }) => {
                     <button type="button" className="hu-cursor-pointer hu-rounded-lg hu-border hu-border-slate-300 hu-bg-white hu-px-4 hu-py-2.5 hu-text-sm hu-font-semibold hu-text-slate-700 hover:hu-bg-slate-50" onClick={onLogout}>
                         {t('logout')}
                     </button>
-                    <button type="button" className="hu-cursor-pointer hu-rounded-lg hu-border-0 hu-bg-blue-700 hu-px-4 hu-py-2.5 hu-text-sm hu-font-semibold hu-text-white hover:hu-bg-blue-800" onClick={onContinue}>
+                    <button type="button" className="hu-cursor-pointer hu-rounded-lg hu-border-0 hu-bg-green-700 hu-px-4 hu-py-2.5 hu-text-sm hu-font-semibold hu-text-white hover:hu-bg-green-800" onClick={onContinue}>
                         {t('session_continue')}
                     </button>
                 </div>

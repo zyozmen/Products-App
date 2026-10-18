@@ -72,7 +72,7 @@ function ProductListComponent({ selectedCategoryIds = [], filters = {}, selected
                 <ul className="hu-m-0 hu-flex hu-list-none hu-flex-wrap hu-items-center hu-gap-1 hu-p-0">
                     {visiblePages.map((page) => (
                         <li key={page}>
-                            <button type="button" aria-current={page === pageNumber ? 'page' : undefined} className={`hu-h-9 hu-min-w-9 hu-cursor-pointer hu-rounded-lg hu-border hu-px-3 hu-text-sm ${page === pageNumber ? 'hu-border-blue-700 hu-bg-blue-700 hu-text-white' : 'hu-border-slate-300 hu-bg-white hu-text-slate-700 hover:hu-bg-slate-50'}`} onClick={() => setPageNumber(page)}>
+                            <button type="button" aria-current={page === pageNumber ? 'page' : undefined} className={`hu-h-9 hu-min-w-9 hu-cursor-pointer hu-rounded-lg hu-border hu-px-3 hu-text-sm ${page === pageNumber ? 'hu-border-green-700 hu-bg-green-700 hu-text-white' : 'hu-border-slate-300 hu-bg-white hu-text-slate-700 hover:hu-bg-slate-50'}`} onClick={() => setPageNumber(page)}>
                                 {page + 1}
                             </button>
                         </li>
@@ -158,7 +158,7 @@ function ProductListComponent({ selectedCategoryIds = [], filters = {}, selected
                                     {isInactive ? (
                                         <span className="hu-block hu-truncate hu-font-semibold">{product.name}</span>
                                     ) : (
-                                        <NavLink className="hu-block hu-truncate hu-font-semibold hu-text-slate-900 hu-no-underline hover:hu-text-blue-700" to={`/product/${product.id}`}>
+                                        <NavLink className="hu-block hu-truncate hu-font-semibold hu-text-slate-900 hu-no-underline hover:hu-text-green-700" to={`/product/${product.id}`}>
                                             {product.name}
                                         </NavLink>
                                     )}

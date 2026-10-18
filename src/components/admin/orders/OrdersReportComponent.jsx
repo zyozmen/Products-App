@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import HeaderComponent from '../../dashboard/HeaderComponent.jsx';
+import AdminNav from '../AdminNav.jsx';
 import FooterComponent from '../../dashboard/FooterComponent.jsx';
 import navigationComponent from '../../navigation/NavigationComponent.jsx';
 import useTranslation from '../../../hooks/useTranslation.js';
@@ -167,20 +168,16 @@ function OrdersReportComponent() {
     const displayError = error instanceof Error ? error.message : '';
 
     return (
-        <div className="hu-flex hu-min-h-screen hu-flex-col hu-bg-slate-50 hu-text-slate-900">
+        <div className="hu-flex hu-min-h-screen hu-flex-col admin-page-bg hu-text-slate-900">
             <HeaderComponentWithNavigation />
+            <AdminNav />
             <main className="hu-mx-auto hu-w-full hu-max-w-[1600px] hu-flex-1 hu-px-4 hu-py-8 md:hu-px-8">
-                <nav className="hu-mb-6 hu-text-sm hu-text-slate-500" aria-label={t('admin_section')}>
-                    {t('admin_section')} <span className="hu-px-2">/</span>
-                    <span className="hu-font-semibold hu-text-slate-800">{t('orders_report')}</span>
-                </nav>
                 <div className="hu-mb-6">
-                    <p className="hu-mb-2 hu-text-xs hu-font-bold hu-uppercase hu-tracking-[0.16em] hu-text-blue-700">{t('admin_section')}</p>
                     <h1 className="hu-m-0 hu-text-3xl hu-font-bold hu-tracking-tight">{t('orders_report')}</h1>
                 </div>
 
-                <Card className="hu-mb-5 hu-p-5">
-                    <div className="hu-grid hu-items-end hu-gap-4 md:hu-grid-cols-2 xl:hu-grid-cols-4">
+                <Card className="hu-mb-5 hu-p-5 kanban-board">
+                    <div className="hu-grid hu-items-end hu-gap-4 md:hu-grid-cols-2 xl:hu-grid-cols-4 ">
                         <Field label={t('report_date')} htmlFor="report-date">
                             <Input
                                 id="report-date"
@@ -240,14 +237,14 @@ function OrdersReportComponent() {
                             </div>
                         )}
                         <div className="hu-grid hu-gap-5 lg:hu-grid-cols-3">
-                            <Card className="hu-p-5 lg:hu-col-span-2">
+                            <Card className="hu-p-5 lg:hu-col-span-2 kanban-board">
                                 <h2 className="hu-mb-4 hu-mt-0 hu-text-lg hu-font-bold">{t('report_chart_title')}</h2>
                                 {renderChart()}
                             </Card>
-                            <Card className="hu-p-5">
+                            <Card className="hu-p-5 kanban-board">
                                 <h2 className="hu-mb-1 hu-mt-0 hu-text-lg hu-font-bold">{t('report_paid_orders')}</h2>
                                 <p className="hu-mb-3 hu-mt-0 hu-text-sm hu-text-slate-500">{t('report_paid_note')}</p>
-                                <p className="hu-mb-1 hu-text-3xl hu-font-bold hu-text-blue-700">{formatCOP(report.paid.total)}</p>
+                                <p className="hu-mb-1 hu-text-3xl hu-font-bold hu-text-green-800">{formatCOP(report.paid.total)}</p>
                                 <p className="hu-mb-4 hu-mt-0 hu-text-sm">
                                     {report.paid.count} {t('report_orders_unit')}
                                 </p>

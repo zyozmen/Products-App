@@ -11,6 +11,7 @@ import CreateProductComponent from './admin/products/CreateProductComponent.jsx'
 import ShoppingCarComponent from './cart/ShoppingCarComponent.jsx';
 import UserAdminComponent from './admin/users/UserAdminComponent.jsx';
 import ProfileComponent from './profile/ProfileComponent.jsx';
+import AdminDashboardComponent from './admin/AdminDashboardComponent.jsx';
 import OrdersKanbanComponent from './admin/orders/OrdersKanbanComponent.jsx';
 import OrdersReportComponent from './admin/orders/OrdersReportComponent.jsx';
 import MyOrdersComponent from './orders/MyOrdersComponent.jsx';
@@ -77,6 +78,7 @@ function GrowShopApp() {
                         <Route path="/product/:id" element={<ProtectedRoute><ProductDetailComponentWithParams /></ProtectedRoute>} />
                         <Route path="/createProduct" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CreateProductComponentWithNavigation /></ProtectedRoute>} />
                         <Route path="/editProduct/:productId" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CreateProductComponentWithNavigation /></ProtectedRoute>} />
+                        <Route path="/admin" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AdminDashboardComponent /></ProtectedRoute>} />
                         <Route path="/admin/users" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><UserAdminComponentWithNavigation /></ProtectedRoute>} />
                         <Route path="/admin/proveedores" element={<SupplierRoute />} />
                         <Route path="/admin/proveedores/:id" element={<SupplierRoute />} />

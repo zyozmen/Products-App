@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import HeaderComponent from '../../dashboard/HeaderComponent.jsx';
+import AdminNav from '../AdminNav.jsx';
 import FooterComponent from '../../dashboard/FooterComponent.jsx';
 import navigationComponent from '../../navigation/NavigationComponent.jsx';
 import AuthenticationService from '../../../services/AuthenticationService.js';
@@ -74,22 +75,19 @@ function UserAdminComponent() {
     };
 
     return (
-        <div className="hu-flex hu-min-h-screen hu-flex-col hu-bg-slate-50 hu-text-slate-900">
+        <div className="hu-flex hu-min-h-screen hu-flex-col admin-page-bg hu-text-slate-900">
             <HeaderComponentWithNavigation />
+            <AdminNav />
             <main className="hu-mx-auto hu-w-full hu-max-w-[1600px] hu-flex-1 hu-px-4 hu-py-8 md:hu-px-8">
-                <nav className="hu-mb-6 hu-text-sm hu-text-slate-500" aria-label="Ruta de navegación">
-                    {t('admin_section')} <span className="hu-px-2">/</span> <span className="hu-font-semibold hu-text-slate-800">{t('manage_users')}</span>
-                </nav>
                 <div className="hu-mb-6 hu-flex hu-flex-wrap hu-items-end hu-justify-between hu-gap-4">
                     <div>
-                        <p className="hu-mb-2 hu-text-xs hu-font-bold hu-uppercase hu-tracking-[0.16em] hu-text-blue-700">{t('admin_section')}</p>
                         <h1 className="hu-m-0 hu-text-3xl hu-font-bold hu-tracking-tight">{t('manage_users')}</h1>
                     </div>
                     <Badge tone="blue">{users.length} usuarios</Badge>
                 </div>
 
-                <Card className="hu-overflow-hidden">
-                    <div className="hu-flex hu-flex-wrap hu-items-center hu-justify-between hu-gap-3 hu-border-b hu-border-slate-200 hu-p-5">
+                <Card className="hu-overflow-hidden kanban-board">
+                    <div className="hu-flex hu-flex-wrap hu-items-center hu-justify-between hu-gap-3 hu-border-b hu-border-slate-200 hu-p-5 ">
                         <div>
                             <h2 className="hu-m-0 hu-text-lg hu-font-bold">{t('manage_users')}</h2>
                             <p className="hu-mb-0 hu-mt-1 hu-text-sm hu-text-slate-500">Administra estados de cuenta y restablece contraseñas.</p>

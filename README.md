@@ -63,6 +63,9 @@ npm run test:coverage    # Ejecuta pruebas y genera cobertura
 - `/login`: inicio de sesion e inicio de registro de clientes con validacion de edad
 - `/profile`: administracion del perfil del usuario (edicion de datos y cambio de contraseña)
 - `/admin/users`: panel de administracion de usuarios (solo admin; activa/inactiva cuentas y restablece claves)
+- `/admin`: dashboard de administracion con acceso a ordenes, usuarios, proveedores, reporte y alta de productos (solo admin; se abre desde el boton "Administracion" del menu de perfil)
+- `/admin/orders`: kanban de ordenes (solo admin)
+- `/admin/orders/report`: reporte de ordenes (solo admin)
 - `/admin/proveedores`: gestion de proveedores, saldos, recepcion de lotes y abonos (solo admin)
 - `/createProduct`: alta de productos (solo admin)
 - `/editProduct/:productId`: edicion de productos (solo admin)
@@ -78,6 +81,64 @@ npm run test:coverage    # Ejecuta pruebas y genera cobertura
 El Kanban de ordenes obtiene las ordenes desde TanStack Query, sin mantener una copia local de los datos del servidor. Los cambios de estado y otras mutaciones invalidan la cache para refrescar la vista. El carrito, en cambio, conserva su estado local persistido mediante `CartService`; no es dato remoto gestionado por TanStack Query.
 
 El formulario de reseñas del detalle valida sus campos, pero no puede guardar reseñas: el backend documentado no ofrece un servicio o endpoint de envio de reseñas. La lista visible actualmente es de ejemplo.
+
+## Guia de estilo (flat design verde)
+
+Tailwind usa el prefijo `hu-` y `preflight` desactivado, por lo que los bordes y botones nativos necesitan `hu-border-0`/`hu-border-solid` y `hu-bg-transparent` explicitos.
+
+### Colores
+
+| Uso | Clase Tailwind | Ejemplo |
+|---|---|---|
+| Fondo oscuro de paneles, dashboard admin y header interno | `hu-bg-green-950`, degradado `hu-from-green-800 hu-to-green-950` | Header fuera de `/` |
+| Tarjetas sobre fondo oscuro | `hu-bg-green-900` | Tarjetas de `/admin` |
+| Botones primarios, foco, paginacion, enlaces | `hu-bg-green-700` (hover `-800`), `hu-ring-green-500`, `hu-text-green-700` | `Button` de `shadcn.tsx` |
+| Acento / resaltado sobre fondo oscuro | `hu-text-green-400` | Titulo del hero |
+| Item activo del menu | `hu-border-b-2 hu-border-green-400` | Navegacion del header |
+| Fondos de pagina admin | `hu-bg-slate-50` con texto `hu-text-slate-900`; secundario `hu-text-slate-500` | Usuarios, Reporte, Proveedores |
+| Estados (badges) | tonos `green`, `amber`, `red`, `blue` de `Badge` | El azul se conserva solo para estados informativos |
+
+Regla: los botones de login, registro y modales son verdes; no usar `blue-*` para acciones.
+
+### Tipografia
+
+- **Principal / titulos:** `hu-font-display` (Franklin Gothic Heavy, con fallback Libre Franklin 800/900, Arial Black).
+- **Complementaria / global:** Inter (`hu-font-sans`, tambien definida en `body`).
+- Las fuentes se cargan en `index.html` y se configuran en `tailwind.config.js`. Si dispones del archivo de Franklin Gothic Heavy, agregalo con `@font-face` en `index.css`.
+
+### Header y hero
+
+- `HeaderComponent` es transparente y absoluto solo en `/` y `/welcome`; en las demas paginas usa el degradado verde.
+- Incluye logo, menu (Marketplace, Cursos Online, Legal, Blog), tema, perfil, busqueda y carrito.
+- El menu de perfil (`DropdownMenu`) acepta `buttonClassName`, `menuClassName`, `panelClassName` y `ariaLabel` para personalizar su estilo.
+- El hero (`SwiperCarousel`) ocupa todo el ancho; su texto sale de las claves `hero_*` en `src/services/translations/es.js` y `en.js`.
+
+### Navegacion de administracion
+
+`AdminNav` (`src/components/admin/AdminNav.jsx`) es la barra de pestanas compartida: Administracion, Ordenes, Usuarios, Proveedores y Reporte. Para usarla en una pagina admin nueva, colocar `<AdminNav />` justo debajo del header y usar el contenedor `hu-mx-auto hu-w-full hu-max-w-[1600px] hu-px-4 hu-py-8 md:hu-px-8`.
+
+### Tema oscuro
+
+Se activa con `body.dark-theme`; `index.css` sobrescribe con `!important` una lista fija de clases slate/white. Los colores fuera de esa lista (badges, avisos `green-50`, `amber-50`) no se adaptan: agregar su regla en `index.css`. Ejemplo para borde blanco en tarjetas: dar a la tarjeta una clase propia (p. ej. `app-card`) y agregar `body.dark-theme .app-card { border-color: #fff !important; }`.
+
+## Formatos y tamaños de imagenes
+
+Recomendaciones segun como se muestra cada imagen en la interfaz. Usar JPG o WebP (calidad 80-85) para fotos y PNG/WebP solo cuando se necesite transparencia. Peso objetivo: menos de 300 KB por imagen (hero: menos de 500 KB). Evitar texto incrustado en las imagenes.
+
+| Tipo | Ubicacion | Formato | Tamaño recomendado | Relacion | Como se recorta |
+|---|---|---|---|---|---|
+| Hero del carrusel | `public/img/hero-home.jpg` (`CarrouselComponent`) | JPG / WebP | 1920 x 780 px (minimo 1600 px de ancho) | ~2.4:1 | `object-cover`, ocupa todo el ancho y ~88vh; mantener el sujeto a la derecha porque el texto va a la izquierda |
+| Tarjetas de oferta (bajo el hero) | `CarrouselComponent` | JPG / WebP | 1200 x 600 px | 2:1 | `object-cover` con opacidad |
+| Producto (listado) | `ProductListComponent` | JPG / WebP | 800 x 800 px | 1:1 | `object-cover` a 280 px de alto; dejar margen alrededor del producto |
+| Producto (detalle / galeria) | `ImageCarousel` | JPG / WebP | 1200 x 900 px | 4:3 | `object-contain`, no se recorta; fondo claro uniforme |
+| Miniatura de carrito | `ShoppingCarComponent` | misma imagen del producto | se escala a 56 x 56 px | 1:1 | `object-cover` |
+| Categoria | `public/img/cat-<category_id>.jpg` (`CategoryComponent`) | JPG | 400 x 400 px | 1:1 | `object-cover` a 96 x 96 px |
+| Logo | `public/img/logo-cheyn-verde.png` | PNG transparente | 400 x 313 px | ~1.3:1 | se muestra a 80 px de alto |
+
+Notas:
+- Las imagenes de categoria deben nombrarse `cat-<category_id>.jpg` y ubicarse en `public/img/`.
+- Las imagenes de producto se suben desde `/createProduct` (`accept="image/*"`); deben ser cuadradas para verse bien en el listado.
+- Para pantallas de alta densidad se pueden subir al doble de tamaño, sin superar el peso objetivo.
 
 ## Gestión de Usuarios, Perfiles y Preferencias
 

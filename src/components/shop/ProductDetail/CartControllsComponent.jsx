@@ -4,9 +4,12 @@ import useTranslation from '../../../hooks/useTranslation.js';
 import { Button, Input } from '../../ui/shadcn';
 import ConfirmationModal from '../../ui/ConfirmationModal';
 
-function CartControllsComponent({ product }) {
+function CartControllsComponent({ product, quantity: controlledQuantity, onQuantityChange }) {
     const t = useTranslation();
-    const [quantity, setQuantity] = useState(1);
+    const [localQuantity, setLocalQuantity] = useState(1);
+    const isControlled = onQuantityChange !== undefined;
+    const quantity = isControlled ? controlledQuantity : localQuantity;
+    const setQuantity = isControlled ? onQuantityChange : setLocalQuantity;
     const [isProductAdded, setIsProductAdded] = useState(false);
     const changeQuantity = (event) => {
         const value = Number(event.target.value);

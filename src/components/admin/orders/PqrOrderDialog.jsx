@@ -75,7 +75,7 @@ function PqrOrderDialog({ onCancel, onCreate, t }) {
                 <Field label={`${t('pqr_notes')} *`} htmlFor="pqr-notes" error={errors.notes?.message}>
                     <textarea
                         id="pqr-notes"
-                        className="hu-w-full hu-rounded-lg hu-border hu-border-slate-300 hu-bg-white hu-px-3 hu-py-2.5 hu-text-sm hu-outline-none focus:hu-border-blue-600 focus:hu-ring-2 focus:hu-ring-blue-100"
+                        className="hu-w-full hu-rounded-lg hu-border hu-border-slate-300 hu-bg-white hu-px-3 hu-py-2.5 hu-text-sm hu-outline-none focus:hu-border-green-600 focus:hu-ring-2 focus:hu-ring-green-100"
                         rows="3"
                         aria-invalid={Boolean(errors.notes)}
                         {...register('notes')}

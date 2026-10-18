@@ -197,7 +197,7 @@ function LoginComponent(props) {
                         </form>
                         <p className="hu-mb-0 hu-mt-6 hu-text-center hu-text-sm hu-text-slate-600">
                             {t('create_account')}?{' '}
-                            <button className="hu-cursor-pointer hu-border-0 hu-bg-transparent hu-p-0 hu-font-semibold hu-text-blue-700 hu-underline" type="button" onClick={() => setIsRegistering(true)}>{t('sign_up')}</button>
+                            <button className="hu-cursor-pointer hu-border-0 hu-bg-transparent hu-p-0 hu-font-semibold hu-text-green-700 hu-underline" type="button" onClick={() => setIsRegistering(true)}>{t('sign_up')}</button>
                         </p>
                     </>
                 )}

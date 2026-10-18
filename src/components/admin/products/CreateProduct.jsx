@@ -599,7 +599,7 @@ class CreateProductView extends Component {
                                 <div className="hu-mt-6">
                                     <button
                                         type="submit"
-                                        className="hu-cursor-pointer hu-rounded-lg hu-border-0 hu-bg-blue-700 hu-px-5 hu-py-2.5 hu-text-sm hu-font-semibold hu-text-white hover:hu-bg-blue-800 disabled:hu-cursor-not-allowed disabled:hu-bg-blue-300"
+                                        className="hu-cursor-pointer hu-rounded-lg hu-border-0 hu-bg-green-700 hu-px-5 hu-py-2.5 hu-text-sm hu-font-semibold hu-text-white hover:hu-bg-green-800 disabled:hu-cursor-not-allowed disabled:hu-bg-green-300"
                                         disabled={isSaving}
                                     >
                                         {isSaving ? t('saving_btn') : (isEditMode ? t('update_product_btn') : t('create_product_btn'))}

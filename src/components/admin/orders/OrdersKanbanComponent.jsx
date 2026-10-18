@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import HeaderComponent from '../../dashboard/HeaderComponent.jsx';
+import AdminNav from '../AdminNav.jsx';
 import FooterComponent from '../../dashboard/FooterComponent.jsx';
 import navigationComponent from '../../navigation/NavigationComponent.jsx';
 import AuthenticationService from '../../../services/AuthenticationService.js';
@@ -148,16 +149,12 @@ function OrdersKanbanComponent({ navigate }) {
     const errorMessage = error || (ordersQuery.isError ? ordersQuery.error?.message || t('orders_load_error') : '');
 
     return (
-        <div className="hu-flex hu-min-h-screen hu-flex-col hu-bg-slate-50 hu-text-slate-900">
+        <div className="hu-flex hu-min-h-screen hu-flex-col admin-page-bg hu-text-slate-900">
             <HeaderComponentWithNavigation />
+            <AdminNav />
             <main className="hu-mx-auto hu-w-full hu-max-w-[1600px] hu-flex-1 hu-px-4 hu-py-8 md:hu-px-8">
-                <nav className="hu-mb-6 hu-text-sm hu-text-slate-500" aria-label={t('admin_section')}>
-                    {t('admin_section')} <span className="hu-px-2">/</span>
-                    <span className="hu-font-semibold hu-text-slate-800">{t('manage_orders')}</span>
-                </nav>
                 <div className="hu-mb-6 hu-flex hu-flex-wrap hu-items-center hu-justify-between hu-gap-4">
                     <div>
-                        <p className="hu-mb-2 hu-text-xs hu-font-bold hu-uppercase hu-tracking-[0.16em] hu-text-green-700">{t('admin_section')}</p>
                         <h1 className="hu-m-0 hu-text-3xl hu-font-bold hu-tracking-tight">{t('manage_orders')}</h1>
                     </div>
                     <div className="hu-flex hu-flex-wrap hu-gap-2">
@@ -170,7 +167,7 @@ function OrdersKanbanComponent({ navigate }) {
                     </div>
                 </div>
 
-                <Card className="hu-mb-5 hu-grid hu-gap-4 hu-p-5 md:hu-grid-cols-[minmax(200px,280px)_1fr]">
+                <Card className="hu-mb-5 hu-grid hu-gap-4 hu-p-5 md:hu-grid-cols-[minmax(200px,280px)_1fr] kanban-board">
                     <label className="hu-grid hu-gap-1.5 hu-text-sm hu-font-medium hu-text-slate-700" htmlFor="orders-day">
                         {t('orders_day')}
                         <Input id="orders-day" type="date" value={selectedDate} onChange={(event) => event.target.value && setSelectedDate(event.target.value)} />
@@ -185,11 +182,11 @@ function OrdersKanbanComponent({ navigate }) {
                             className="hu-min-w-0 hu-flex-1"
                         />
                         {searchTerm && (
-                            <Button type="button" variant="secondary" onClick={() => setSearchTerm('')}>
+                            <Button className="hu-mb-2" type="button" variant="secondary" onClick={() => setSearchTerm('')}>
                                 {t('clear_btn')}
                             </Button>
                         )}
-                        <Button type="button" variant="secondary" onClick={() => setSelectedDate(toDateInputValue(new Date()))}>
+                        <Button type="button" className="hu-mb-2" variant="secondary" onClick={() => setSelectedDate(toDateInputValue(new Date()))}>
                             {t('orders_today')}
                         </Button>
                     </div>
@@ -216,14 +213,14 @@ function OrdersKanbanComponent({ navigate }) {
                                 {searchTerm && dayOrders.length > 0 ? t('search_orders_no_results') : t('orders_no_orders_day')}
                             </div>
                         )}
-                        <div className="hu-grid hu-items-start hu-gap-4 xl:hu-grid-cols-5">
+                        <div className="hu-grid hu-items-start hu-gap-4 xl:hu-grid-cols-5 kanban-board">
                             {ORDER_STATUSES.map((status) => {
                                 const columnOrders = visibleOrders.filter((order) => getOrderStatus(order) === status);
                                 const isDragOver = dragOverStatus === status;
                                 return (
                                     <section
                                         key={status}
-                                        className={`hu-min-w-[250px] hu-rounded-xl hu-border hu-p-3 ${isDragOver ? 'hu-border-amber-500 hu-bg-amber-50' : 'hu-border-slate-200 hu-bg-white'}`}
+                                        className={`hu-min-w-[250px] hu-rounded-xl hu-border hu-border-slate-200 hu-p-3 ${isDragOver ? 'hu-border-amber-500 hu-bg-amber-50' : 'hu-border-slate-200 hu-bg-white'}`}
                                         onDragOver={(event) => {
                                             event.preventDefault();
                                             if (!isDragOver) setDragOverStatus(status);

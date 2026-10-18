@@ -16,6 +16,7 @@ import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import HeaderComponent from '../../dashboard/HeaderComponent.jsx';
+import AdminNav from '../AdminNav.jsx';
 import FooterComponent from '../../dashboard/FooterComponent.jsx';
 import navigationComponent from '../../navigation/NavigationComponent.jsx';
 import {
@@ -45,51 +46,24 @@ const formatCop = (amount: number) => `$${cop.format(amount)} COP`;
 const positiveId = /^[a-f\d]{24}$/i;
 const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
 
-function PageHeader({ detail }: { detail?: boolean }) {
-  return (
-    <nav className="hu-mb-6 hu-flex hu-flex-wrap hu-items-center hu-gap-2 hu-text-sm hu-text-slate-500" aria-label="Ruta de navegación">
-      <span>Administración</span>
-      <span aria-hidden="true">/</span>
-      {detail && (
-        <>
-          <Link to="/admin/proveedores" className="hu-font-medium hu-text-blue-700 hu-no-underline hover:hu-text-blue-900">
-            Proveedores
-          </Link>
-          <span aria-hidden="true">/</span>
-        </>
-      )}
-      <span className="hu-font-semibold hu-text-slate-800">{detail ? 'Detalle' : 'Proveedores y saldos'}</span>
-      {detail && (
-        <Link to="/admin/proveedores" className="hu-ml-auto hu-inline-flex hu-items-center hu-gap-2 hu-font-semibold hu-text-blue-700 hu-no-underline hover:hu-text-blue-900">
-          <ArrowLeft size={16} aria-hidden="true" />
-          Cambiar proveedor
-        </Link>
-      )}
-    </nav>
-  );
-}
-
 function PageShell({ children, detail = false }: { children: React.ReactNode; detail?: boolean }) {
   return (
-    <div className="hu-flex hu-min-h-screen hu-flex-col hu-bg-slate-50 hu-text-slate-900">
+    <div className="hu-flex hu-min-h-screen hu-flex-col admin-page-bg hu-text-slate-900">
       <HeaderComponentWithNavigation />
-      <main className="hu-w-full hu-flex-1">
-        <div className="hu-mx-auto hu-max-w-7xl hu-px-4 hu-py-8 md:hu-px-8">
-          <PageHeader detail={detail} />
-          {children}
-        </div>
+      <AdminNav />
+      <main className="hu-mx-auto hu-w-full hu-max-w-[1600px] hu-flex-1 hu-px-4 hu-py-8 md:hu-px-8">
+        {children}
       </main>
       <FooterComponent />
     </div>
   );
 }
 
-function PageTitle({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
+function PageTitle({ title, description }: { title: string; description: string }) {
   return (
-    <div className="hu-mb-7">
-      <p className="hu-mb-2 hu-text-xs hu-font-bold hu-uppercase hu-tracking-[0.16em] hu-text-blue-700">{eyebrow}</p>
-      <h1 className="hu-mb-2 hu-text-3xl hu-font-bold hu-tracking-tight hu-text-slate-900">{title}</h1>
-      <p className="hu-m-0 hu-max-w-3xl hu-text-sm hu-leading-6 hu-text-slate-600">{description}</p>
+    <div className="hu-mb-6">
+      <h1 className="hu-m-0 hu-text-3xl hu-font-bold hu-tracking-tight">{title}</h1>
+      <p className="hu-mb-0 hu-mt-2 hu-max-w-3xl hu-text-sm hu-text-slate-500">{description}</p>
     </div>
   );
 }
@@ -131,7 +105,7 @@ function SupplierEntryPage() {
         description="Consulta el estado financiero de tus proveedores, registra ingresos de lotes y controla los abonos."
       />
       <div className="hu-grid hu-items-start hu-gap-6 lg:hu-grid-cols-[minmax(0,1fr)_minmax(340px,0.8fr)]">
-        <Card className="hu-overflow-hidden">
+        <Card className="hu-overflow-hidden kanban-board">
           <div className="hu-border-b hu-border-slate-100 hu-p-6">
             <span className="hu-mb-4 hu-flex hu-h-11 hu-w-11 hu-items-center hu-justify-center hu-rounded-xl hu-bg-blue-50 hu-text-blue-700"><Search size={21} /></span>
             <h2 className="hu-mb-1 hu-text-lg hu-font-bold">Consultar proveedor</h2>
@@ -156,8 +130,8 @@ function SupplierEntryPage() {
           </form>
         </Card>
 
-        <Card className="hu-overflow-hidden">
-          <div className="hu-border-b hu-border-slate-100 hu-p-6">
+        <Card className="hu-overflow-hidden kanban-board">
+          <div className="hu-border-b hu-border-slate-100 hu-p-6 ">
             <span className="hu-mb-4 hu-flex hu-h-11 hu-w-11 hu-items-center hu-justify-center hu-rounded-xl hu-bg-indigo-50 hu-text-indigo-700"><Building2 size={21} /></span>
             <h2 className="hu-mb-1 hu-text-lg hu-font-bold">Registrar proveedor</h2>
             <p className="hu-m-0 hu-text-sm hu-text-slate-500">Crea la ficha para comenzar a administrar sus lotes y pagos.</p>

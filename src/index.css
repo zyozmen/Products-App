@@ -1,5 +1,5 @@
 :root {
-  --primary: #2563eb;
+  --primary: #1A7F2D;
   --dark: #172b4d;
   --warning: #f59e0b;
   --danger: #dc2626;
@@ -8,8 +8,8 @@
 body {
   min-width: 320px;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+    'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -51,4 +51,33 @@ body.dark-theme input,
 body.dark-theme select,
 body.dark-theme textarea {
   color-scheme: dark;
+}
+
+body.dark-theme .app-card {
+  border-color: #fff !important;
+}
+
+.admin-page-bg {
+  background: url('/img/admin-bg.jpg') center / cover fixed no-repeat;
+}
+
+body.dark-theme .admin-page-bg {
+  background-image: url('/img/admin-bg-dark.jpg');
+}
+
+/* Dark theme background color for admin page */
+.admin-page-card {
+  background-color: #18251e;
+}
+
+body.dark-theme .admin-title {
+  color: #bbf7d0 !important;
+}
+
+.kanban-board {
+  background-color: rgb(241 245 249 / 0.5) !important;
+}
+
+body.dark-theme .kanban-board {
+  background-color: rgb(241 245 249 / 0.1) !important;
 }
