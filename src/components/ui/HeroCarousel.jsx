@@ -1,48 +1,46 @@
-import React, { useEffect, useState } from 'react';
-import translationService from '../../services/TranslationService';
-import './HeroCarousel.css';
+import { useState } from 'react';
+import useTranslation from '../../hooks/useTranslation.js';
 
-const HeroCarousel = ({ items }) => {
+function HeroCarousel({ items }) {
+  const t = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
-  const [, setCurrentLanguage] = useState(translationService.getLanguage());
+  const activeItem = items[activeIndex];
+  if (!activeItem) return null;
 
-  useEffect(() => translationService.subscribe(setCurrentLanguage), []);
+  const move = (direction) => {
+    setActiveIndex((index) => (index + direction + items.length) % items.length);
+  };
 
   return (
-    <div className="carousel slide carousel-fade mb-30 mb-lg-0 hero-carousel">
-      <ol className="carousel-indicators">
-        {items.map((item, index) => (
-          <button
-            key={item.id}
-            type="button"
-            className={`hero-carousel-indicator ${index === activeIndex ? 'active' : ''}`}
-            onClick={() => setActiveIndex(index)}
-            aria-label={`${translationService.t('slide_label')} ${index + 1}`}
-          />
-        ))}
-      </ol>
-      <div className="carousel-inner">
-        {items.map((item, index) => (
-          <div key={item.id} className={`carousel-item position-relative hero-carousel-item ${index === activeIndex ? 'active' : ''}`}>
-            <img className="position-absolute w-100 h-100 hero-carousel-image" src={item.image} alt={item.title} />
-            <div className="carousel-caption d-flex flex-column align-items-center justify-content-center">
-              <div className="p-3 hero-carousel-caption">
-                <h1 className="display-4 text-white mb-3 animate__animated animate__fadeInDown">{item.title}</h1>
-                <p className="mx-md-5 px-5 animate__animated animate__bounceIn">{item.description}</p>
-                <button type="button" className="btn btn-outline-light py-2 px-4 mt-3 animate__animated animate__fadeInUp">{translationService.t('shop_now')}</button>
-              </div>
-            </div>
-          </div>
-        ))}
+    <section className="hu-relative hu-h-[430px] hu-overflow-hidden hu-rounded-2xl hu-bg-slate-900" aria-roledescription="carousel">
+      <img className="hu-absolute hu-inset-0 hu-h-full hu-w-full hu-object-cover" src={activeItem.image} alt={activeItem.title} />
+      <div className="hu-absolute hu-inset-0 hu-flex hu-items-center hu-justify-center hu-bg-slate-950/50 hu-p-6">
+        <div className="hu-max-w-3xl hu-text-center">
+          <h1 className="hu-mb-3 hu-text-4xl hu-font-bold hu-text-white">{activeItem.title}</h1>
+          <p className="hu-mx-auto hu-max-w-2xl hu-text-white">{activeItem.description}</p>
+          <button type="button" className="hu-mt-3 hu-cursor-pointer hu-rounded-lg hu-border hu-border-white hu-bg-transparent hu-px-4 hu-py-2 hu-font-semibold hu-text-white hover:hu-bg-white hover:hu-text-slate-900">{t('shop_now')}</button>
+        </div>
       </div>
-      <button type="button" className="carousel-control-prev" onClick={() => setActiveIndex((prev) => (prev > 0 ? prev - 1 : items.length - 1))}>
-        <i className="fa fa-2x fa-angle-left text-dark" />
-      </button>
-      <button type="button" className="carousel-control-next" onClick={() => setActiveIndex((prev) => (prev < items.length - 1 ? prev + 1 : 0))}>
-        <i className="fa fa-2x fa-angle-right text-dark" />
-      </button>
-    </div>
+      {items.length > 1 && (
+        <>
+          <div className="hu-absolute hu-bottom-4 hu-left-1/2 hu-flex hu--translate-x-1/2 hu-gap-2">
+            {items.map((item, index) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`hu-h-2.5 hu-w-2.5 hu-cursor-pointer hu-rounded-full hu-border-0 ${index === activeIndex ? 'hu-bg-white' : 'hu-bg-white/50'}`}
+                onClick={() => setActiveIndex(index)}
+                aria-label={`${t('slide_label')} ${index + 1}`}
+                aria-current={index === activeIndex}
+              />
+            ))}
+          </div>
+          <button type="button" className="hu-absolute hu-left-3 hu-top-1/2 hu-rounded-full hu-border-0 hu-bg-white/90 hu-p-3 hu-text-slate-900" onClick={() => move(-1)} aria-label={t('image_navigation_previous')}>‹</button>
+          <button type="button" className="hu-absolute hu-right-3 hu-top-1/2 hu-rounded-full hu-border-0 hu-bg-white/90 hu-p-3 hu-text-slate-900" onClick={() => move(1)} aria-label={t('image_navigation_next')}>›</button>
+        </>
+      )}
+    </section>
   );
-};
+}
 
 export default HeroCarousel;

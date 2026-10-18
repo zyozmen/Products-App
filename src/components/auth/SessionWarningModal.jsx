@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import translationService from '../../services/TranslationService.js';
+import useTranslation from '../../hooks/useTranslation.js';
 
 const SessionWarningModal = ({ remainingMs, onContinue, onLogout }) => {
     const [secondsLeft, setSecondsLeft] = useState(Math.ceil(remainingMs / 1000));
@@ -12,32 +12,25 @@ const SessionWarningModal = ({ remainingMs, onContinue, onLogout }) => {
         return () => clearInterval(interval);
     }, [remainingMs]);
 
-    const t = (key) => translationService.t(key);
+    const t = useTranslation();
 
     return (
         <div
-            className="modal d-block"
+            className="hu-fixed hu-inset-0 hu-z-50 hu-grid hu-place-items-center hu-bg-slate-950/50 hu-p-4"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="session-warning-title"
-            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
         >
-            <div className="modal-dialog modal-dialog-centered">
-                <div className="modal-content">
-                    <div className="modal-header">
-                        <h5 className="modal-title" id="session-warning-title">{t('session_warning_title')}</h5>
-                    </div>
-                    <div className="modal-body">
-                        <p>{t('session_warning_text')} <strong>{secondsLeft}s</strong></p>
-                    </div>
-                    <div className="modal-footer">
-                        <button type="button" className="btn btn-outline-secondary" onClick={onLogout}>
-                            {t('logout')}
-                        </button>
-                        <button type="button" className="btn btn-primary" onClick={onContinue}>
-                            {t('session_continue')}
-                        </button>
-                    </div>
+            <div className="hu-w-full hu-max-w-md hu-rounded-2xl hu-bg-white hu-p-6 hu-shadow-2xl">
+                <h2 className="hu-m-0 hu-text-xl hu-font-bold hu-text-slate-900" id="session-warning-title">{t('session_warning_title')}</h2>
+                <p className="hu-mb-6 hu-mt-3 hu-text-sm hu-leading-6 hu-text-slate-600">{t('session_warning_text')} <strong>{secondsLeft}s</strong></p>
+                <div className="hu-flex hu-justify-end hu-gap-3">
+                    <button type="button" className="hu-cursor-pointer hu-rounded-lg hu-border hu-border-slate-300 hu-bg-white hu-px-4 hu-py-2.5 hu-text-sm hu-font-semibold hu-text-slate-700 hover:hu-bg-slate-50" onClick={onLogout}>
+                        {t('logout')}
+                    </button>
+                    <button type="button" className="hu-cursor-pointer hu-rounded-lg hu-border-0 hu-bg-blue-700 hu-px-4 hu-py-2.5 hu-text-sm hu-font-semibold hu-text-white hover:hu-bg-blue-800" onClick={onContinue}>
+                        {t('session_continue')}
+                    </button>
                 </div>
             </div>
         </div>

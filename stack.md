@@ -1,31 +1,31 @@
 # Stack Tecnológico del Proyecto
 
 ## Frontend
-- React: 19.2.7
-- React DOM: 19.2.7
-- React Router DOM: 7.17.0
-- Create React App / React Scripts: 5.0.1
+- React 19 y React DOM
+- Vite 8 como servidor de desarrollo y bundler
+- React Router DOM 7 para navegación
+- JavaScript/JSX para las vistas existentes y TypeScript/TSX para HU-01, con TypeScript habilitado para migración incremental
 
-## UI y Estilos
-- Bootstrap: 4.6.2
-- Animate.css: 4.1.1
-- Font Awesome: 7.2.0
-- jQuery: 3.7.1
-- Owl Carousel: 2.3.4
+## UI y estilos
+- Bootstrap y CSS propio en las vistas existentes
+- Tailwind CSS 3 para HU-01, con prefijo `hu-` y preflight deshabilitado para coexistir con Bootstrap
+- Componentes locales con estilo shadcn/ui
+- Animate.css y Font Awesome
 
-## Consumo de APIs
-- Axios: 1.17.0
+## Formularios y datos
+- TanStack Query para consultas, caché y mutaciones
+- React Hook Form y Zod para formularios y validación
+- Axios para consumo de APIs; el cliente global conserva los interceptores de autenticación existentes
 
 ## Testing
-- Testing Library React: 16.3.2
-- Jest DOM: 6.9.1
-- User Event: 13.5.0
+- Vitest
+- Testing Library React, DOM y User Event
+- `npm run typecheck` para comprobar TypeScript
 
-## Runtime y Despliegue
-- Node.js: 20 (imagen Docker: node:20-alpine)
-- Nginx: alpine
-- Docker Compose: 3.8
-- Jenkins: configurado para CI/CD
+## Runtime y despliegue
+- Node.js 20 o superior
+- Docker y Nginx
+- Jenkins para CI/CD
 
-## Gestión de Paquetes
+## Gestión de paquetes
 - npm

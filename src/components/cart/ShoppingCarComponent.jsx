@@ -1,16 +1,21 @@
-import React, { Component } from "react";
+import React, { Component, useState } from "react";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import HeaderComponent from "../dashboard/HeaderComponent";
 import FooterComponent from "../dashboard/FooterComponent";
 import navigationComponent from "../navigation/NavigationComponent";
 import cartService, { DEFAULT_TAX_RATE } from "../../services/CartService";
 import translationService from "../../services/TranslationService";
-import orderService from "../../services/OrderService";
 import AuthenticationService from "../../services/AuthenticationService";
 import { formatCOP } from "../../Interfaces/ProductInterface";
 import ConfirmationModal from "../ui/ConfirmationModal";
-import './ShoppingCarComponent.css';
+import useTranslation from '../../hooks/useTranslation.js';
+import { useOrderMutations } from '../../hooks/useApiQueries.ts';
+import { checkoutSchema } from '../../schemas/checkout';
+import { Button, Card, ErrorNotice, Field, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/shadcn';
 
 const whatsappPhoneNumber = String(import.meta.env.VITE_WHATSAPP_NUMBER ?? '573124058166').trim();
+const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
 
 export const createWhatsAppCheckoutUrl = ({ items, phoneNumber, subtotal, taxAmount, total, delivery = {} }) => {
     const orderLines = items.map((item) =>
@@ -33,18 +38,115 @@ export const createWhatsAppCheckoutUrl = ({ items, phoneNumber, subtotal, taxAmo
     return `https://wa.me/${normalizedPhoneNumber}?text=${encodeURIComponent(message)}`;
 };
 
+export function CheckoutForm({ items, subtotal, taxAmount, total, onOrderConfirmed }) {
+    const t = useTranslation();
+    const { create } = useOrderMutations();
+    const user = AuthenticationService.getLoggedInUser();
+    const fullName = `${user?.nombre || ''} ${user?.apellido || ''}`.trim();
+    const [isOtherRecipient, setIsOtherRecipient] = useState(false);
+    const [submitError, setSubmitError] = useState('');
+    const form = useForm({
+        resolver: zodResolver(checkoutSchema),
+        defaultValues: {
+            recipientName: fullName,
+            address: user?.direccion || '',
+            addressComplement: '',
+            contactPhone: user?.telefono || '',
+        },
+    });
+
+    const fieldError = (name) => {
+        const message = form.formState.errors[name]?.message;
+        return message ? t(message) : undefined;
+    };
+
+    const onSubmit = form.handleSubmit(async (values) => {
+        setSubmitError('');
+        const delivery = {
+            recipientName: values.recipientName,
+            address: values.address,
+            addressComplement: values.addressComplement,
+            contactPhone: values.contactPhone,
+        };
+        try {
+            await create.mutateAsync({ items, delivery, subtotal, taxAmount, total });
+        } catch (error) {
+            setSubmitError(error instanceof Error ? error.message : t('checkout_create_error'));
+            return;
+        }
+
+        const url = createWhatsAppCheckoutUrl({
+            items,
+            phoneNumber: whatsappPhoneNumber,
+            subtotal,
+            taxAmount,
+            total,
+            delivery,
+        });
+        window.open(url, '_blank', 'noopener,noreferrer');
+        onOrderConfirmed();
+    });
+
+    return (
+        <form className="hu-grid hu-gap-4" onSubmit={onSubmit} noValidate>
+            <div className="hu-border-b hu-border-slate-200 hu-pb-4">
+                <h2 className="hu-mb-3 hu-mt-0 hu-text-base hu-font-semibold">{t('delivery_details')}</h2>
+                <label className="hu-mb-4 hu-flex hu-cursor-pointer hu-items-center hu-gap-2 hu-text-sm hu-font-medium">
+                    <input
+                        type="checkbox"
+                        checked={isOtherRecipient}
+                        onChange={(event) => {
+                            const checked = event.target.checked;
+                            setIsOtherRecipient(checked);
+                            form.setValue('recipientName', checked ? '' : fullName, { shouldValidate: form.formState.isSubmitted });
+                        }}
+                    />
+                    {t('other_recipient')}
+                </label>
+                <div className="hu-grid hu-gap-4">
+                    {(isOtherRecipient || !fullName) && (
+                        <Field label={`${t('other_recipient_name')} *`} htmlFor="delivery-recipient" error={fieldError('recipientName')}>
+                            <Input id="delivery-recipient" autoComplete="name" aria-invalid={Boolean(form.formState.errors.recipientName)} {...form.register('recipientName')} />
+                        </Field>
+                    )}
+                    <Field label={`${t('address')} *`} htmlFor="delivery-address" error={fieldError('address')}>
+                        <Input id="delivery-address" autoComplete="street-address" aria-invalid={Boolean(form.formState.errors.address)} {...form.register('address')} />
+                    </Field>
+                    <Field label={t('address_complement')} htmlFor="delivery-complement">
+                        <Input id="delivery-complement" placeholder={t('cart_address_example')} {...form.register('addressComplement')} />
+                    </Field>
+                    <Field label={`${t('contact_phone')} *`} htmlFor="delivery-phone" error={fieldError('contactPhone')}>
+                        <Input id="delivery-phone" type="tel" autoComplete="tel" aria-invalid={Boolean(form.formState.errors.contactPhone)} {...form.register('contactPhone')} />
+                    </Field>
+                </div>
+            </div>
+            {submitError && <ErrorNotice>{submitError}</ErrorNotice>}
+            <div className="hu-grid hu-gap-2 hu-border-b hu-border-slate-200 hu-pb-2">
+                <div className="hu-flex hu-justify-between hu-text-sm">
+                    <span>{t('subtotal')}</span>
+                    <strong>{formatCOP(subtotal)}</strong>
+                </div>
+                <div className="hu-flex hu-justify-between hu-text-sm">
+                    <span>{t('tax')} ({(DEFAULT_TAX_RATE * 100).toFixed(0)}%)</span>
+                    <strong>{formatCOP(taxAmount)}</strong>
+                </div>
+                <div className="hu-flex hu-justify-between hu-pt-2 hu-text-base">
+                    <strong>{t('total')}</strong>
+                    <strong>{formatCOP(total)}</strong>
+                </div>
+            </div>
+            <Button type="submit" className="hu-w-full" disabled={items.length === 0 || form.formState.isSubmitting || create.isPending}>
+                {form.formState.isSubmitting || create.isPending ? t('saving_btn') : t('proceed_checkout')}
+            </Button>
+        </form>
+    );
+}
+
 class ShoppingCarComponent extends Component {
     constructor(props) {
         super(props);
         this.state = {
             items: cartService.getCart(),
-            delivery: {
-                recipientName: '',
-                address: '',
-                addressComplement: '',
-                contactPhone: '',
-            },
-            isOtherRecipient: false,
             isOrderConfirmed: false,
             currentLanguage: translationService.getLanguage(),
         };
@@ -52,8 +154,7 @@ class ShoppingCarComponent extends Component {
         this.handleIncrement = this.handleIncrement.bind(this);
         this.handleDecrement = this.handleDecrement.bind(this);
         this.handleQuantityChange = this.handleQuantityChange.bind(this);
-        this.handleDeliveryChange = this.handleDeliveryChange.bind(this);
-        this.handleCheckout = this.handleCheckout.bind(this);
+        this.handleOrderConfirmed = this.handleOrderConfirmed.bind(this);
         this.handleConfirmationAccept = this.handleConfirmationAccept.bind(this);
         this.unsubscribe = null;
         this.unsubscribeFromLanguage = null;
@@ -65,20 +166,6 @@ class ShoppingCarComponent extends Component {
             this.setState({ currentLanguage: lang });
         });
 
-        const isUserLoggedIn = AuthenticationService.isUserLoggedIn();
-        if (isUserLoggedIn) {
-            const user = AuthenticationService.getLoggedInUser();
-            if (user) {
-                this.setState({
-                    delivery: {
-                        recipientName: `${user.nombre || ''} ${user.apellido || ''}`.trim(),
-                        address: user.direccion || '',
-                        addressComplement: '',
-                        contactPhone: user.telefono || '',
-                    }
-                });
-            }
-        }
     }
 
     componentWillUnmount() {
@@ -111,46 +198,7 @@ class ShoppingCarComponent extends Component {
         }
     }
 
-    handleDeliveryChange(event) {
-        const { name, value } = event.target;
-        this.setState((previousState) => ({
-            delivery: {
-                ...previousState.delivery,
-                [name]: value,
-            },
-        }));
-    }
-
-    async handleCheckout(event) {
-        event.preventDefault();
-        const items = cartService.getCart();
-        if (items.length === 0) {
-            return;
-        }
-
-        try {
-            await orderService.createOrder({
-                items,
-                delivery: this.state.delivery,
-                subtotal: cartService.getSubtotal(),
-                taxAmount: cartService.getTaxAmount(),
-                total: cartService.getTotal(),
-            });
-        } catch (error) {
-            alert(`${translationService.t('order_register_error')}\n${error.message}`);
-            return;
-        }
-
-        const url = createWhatsAppCheckoutUrl({
-            items,
-            phoneNumber: whatsappPhoneNumber,
-            subtotal: cartService.getSubtotal(),
-            taxAmount: cartService.getTaxAmount(),
-            total: cartService.getTotal(),
-            delivery: this.state.delivery,
-        });
-
-        window.open(url, '_blank', 'noopener,noreferrer');
+    handleOrderConfirmed() {
         cartService.clearCart();
         this.setState({ isOrderConfirmed: true });
     }
@@ -160,228 +208,103 @@ class ShoppingCarComponent extends Component {
     }
 
     render() {
-        const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
         const isUserLoggedIn = AuthenticationService.isUserLoggedIn();
         const { items } = this.state;
         const subtotal = cartService.getSubtotal();
         const taxAmount = cartService.getTaxAmount();
         const total = cartService.getTotal();
-        const taxPercentage = (DEFAULT_TAX_RATE * 100).toFixed(0);
         const t = (key) => translationService.t(key);
 
         return (
-            <>
+            <div className="hu-flex hu-min-h-screen hu-flex-col hu-bg-slate-50 hu-text-slate-900">
                 <HeaderComponentWithNavigation />
-                <div className="container-fluid shopping-cart-page">
-                    <div className="row px-xl-5">
-                        <div className="col-lg-8 table-responsive mb-5">
-                            <table className="table table-light table-borderless table-hover text-center mb-0">
-                                <thead className="thead-dark">
-                                    <tr>
-                                        <th>{t('product')}</th>
-                                        <th>{t('price')}</th>
-                                        <th>{t('quantity')}</th>
-                                        <th>{t('total')}</th>
-                                        <th>{t('remove')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="align-middle">
+                <main className="hu-mx-auto hu-w-full hu-max-w-[1600px] hu-flex-1 hu-px-4 hu-py-8 md:hu-px-8">
+                    <div className="hu-mb-6">
+                        <p className="hu-mb-2 hu-text-xs hu-font-bold hu-uppercase hu-tracking-[0.16em] hu-text-blue-700">{t('quick_shop')}</p>
+                        <h1 className="hu-m-0 hu-text-3xl hu-font-bold hu-tracking-tight">{t('cart_summary')}</h1>
+                    </div>
+                    <div className="hu-grid hu-items-start hu-gap-5 lg:hu-grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
+                        <Card className="hu-overflow-hidden">
+                            <div className="hu-overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="hover:hu-bg-slate-50">
+                                            <TableHead>{t('product')}</TableHead>
+                                            <TableHead>{t('price')}</TableHead>
+                                            <TableHead>{t('quantity')}</TableHead>
+                                            <TableHead>{t('total')}</TableHead>
+                                            <TableHead>{t('remove')}</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
                                     {items.length === 0 && (
-                                        <tr>
-                                            <td colSpan="5" className="align-middle py-4">
+                                        <TableRow>
+                                            <TableCell colSpan="5" className="hu-py-8 hu-text-center hu-text-slate-500">
                                                 {t('empty_cart')}
-                                            </td>
-                                        </tr>
+                                            </TableCell>
+                                        </TableRow>
                                     )}
                                     {items.map((item) => (
-                                        <tr key={item.id}>
-                                            <td className="align-middle">
+                                        <TableRow key={item.id}>
+                                            <TableCell className="hu-min-w-[220px]">
                                                 <img
                                                     src={String(item.image ?? '').trim() || '/img/no_image.jpg'}
                                                     alt={item.name}
-                                                    className="cart-product-image"
-                                                />{" "}
-                                                {item.name}
-                                            </td>
-                                            <td className="align-middle">{formatCOP(item.price)}</td>
-                                            <td className="align-middle">
-                                                <div
-                                                    className="input-group quantity mx-auto cart-quantity-input"
-                                                >
-                                                    <div className="input-group-btn">
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-sm btn-primary btn-minus"
-                                                            onClick={() => this.handleDecrement(item)}
-                                                        >
-                                                            <i className="fa fa-minus" />
-                                                        </button>
-                                                    </div>
-                                                    <input
-                                                        type="text"
-                                                        className="form-control form-control-sm bg-secondary border-0 text-center"
+                                                    className="hu-mr-3 hu-inline-block hu-h-14 hu-w-14 hu-rounded-lg hu-object-cover"
+                                                />
+                                                <span className="hu-font-medium">{item.name}</span>
+                                            </TableCell>
+                                            <TableCell>{formatCOP(item.price)}</TableCell>
+                                            <TableCell>
+                                                <div className="hu-flex hu-w-32 hu-items-center">
+                                                    <Button type="button" variant="secondary" className="hu-rounded-r-none hu-px-3 hu-py-2" aria-label={`${t('decrease_quantity')} ${item.name}`} onClick={() => this.handleDecrement(item)} disabled={item.quantity <= 1}>−</Button>
+                                                    <Input
+                                                        type="number"
+                                                        min="1"
+                                                        aria-label={`${t('quantity')} ${item.name}`}
+                                                        className="hu-rounded-none hu-p-2 hu-text-center"
                                                         value={item.quantity}
-                                                        onChange={(e) => this.handleQuantityChange(item, e.target.value)}
+                                                        onChange={(event) => this.handleQuantityChange(item, event.target.value)}
                                                     />
-                                                    <div className="input-group-btn">
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-sm btn-primary btn-plus"
-                                                            onClick={() => this.handleIncrement(item)}
-                                                        >
-                                                            <i className="fa fa-plus" />
-                                                        </button>
-                                                    </div>
+                                                    <Button type="button" variant="secondary" className="hu-rounded-l-none hu-px-3 hu-py-2" aria-label={`${t('increase_quantity')} ${item.name}`} onClick={() => this.handleIncrement(item)}>+</Button>
                                                 </div>
-                                            </td>
-                                            <td className="align-middle">{formatCOP(item.price * item.quantity)}</td>
-                                            <td className="align-middle">
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-sm btn-danger"
-                                                    onClick={() => this.handleRemove(item.id)}
-                                                >
-                                                    <i className="fa fa-times" />
-                                                </button>
-                                            </td>
-                                        </tr>
+                                            </TableCell>
+                                            <TableCell className="hu-font-semibold">{formatCOP(item.price * item.quantity)}</TableCell>
+                                            <TableCell>
+                                                <Button type="button" variant="destructive" className="hu-px-3 hu-py-2" aria-label={`${t('remove')} ${item.name}`} onClick={() => this.handleRemove(item.id)}>×</Button>
+                                            </TableCell>
+                                        </TableRow>
                                     ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div className="col-lg-4">
-                            <h5 className="section-title position-relative text-uppercase mb-3">
-                                <span className="bg-secondary pr-3">{t('cart_summary')}</span>
-                            </h5>
-                            <div className="bg-light p-30 mb-5">
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </Card>
+                        <Card className="hu-p-5">
+                            <h2 className="hu-mb-4 hu-mt-0 hu-text-lg hu-font-bold">{t('cart_summary')}</h2>
                                 {!isUserLoggedIn ? (
-                                    <div className="text-center py-4">
-                                        <div className="alert alert-warning mb-3" style={{ fontSize: '14px' }}>
+                                    <div className="hu-grid hu-justify-items-center hu-gap-4 hu-py-4 hu-text-center">
+                                        <div className="hu-w-full hu-rounded-lg hu-border hu-border-amber-200 hu-bg-amber-50 hu-p-3 hu-text-sm hu-text-amber-900" role="status">
                                             {t('checkout_login_required')}
                                         </div>
-                                        <button 
-                                            type="button" 
-                                            className="btn btn-primary font-weight-bold py-2 px-4 text-uppercase"
+                                        <Button
+                                            type="button"
                                             onClick={() => this.props.navigate('/login')}
                                         >
                                             {t('sign_in')}
-                                        </button>
+                                        </Button>
                                     </div>
                                 ) : (
-                                    <form onSubmit={this.handleCheckout}>
-                                        <div className="cart-delivery-form border-bottom pb-3 mb-3">
-                                            <h6>{t('delivery_details')}</h6>
-                                            <div className="cart-delivery-fields">
-                                                
-                                                <div className="form-group mb-2 mt-2">
-                                                    <div className="custom-control custom-checkbox">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            className="custom-control-input" 
-                                                            id="isOtherRecipient" 
-                                                            checked={this.state.isOtherRecipient}
-                                                            onChange={(e) => {
-                                                                const checked = e.target.checked;
-                                                                const user = AuthenticationService.getLoggedInUser();
-                                                                this.setState({ 
-                                                                    isOtherRecipient: checked,
-                                                                    delivery: {
-                                                                        ...this.state.delivery,
-                                                                        recipientName: checked ? '' : `${user?.nombre || ''} ${user?.apellido || ''}`.trim()
-                                                                    }
-                                                                });
-                                                            }}
-                                                        />
-                                                        <label className="custom-control-label font-weight-bold text-dark" htmlFor="isOtherRecipient" style={{ cursor: 'pointer', fontSize: '14px' }}>
-                                                            {t('other_recipient')}
-                                                        </label>
-                                                    </div>
-                                                </div>
-
-                                                {this.state.isOtherRecipient && (
-                                                    <div className="mb-2">
-                                                        <label htmlFor="delivery-recipient-other">{t('other_recipient_name')} *</label>
-                                                        <input
-                                                            id="delivery-recipient-other"
-                                                            className="form-control"
-                                                            name="recipientName"
-                                                            type="text"
-                                                            value={this.state.delivery.recipientName}
-                                                            onChange={this.handleDeliveryChange}
-                                                            required
-                                                        />
-                                                    </div>
-                                                )}
-
-                                                <div>
-                                                    <label htmlFor="delivery-address">{t('address')} *</label>
-                                                    <input
-                                                        id="delivery-address"
-                                                        className="form-control"
-                                                        name="address"
-                                                        type="text"
-                                                        autoComplete="street-address"
-                                                        value={this.state.delivery.address}
-                                                        onChange={this.handleDeliveryChange}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label htmlFor="delivery-complement">{t('address_complement')}</label>
-                                                    <input
-                                                        id="delivery-complement"
-                                                        className="form-control"
-                                                        name="addressComplement"
-                                                        type="text"
-                                                        placeholder={t('cart_address_example')}
-                                                        value={this.state.delivery.addressComplement}
-                                                        onChange={this.handleDeliveryChange}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label htmlFor="delivery-phone">{t('contact_phone')} *</label>
-                                                    <input
-                                                        id="delivery-phone"
-                                                        className="form-control"
-                                                        name="contactPhone"
-                                                        type="tel"
-                                                        autoComplete="tel"
-                                                        value={this.state.delivery.contactPhone}
-                                                        onChange={this.handleDeliveryChange}
-                                                        required
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="border-bottom pb-2">
-                                            <div className="d-flex justify-content-between mb-3">
-                                                <h6>{t('subtotal')}</h6>
-                                                <h6>{formatCOP(subtotal)}</h6>
-                                            </div>
-                                            <div className="d-flex justify-content-between">
-                                                <h6 className="font-weight-medium">{t('tax')} ({taxPercentage}%)</h6>
-                                                <h6 className="font-weight-medium">{formatCOP(taxAmount)}</h6>
-                                            </div>
-                                        </div>
-                                        <div className="pt-2">
-                                            <div className="d-flex justify-content-between mt-2">
-                                                <h5>{t('total')}</h5>
-                                                <h5>{formatCOP(total)}</h5>
-                                            </div>
-                                            <button
-                                                type="submit"
-                                                className="btn btn-block btn-primary font-weight-bold my-3 py-3"
-                                                disabled={items.length === 0}
-                                            >
-                                                {t('proceed_checkout')}
-                                            </button>
-                                        </div>
-                                    </form>
+                                    <CheckoutForm
+                                        items={items}
+                                        subtotal={subtotal}
+                                        taxAmount={taxAmount}
+                                        total={total}
+                                        onOrderConfirmed={this.handleOrderConfirmed}
+                                    />
                                 )}
-                            </div>
-                        </div>
+                        </Card>
                     </div>
-                </div>
+                </main>
                 <FooterComponent />
                 {this.state.isOrderConfirmed && (
                     <ConfirmationModal
@@ -391,7 +314,7 @@ class ShoppingCarComponent extends Component {
                         onAccept={this.handleConfirmationAccept}
                     />
                 )}
-            </>
+            </div>
         );
     }
 }

@@ -1,326 +1,192 @@
-import React, { Component } from "react";
-import FilterProducts from "./FilterProducts";
-import { NavLink } from "react-router-dom";
-import productosService from "../../services/ProductosService";
-import cartService from "../../services/CartService";
-import translationService from "../../services/TranslationService";
-import AuthenticationService from "../../services/AuthenticationService";
-import { formatCOP } from "../../Interfaces/ProductInterface";
-import ConfirmationModal from "../ui/ConfirmationModal";
+import React, { useEffect, useMemo, useState } from 'react';
+import { NavLink } from 'react-router-dom';
+import FilterProducts from './FilterProducts.jsx';
+import cartService from '../../services/CartService.js';
+import AuthenticationService from '../../services/AuthenticationService.js';
+import { formatCOP } from '../../Interfaces/ProductInterface.js';
+import ConfirmationModal from '../ui/ConfirmationModal.jsx';
+import { useProductList } from '../../hooks/useApiQueries.ts';
+import useTranslation from '../../hooks/useTranslation.js';
+import { Button } from '../ui/shadcn';
 
-class ProductListComponent extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            products: [],
-            loading: true,
-            error: null,
-            searchTerm: "",
-            pageNumber: 0,
-            pageSize: 15,
-            totalPages: 0,
-            totalElements: 0,
-            numberOfElements: 0,
-            first: true,
-            last: true,
-            isOrderConfirmed: false,
-            currentLanguage: translationService.getLanguage(),
-        };
+function ProductListComponent({ selectedCategoryIds = [], filters = {}, selectedSortBy, onSortByChange, location }) {
+    const t = useTranslation();
+    const [pageNumber, setPageNumber] = useState(0);
+    const [pageSize, setPageSize] = useState(15);
+    const [isOrderConfirmed, setIsOrderConfirmed] = useState(false);
+    const queryParams = useMemo(() => new URLSearchParams(location?.search || ''), [location?.search]);
+    const searchTerm = queryParams.get('name') || queryParams.get('search') || '';
+    const categoryKey = selectedCategoryIds.join(',');
+    const filterKey = JSON.stringify(filters);
 
-        this.loadProducts = this.loadProducts.bind(this);
-        this.goToPreviousPage = this.goToPreviousPage.bind(this);
-        this.goToNextPage = this.goToNextPage.bind(this);
-        this.goToPage = this.goToPage.bind(this);
-        this.getVisiblePageNumbers = this.getVisiblePageNumbers.bind(this);
-        this.handlePageSizeChange = this.handlePageSizeChange.bind(this);
-        this.handleAddToCart = this.handleAddToCart.bind(this);
-        this.unsubscribeFromLanguage = null;
-    }
+    useEffect(() => {
+        setPageNumber(0);
+    }, [searchTerm, categoryKey, filterKey]);
 
-    handleAddToCart(event, product) {
+    const normalizedFilters = useMemo(() => ({
+        searchTerm,
+        categoryIds: selectedCategoryIds,
+        sortBy: filters.sortBy,
+        sortDir: filters.sortDir,
+        minPrice: filters.minPrice,
+        maxPrice: filters.maxPrice,
+        minRating: filters.minRating,
+        maxRating: filters.maxRating,
+    }), [searchTerm, categoryKey, filterKey]);
+    const { data, isPending, isError, error } = useProductList(pageNumber, pageSize, normalizedFilters);
+    const products = data?.products ?? [];
+    const pagination = data?.pagination;
+    const totalPages = pagination?.totalPages ?? 0;
+    const first = pagination?.first ?? true;
+    const last = pagination?.last ?? true;
+
+    const visiblePages = useMemo(() => {
+        if (!totalPages) return [];
+        const maxVisiblePages = 10;
+        const halfWindow = Math.floor(maxVisiblePages / 2);
+        const start = Math.max(0, pageNumber - halfWindow);
+        const end = Math.min(totalPages - 1, start + maxVisiblePages - 1);
+        const adjustedStart = Math.max(0, end - maxVisiblePages + 1);
+        return Array.from({ length: end - adjustedStart + 1 }, (_, index) => adjustedStart + index);
+    }, [pageNumber, totalPages]);
+
+    const handleAddToCart = (event, product) => {
         event.preventDefault();
         cartService.addToCart({
             id: product.id,
             name: product.name,
             price: product.current_price,
-            image: product.image
+            image: product.image,
         });
-        this.setState({ isOrderConfirmed: true });
-    }
+        setIsOrderConfirmed(true);
+    };
 
-    componentDidMount() {
-        this.loadProducts(0);
-        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
-            this.setState({ currentLanguage: lang });
-        });
-    }
-
-    componentWillUnmount() {
-        if (this.unsubscribeFromLanguage) {
-            this.unsubscribeFromLanguage();
-        }
-    }
-
-    componentDidUpdate(prevProps) {
-        const previousQuery = new URLSearchParams(prevProps.location?.search || "");
-        const currentQuery = new URLSearchParams(this.props.location?.search || "");
-        const previousSearch = previousQuery.get("name") || previousQuery.get("search") || "";
-        const currentSearch = currentQuery.get("name") || currentQuery.get("search") || "";
-        const previousCategoryKey = (prevProps.selectedCategoryIds || []).join(",");
-        const currentCategoryKey = (this.props.selectedCategoryIds || []).join(",");
-        const previousFiltersKey = JSON.stringify(prevProps.filters || {});
-        const currentFiltersKey = JSON.stringify(this.props.filters || {});
-
-        if (previousSearch !== currentSearch || previousCategoryKey !== currentCategoryKey || previousFiltersKey !== currentFiltersKey) {
-            this.loadProducts(0, undefined, currentSearch);
-        }
-    }
-
-    loadProducts(pageNumber, selectedPageSize, forcedSearchTerm) {
-        const { pageSize, searchTerm } = this.state;
-        const { filters = {} } = this.props;
-        const selectedCategoryIds = this.props.selectedCategoryIds || [];
-        const effectivePageSize = selectedPageSize || pageSize;
-        const queryParams = new URLSearchParams(this.props.location?.search || "");
-        const querySearch = queryParams.get("name") || queryParams.get("search") || "";
-        const effectiveSearchTerm = forcedSearchTerm !== undefined ? forcedSearchTerm : querySearch || searchTerm;
-        this.setState({ loading: true, error: null });
-        productosService.listarProductos(pageNumber, effectivePageSize, {
-            searchTerm: effectiveSearchTerm,
-            categoryIds: selectedCategoryIds,
-            sortBy: filters.sortBy,
-            sortDir: filters.sortDir,
-            minPrice: filters.minPrice,
-            maxPrice: filters.maxPrice,
-            minRating: filters.minRating,
-            maxRating: filters.maxRating,
-        })
-            .then(({ products, pagination }) => {
-                this.setState({
-                    products,
-                    loading: false,
-                    error: null,
-                    searchTerm: effectiveSearchTerm,
-                    pageNumber: pagination.pageNumber,
-                    pageSize: pagination.pageSize,
-                    totalPages: pagination.totalPages,
-                    totalElements: pagination.totalElements,
-                    numberOfElements: pagination.numberOfElements,
-                    first: pagination.first,
-                    last: pagination.last,
-                });
-            })
-            .catch(() => {
-                this.setState({ products: [], loading: false, error: translationService.t("could_not_load_products") });
-            });
-    }
-
-    goToPreviousPage() {
-        const { pageNumber, first } = this.state;
-        if (!first) {
-            this.loadProducts(pageNumber - 1);
-        }
-    }
-
-    goToNextPage() {
-        const { pageNumber, last } = this.state;
-        if (!last) {
-            this.loadProducts(pageNumber + 1);
-        }
-    }
-
-    goToPage(targetPage) {
-        const { totalPages } = this.state;
-        if (targetPage >= 0 && targetPage < totalPages) {
-            this.loadProducts(targetPage);
-        }
-    }
-
-    getVisiblePageNumbers() {
-        const { pageNumber, totalPages } = this.state;
-        const maxVisiblePages = 10;
-
-        if (totalPages <= 0) {
-            return [];
-        }
-
-        const halfWindow = Math.floor(maxVisiblePages / 2);
-        let startPage = Math.max(0, pageNumber - halfWindow);
-        let endPage = Math.min(totalPages - 1, startPage + maxVisiblePages - 1);
-
-        // Shift window left when near the end to keep 10 pages visible when possible.
-        startPage = Math.max(0, endPage - maxVisiblePages + 1);
-
-        const pages = [];
-        for (let page = startPage; page <= endPage; page += 1) {
-            pages.push(page);
-        }
-
-        return pages;
-    }
-
-    handlePageSizeChange(nextPageSize) {
-        this.loadProducts(0, Number(nextPageSize));
-    }
-
-    handleConfirmationAccept(event) {
-        event.preventDefault();
-        this.setState({ isOrderConfirmed: false });
-    }
-
-    renderStars(averageRating) {
-        const stars = Math.max(0, Math.min(5, Math.round(Number(averageRating) || 0)));
-        return [...Array(stars)].map((_, i) => (
-            <small key={i} className="fa fa-star text-primary mr-1" />
-        ));
-    }
-
-    renderPaginationControls(visiblePages) {
-        const { pageNumber, totalPages, totalElements, numberOfElements, first, last } = this.state;
-        const t = (key) => translationService.t(key);
-
-        return (
-            <div className="col-12 mt-3">
-                <div className="d-flex justify-content-between align-items-center flex-wrap">
-                    {!first ? (
-                        <button
-                            type="button"
-                            className="btn btn-light"
-                            onClick={this.goToPreviousPage}
-                        >
-                            {t('previous')}
-                        </button>
-                    ) : <div />}
-
-                    <ul className="pagination mb-0 mt-2 mt-md-0">
-                        {visiblePages.map((page) => (
-                            <li key={page} className={`page-item ${page === pageNumber ? "active" : ""}`}>
-                                <button
-                                    type="button"
-                                    className="page-link"
-                                    onClick={() => this.goToPage(page)}
-                                >
-                                    {page + 1}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-
-                    {!last ? (
-                        <button
-                            type="button"
-                            className="btn btn-light mt-2 mt-md-0"
-                            onClick={this.goToNextPage}
-                        >
-                            {t('next')}
-                        </button>
-                    ) : <div />}
-                </div>
-
-                <div className="text-center mt-2">
-                    {t('showing')} {numberOfElements} {t('of')} {totalElements} | {t('page')} {totalPages === 0 ? 0 : pageNumber + 1} {t('of')} {totalPages}
-                </div>
+    const renderPaginationControls = () => (
+        <div className="hu-col-span-full hu-mt-3">
+            <div className="hu-flex hu-flex-wrap hu-items-center hu-justify-between hu-gap-3">
+                {!first ? (
+                    <Button type="button" variant="secondary" onClick={() => setPageNumber((page) => Math.max(0, page - 1))}>
+                        {t('previous')}
+                    </Button>
+                ) : <div />}
+                <ul className="hu-m-0 hu-flex hu-list-none hu-flex-wrap hu-items-center hu-gap-1 hu-p-0">
+                    {visiblePages.map((page) => (
+                        <li key={page}>
+                            <button type="button" aria-current={page === pageNumber ? 'page' : undefined} className={`hu-h-9 hu-min-w-9 hu-cursor-pointer hu-rounded-lg hu-border hu-px-3 hu-text-sm ${page === pageNumber ? 'hu-border-blue-700 hu-bg-blue-700 hu-text-white' : 'hu-border-slate-300 hu-bg-white hu-text-slate-700 hover:hu-bg-slate-50'}`} onClick={() => setPageNumber(page)}>
+                                {page + 1}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+                {!last ? (
+                    <Button type="button" variant="secondary" onClick={() => setPageNumber((page) => page + 1)}>
+                        {t('next')}
+                    </Button>
+                ) : <div />}
             </div>
-        );
-    }
+            <div className="hu-mt-3 hu-text-center hu-text-xs hu-text-slate-500">
+                {pagination?.numberOfElements ?? 0} {t('of')} {pagination?.totalElements ?? 0} | {t('page')} {totalPages ? pageNumber + 1 : 0} {t('of')} {totalPages}
+            </div>
+        </div>
+    );
 
-    render() {
-        const { products, loading, error, pageNumber, pageSize, totalPages, totalElements, numberOfElements } = this.state;
-        const { selectedSortBy, onSortByChange } = this.props;
-        const visiblePages = this.getVisiblePageNumbers();
-        const t = (key) => translationService.t(key);
-        const isUserAdmin = AuthenticationService.isUserLoggedIn() && AuthenticationService.isUserAdmin();
-
-        return (
-
-            <div className="col-lg-9 col-md-8 product-list-component">
-                <div className="row pb-3">
-                    <FilterProducts
-                        selectedPageSize={pageSize}
-                        pageSizeOptions={[15, 30, 45]}
-                        onPageSizeChange={this.handlePageSizeChange}
-                        selectedSortBy={selectedSortBy}
-                        onSortByChange={onSortByChange}
-                    />
-                    {loading && <div className="col-12">{t('loading_products')}</div>}
-                    {error && <div className="col-12 text-danger">{error}</div>}
-                    {!loading && !error && products.length > 0 && this.renderPaginationControls(visiblePages)}
-                    {!loading && !error && products.length === 0 && (
-                        <div className="col-12 text-center py-4"><h1>{t('product_not_found')}</h1></div>
-                    )}
-                    {!loading && !error && products.map((product) => {
-                        const status = String(product.status ?? "").toUpperCase();
-                        const isInactive = status === "INACTIVE";
-                        const isDraft = status === "DRAFT";
-                        const productImage = (
-                            <div className="product-img position-relative overflow-hidden" >
+    const isUserAdmin = AuthenticationService.isUserLoggedIn() && AuthenticationService.isUserAdmin();
+    return (
+        <div className="hu-min-w-0">
+            <div className="hu-grid hu-gap-4 sm:hu-grid-cols-2 xl:hu-grid-cols-3">
+                <FilterProducts
+                    selectedPageSize={pageSize}
+                    pageSizeOptions={[15, 30, 45]}
+                    onPageSizeChange={(nextPageSize) => {
+                        setPageSize(Number(nextPageSize));
+                        setPageNumber(0);
+                    }}
+                    selectedSortBy={selectedSortBy}
+                    onSortByChange={onSortByChange}
+                />
+                {isPending && <div className="hu-col-span-full hu-py-8 hu-text-center hu-text-slate-500" role="status">{t('loading_products')}</div>}
+                {isError && <div className="hu-col-span-full hu-rounded-lg hu-border hu-border-red-200 hu-bg-red-50 hu-p-4 hu-text-red-800" role="alert">{error?.message || t('could_not_load_products')}</div>}
+                {data && products.length > 0 && renderPaginationControls()}
+                {!isPending && !isError && products.length === 0 && (
+                    <div className="hu-col-span-full hu-py-8 hu-text-center"><h1 className="hu-text-xl hu-font-semibold">{t('product_not_found')}</h1></div>
+                )}
+                {products.map((product) => {
+                    const status = String(product.status ?? '').toUpperCase();
+                    const isInactive = status === 'INACTIVE';
+                    const isDraft = status === 'DRAFT';
+                    const productImage = (
+                        <div className="hu-group hu-relative hu-overflow-hidden hu-bg-slate-100">
+                            {isInactive ? (
                                 <img
-                                    className="img-fluid w-100"
-                                    src={product.foto_principal || "img/no_image.jpg"}
+                                    className="hu-h-[280px] hu-w-full hu-object-cover hu-transition hu-duration-300 group-hover:hu-scale-105"
+                                    src={product.foto_principal || '/img/no_image.jpg'}
                                     alt={product.name}
-                                    style={{ height: "280px", objectFit: "cover" }}
                                 />
-                                <div className="product-action">
-                                    {!isInactive && !isDraft && (
-                                        <NavLink className="btn btn-outline-dark btn-square active" onClick={(event) => this.handleAddToCart(event, product)} aria-label={t('add_to_cart')}>
-                                            <i className="fa fa-shopping-cart" />
-                                        </NavLink>
-                                    )}
-                                    {!isInactive && (
-                                        <NavLink className="btn btn-outline-dark btn-square active" to={`/product/${product.id}`} aria-label={t('view_details')}>
-                                            <i className="fa fa-search" />
-                                        </NavLink>
-                                    )}
-                                    {isUserAdmin && (
-                                        <NavLink className="btn btn-outline-dark btn-square active" to={`/editProduct/${product.id}`} aria-label={t('edit_product_title')}>
-                                            <i className="fa fa-edit" />
-                                        </NavLink>
-                                    )}
-                                </div>
-                            </div>
-                        );
-
-                        return (
-                    <div key={product.id} className="col-lg-4 col-md-6 col-sm-6 pb-1">
-                        <div className={`product-item bg-light mb-4${isInactive ? " product-item-inactive" : ""}${isDraft ? " product-item-draft" : ""}`}>
-                            {isInactive ? productImage : <NavLink to={`/product/${product.id}`}>{productImage}</NavLink>}
-                            <div className="text-center py-4">
-                                {isInactive ? (
-                                    <span className="h6 text-truncate d-block">{product.name}</span>
-                                ) : (
-                                    <NavLink className="h6 text-decoration-none text-truncate" to={`/product/${product.id}`}>
-                                        {product.name}
+                            ) : (
+                                <NavLink to={`/product/${product.id}`} aria-label={`${t('view_details')}: ${product.name}`}>
+                                    <img
+                                        className="hu-h-[280px] hu-w-full hu-object-cover hu-transition hu-duration-300 group-hover:hu-scale-105"
+                                        src={product.foto_principal || '/img/no_image.jpg'}
+                                        alt={product.name}
+                                    />
+                                </NavLink>
+                            )}
+                            <div className="hu-absolute hu-inset-x-0 hu-bottom-3 hu-flex hu-translate-y-2 hu-justify-center hu-gap-2 hu-opacity-0 hu-transition group-hover:hu-translate-y-0 group-hover:hu-opacity-100 focus-within:hu-translate-y-0 focus-within:hu-opacity-100">
+                                {!isInactive && !isDraft && (
+                                    <button type="button" className="hu-grid hu-h-10 hu-w-10 hu-cursor-pointer hu-place-items-center hu-rounded-lg hu-border hu-border-slate-300 hu-bg-white hu-text-slate-800 hover:hu-bg-green-700 hover:hu-text-white" onClick={(event) => handleAddToCart(event, product)} aria-label={t('add_to_cart')}>
+                                        <i className="fa fa-shopping-cart" aria-hidden="true" />
+                                    </button>
+                                )}
+                                {!isInactive && (
+                                    <NavLink className="hu-grid hu-h-10 hu-w-10 hu-place-items-center hu-rounded-lg hu-border hu-border-slate-300 hu-bg-white hu-text-center hu-text-slate-800 hover:hu-bg-green-700 hover:hu-text-white" to={`/product/${product.id}`} aria-label={t('view_details')}>
+                                        <i className="fa fa-search" aria-hidden="true" />
                                     </NavLink>
                                 )}
-                                <div className="d-flex align-items-center justify-content-center mt-2">
-                                    <h5>{formatCOP(product.current_price)}</h5>
-                                    {product.original_price && Number(product.original_price) !== Number(product.current_price) && (
-                                        <h6 className="text-muted ml-2">
-                                            <del>{formatCOP(product.original_price)}</del>
-                                        </h6>
+                                {isUserAdmin && (
+                                    <NavLink className="hu-grid hu-h-10 hu-w-10 hu-place-items-center hu-rounded-lg hu-border hu-border-slate-300 hu-bg-white hu-text-center hu-text-slate-800 hover:hu-bg-green-700 hover:hu-text-white" to={`/editProduct/${product.id}`} aria-label={t('edit_product_title')}>
+                                        <i className="fa fa-edit" aria-hidden="true" />
+                                    </NavLink>
+                                )}
+                            </div>
+                        </div>
+                    );
+                    return (
+                        <div key={product.id} className="hu-overflow-hidden hu-rounded-xl hu-border hu-border-slate-200 hu-bg-white hu-shadow-sm">
+                            <div className={`${isInactive ? 'hu-opacity-50' : ''}${isDraft ? ' hu-border-t-4 hu-border-amber-400' : ''}`}>
+                                {productImage}
+                                <div className="hu-p-4 hu-text-center">
+                                    {isInactive ? (
+                                        <span className="hu-block hu-truncate hu-font-semibold">{product.name}</span>
+                                    ) : (
+                                        <NavLink className="hu-block hu-truncate hu-font-semibold hu-text-slate-900 hu-no-underline hover:hu-text-blue-700" to={`/product/${product.id}`}>
+                                            {product.name}
+                                        </NavLink>
                                     )}
+                                    <div className="hu-mt-2 hu-flex hu-items-center hu-justify-center hu-gap-2">
+                                        <h3 className="hu-m-0 hu-text-base hu-font-bold hu-text-slate-900">{formatCOP(product.current_price)}</h3>
+                                        {product.original_price && Number(product.original_price) !== Number(product.current_price) && (
+                                            <span className="hu-text-sm hu-text-slate-500"><del>{formatCOP(product.original_price)}</del></span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                        );
-                    })}
-
-                    {!loading && !error && products.length > 0 && (
-                        this.renderPaginationControls(visiblePages)
-                    )}
-                </div>
-
-                {this.state.isOrderConfirmed && (
-                    <ConfirmationModal
-                        title={t('product_added_to_cart')}
-                        acceptLabel={t('accept')}
-                        onAccept={(event) => this.handleConfirmationAccept(event)}
-                    />
-                )}
+                    );
+                })}
+                {data && products.length > 0 && renderPaginationControls()}
             </div>
-        );
-    }
+            {isOrderConfirmed && (
+                <ConfirmationModal
+                    title={t('product_added_to_cart')}
+                    acceptLabel={t('accept')}
+                    onAccept={(event) => {
+                        event.preventDefault();
+                        setIsOrderConfirmed(false);
+                    }}
+                />
+            )}
+        </div>
+    );
 }
 
 export default ProductListComponent;

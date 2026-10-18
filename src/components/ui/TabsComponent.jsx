@@ -5,23 +5,23 @@ const TabsComponent = ({ tabs }) => {
 
   return (
     <div>
-      <div className="nav nav-tabs mb-4">
+      <div className="hu-mb-4 hu-flex hu-gap-2 hu-overflow-x-auto hu-border-b hu-border-slate-200" role="tablist">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
-            className={`nav-item nav-link text-dark ${activeTab === tab.key ? 'active' : ''}`}
+            className={`hu-whitespace-nowrap hu-border-0 hu-border-b-2 hu-bg-transparent hu-px-4 hu-py-2.5 hu-text-sm hu-font-medium ${activeTab === tab.key ? 'hu-border-blue-700 hu-text-blue-700' : 'hu-border-transparent hu-text-slate-600 hover:hu-text-slate-900'}`}
             onClick={() => setActiveTab(tab.key)}
+            role="tab"
+            aria-selected={activeTab === tab.key}
           >
             {tab.label}
           </button>
         ))}
       </div>
-      <div className="tab-content">
+      <div>
         {tabs.map((tab) => (
-          <div key={tab.key} className={`tab-pane fade ${activeTab === tab.key ? 'show active' : ''}`}>
-            {tab.content}
-          </div>
+          activeTab === tab.key && <div key={tab.key} role="tabpanel">{tab.content}</div>
         ))}
       </div>
     </div>

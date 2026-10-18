@@ -1,107 +1,59 @@
-import React, { Component } from 'react';
-import translationService from '../../services/TranslationService.js';
-import './AgeVerificationModal.css';
+import { useEffect, useState } from 'react';
+import useTranslation from '../../hooks/useTranslation.js';
 
-class AgeVerificationModal extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            isOpen: false,
-            currentLanguage: translationService.getLanguage(),
-            declined: false
-        };
-        this.handleAccept = this.handleAccept.bind(this);
-        this.handleDecline = this.handleDecline.bind(this);
-        this.unsubscribeFromLanguage = null;
-    }
+function AgeVerificationModal({ navigate }) {
+    const t = useTranslation();
+    const [isOpen, setIsOpen] = useState(false);
+    const [declined, setDeclined] = useState(false);
 
-    componentDidMount() {
-        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
-            this.setState({ currentLanguage: lang });
-        });
+    useEffect(() => {
+        setIsOpen(sessionStorage.getItem('age_verified') !== 'true');
+    }, []);
 
-        const isVerified = sessionStorage.getItem('age_verified') === 'true';
-        if (!isVerified) {
-            this.setState({ isOpen: true });
-        }
-    }
+    if (!isOpen) return null;
 
-    componentWillUnmount() {
-        if (this.unsubscribeFromLanguage) {
-            this.unsubscribeFromLanguage();
-        }
-    }
-
-    handleAccept() {
+    const accept = () => {
         sessionStorage.setItem('age_verified', 'true');
-        this.setState({ isOpen: false });
-        this.props.navigate('/login');
-    }
+        setIsOpen(false);
+        navigate('/login');
+    };
 
-    handleDecline() {
-        this.setState({ declined: true });
-    }
-
-    render() {
-        if (!this.state.isOpen) return null;
-
-        const t = (key) => translationService.t(key);
-
-        return (
-            <div className="age-verification-overlay">
-                <div className="age-verification-modal">
-                    <div className="mb-4">
-                        <span className="h1 text-uppercase text-dark bg-light px-2">
-                            Zona
-                        </span>
-                        <span className="h1 text-uppercase text-dark bg-primary px-2 ml-n1">
-                            Green
-                        </span>
-                    </div>
-
-                    {!this.state.declined ? (
-                        <>
-                            <h3 className="age-verification-title mb-3 text-dark font-weight-bold">
-                                {t('underage_warning')}
-                            </h3>
-                            <p className="age-verification-description text-muted mb-4">
-                                {t('underage_confirmation_details')}
-                            </p>
-                            <div className="age-verification-actions d-flex flex-column">
-                                <button 
-                                    className="btn btn-primary btn-block font-weight-bold py-3 text-uppercase" 
-                                    onClick={this.handleAccept}
-                                >
-                                    {t('yes_over_18')}
-                                </button>
-                                <button 
-                                    className="btn btn-outline-danger btn-block font-weight-bold py-3 text-uppercase m-0" 
-                                    onClick={this.handleDecline}
-                                >
-                                    {t('no_under_18')}
-                                </button>
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <h3 className="age-verification-title mb-3 text-danger font-weight-bold">
-                                {t('must_be_over_18')}
-                            </h3>
-                            <p className="age-verification-description text-muted mb-4">
-                                {t('underage_exit_message')}
-                            </p>
-                            <button 
-                                className="btn btn-secondary btn-block font-weight-bold py-3" 
-                                onClick={() => window.location.href = 'https://www.google.com'}
-                            >
-                                {t('exit')}
-                            </button>
-                        </>
-                    )}
+    return (
+        <div className="hu-fixed hu-inset-0 hu-z-[100] hu-grid hu-place-items-center hu-bg-slate-950/80 hu-p-4">
+            <section className="hu-w-full hu-max-w-lg hu-rounded-2xl hu-bg-white hu-p-6 hu-text-center hu-shadow-2xl sm:hu-p-8" role="alertdialog" aria-modal="true">
+                <div className="hu-mb-6 hu-text-3xl hu-font-black hu-uppercase">
+                    <span className="hu-bg-slate-100 hu-px-2 hu-text-slate-800">Zona</span>
+                    <span className="hu-bg-green-600 hu-px-2 hu-text-white">Green</span>
                 </div>
-            </div>
-        );
-    }
+                {!declined ? (
+                    <>
+                        <h2 className="hu-mb-3 hu-mt-0 hu-text-xl hu-font-bold hu-text-slate-900">{t('underage_warning')}</h2>
+                        <p className="hu-mb-6 hu-mt-0 hu-leading-6 hu-text-slate-600">{t('underage_confirmation_details')}</p>
+                        <div className="hu-grid hu-gap-3">
+                            <button className="hu-cursor-pointer hu-rounded-lg hu-border-0 hu-bg-green-600 hu-px-4 hu-py-3 hu-font-bold hu-uppercase hu-text-white hover:hu-bg-green-700" type="button" onClick={accept}>
+                                {t('yes_over_18')}
+                            </button>
+                            <button className="hu-cursor-pointer hu-rounded-lg hu-border hu-border-red-600 hu-bg-white hu-px-4 hu-py-3 hu-font-bold hu-uppercase hu-text-red-700 hover:hu-bg-red-50" type="button" onClick={() => setDeclined(true)}>
+                                {t('no_under_18')}
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <h2 className="hu-mb-3 hu-mt-0 hu-text-xl hu-font-bold hu-text-red-700">{t('must_be_over_18')}</h2>
+                        <p className="hu-mb-6 hu-mt-0 hu-leading-6 hu-text-slate-600">{t('underage_exit_message')}</p>
+                        <button
+                            className="hu-cursor-pointer hu-rounded-lg hu-border-0 hu-bg-slate-700 hu-px-4 hu-py-3 hu-font-bold hu-text-white hover:hu-bg-slate-800"
+                            type="button"
+                            onClick={() => { window.location.href = 'https://www.google.com'; }}
+                        >
+                            {t('exit')}
+                        </button>
+                    </>
+                )}
+            </section>
+        </div>
+    );
 }
 
 export default AgeVerificationModal;

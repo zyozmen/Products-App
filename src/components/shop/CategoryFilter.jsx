@@ -1,113 +1,53 @@
+import React from 'react';
+import { useCategories } from '../../hooks/useApiQueries.ts';
+import useTranslation from '../../hooks/useTranslation.js';
 
-import React, { Component } from "react";
-import productosService from "../../services/ProductosService";
-import translationService from "../../services/TranslationService";
+function CategoryFilter({ selectedCategoryIds = [], onCategorySelectionChange }) {
+    const t = useTranslation();
+    const { data: categories = [], isPending, isError, error } = useCategories();
+    const totalProductsInCategories = categories.reduce(
+        (total, category) => total + Number(category.products_count ?? 0),
+        0,
+    );
 
-class CategoryFilter extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            categories: [],
-            loading: true,
-            error: null,
-            currentLanguage: translationService.getLanguage(),
-        };
+    const toggleCategory = (categoryId) => {
+        const id = String(categoryId);
+        const next = selectedCategoryIds.includes(id)
+            ? selectedCategoryIds.filter((selectedId) => selectedId !== id)
+            : [...selectedCategoryIds, id];
+        onCategorySelectionChange?.(next);
+    };
 
-        this.handleAllCategoriesChange = this.handleAllCategoriesChange.bind(this);
-        this.handleCategoryToggle = this.handleCategoryToggle.bind(this);
-        this.unsubscribeFromLanguage = null;
-    }
-
-    componentDidMount() {
-        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
-            this.setState({ currentLanguage: lang });
-        });
-
-        productosService.listarCategorias()
-            .then((categories) => {
-                this.setState({ categories, loading: false, error: null });
-            })
-            .catch(() => {
-                this.setState({ categories: [], loading: false, error: translationService.t("could_not_load_categories") });
-            });
-    }
-
-    componentWillUnmount() {
-        if (this.unsubscribeFromLanguage) {
-            this.unsubscribeFromLanguage();
-        }
-    }
-
-    handleAllCategoriesChange() {
-        const { onCategorySelectionChange } = this.props;
-        if (onCategorySelectionChange) {
-            onCategorySelectionChange([]);
-        }
-    }
-
-    handleCategoryToggle(categoryId) {
-        const { selectedCategoryIds = [], onCategorySelectionChange } = this.props;
-        const normalizedId = String(categoryId);
-        const isSelected = selectedCategoryIds.includes(normalizedId);
-        const nextSelection = isSelected
-            ? selectedCategoryIds.filter((id) => id !== normalizedId)
-            : [...selectedCategoryIds, normalizedId];
-
-        if (onCategorySelectionChange) {
-            onCategorySelectionChange(nextSelection);
-        }
-    }
-
-    render() {
-        const { categories, loading, error } = this.state;
-        const { selectedCategoryIds = [] } = this.props;
-        const t = (key) => translationService.t(key);
-        const totalProductsInCategories = categories.reduce(
-            (total, category) => total + Number(category.products_count ?? 0),
-            0
-        );
-
-        return (
-
-            <div className="bg-light p-4 mb-30">
-                <form>
-                    <div className="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
-                        <input
-                            type="checkbox"
-                            className="custom-control-input"
-                            checked={selectedCategoryIds.length === 0}
-                            onChange={this.handleAllCategoriesChange}
-                            id="category-all"
-                        />
-                        <label className="custom-control-label" htmlFor="category-all">
-                            {t('all_categories')}
-                        </label>
-                        <span className="badge border font-weight-normal">{totalProductsInCategories}</span>
-                    </div>
-                    {loading && <div className="text-muted">{t('loading_categories')}</div>}
-                    {error && <div className="text-danger">{error}</div>}
-                    {!loading && !error && categories.map((category) => (
-                        <div
-                            key={category.category_id}
-                            className="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3"
-                        >
-                            <input
-                                type="checkbox"
-                                className="custom-control-input"
-                                checked={selectedCategoryIds.includes(String(category.category_id))}
-                                onChange={() => this.handleCategoryToggle(category.category_id)}
-                                id={`category-${category.category_id}`}
-                            />
-                            <label className="custom-control-label" htmlFor={`category-${category.category_id}`}>
-                                {category.name}
-                            </label>
-                            <span className="badge border font-weight-normal">{category.products_count}</span>
-                        </div>
-                    ))}
-                </form>
+    return (
+        <section className="hu-rounded-xl hu-border hu-border-slate-200 hu-bg-white hu-p-4">
+            <div className="hu-mb-3 hu-flex hu-items-center hu-justify-between hu-gap-3">
+                <input
+                    type="checkbox"
+                    className="hu-h-4 hu-w-4 hu-accent-blue-700"
+                    checked={selectedCategoryIds.length === 0}
+                    onChange={() => onCategorySelectionChange?.([])}
+                    id="category-all"
+                />
+                <label className="hu-flex-1 hu-cursor-pointer hu-text-sm hu-font-medium hu-text-slate-700" htmlFor="category-all">{t('all_categories')}</label>
+                <span className="hu-rounded-full hu-border hu-border-slate-200 hu-px-2.5 hu-py-1 hu-text-xs hu-text-slate-600">{totalProductsInCategories}</span>
             </div>
-        );
-    }
+            {isPending && <div className="hu-text-sm hu-text-slate-500" role="status">{t('loading_categories')}</div>}
+            {isError && <div className="hu-text-sm hu-text-red-700" role="alert">{error?.message || t('could_not_load_categories')}</div>}
+            {!isPending && !isError && categories.map((category) => (
+                <div key={category.category_id} className="hu-mb-3 hu-flex hu-items-center hu-justify-between hu-gap-3 last:hu-mb-0">
+                    <input
+                        type="checkbox"
+                        className="hu-h-4 hu-w-4 hu-accent-blue-700"
+                        checked={selectedCategoryIds.includes(String(category.category_id))}
+                        onChange={() => toggleCategory(category.category_id)}
+                        id={`category-${category.category_id}`}
+                    />
+                    <label className="hu-flex-1 hu-cursor-pointer hu-text-sm hu-text-slate-700" htmlFor={`category-${category.category_id}`}>{category.name}</label>
+                    <span className="hu-rounded-full hu-border hu-border-slate-200 hu-px-2.5 hu-py-1 hu-text-xs hu-text-slate-600">{category.products_count}</span>
+                </div>
+            ))}
+        </section>
+    );
 }
 
 export default CategoryFilter;

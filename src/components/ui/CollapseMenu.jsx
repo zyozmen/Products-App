@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import './CollapseMenu.css';
 
 const CollapseMenu = ({ title, children, className = '', triggerClassName = '', contentClassName = '' }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const resolvedContentClassName = `${contentClassName} ${isOpen ? 'show' : ''}`.trim();
+  const resolvedContentClassName = `${contentClassName} ${isOpen ? 'show hu-block' : 'hu-hidden'}`.trim();
 
   return (
     <div className={className}>
@@ -15,7 +14,7 @@ const CollapseMenu = ({ title, children, className = '', triggerClassName = '', 
       >
         {title}
       </button>
-      <div className={`${resolvedContentClassName} ${isOpen ? 'collapse-menu-open' : 'collapse-menu-closed'}`.trim()}>
+      <div className={resolvedContentClassName}>
         {children}
       </div>
     </div>

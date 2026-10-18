@@ -1,108 +1,98 @@
-import React, { Component } from 'react';
+import React from 'react';
 import HeaderComponent from '../dashboard/HeaderComponent.jsx';
 import FooterComponent from '../dashboard/FooterComponent.jsx';
 import navigationComponent from '../navigation/NavigationComponent.jsx';
-import translationService from '../../services/TranslationService.js';
-import orderService, { ORDER_STATUS_BADGES, getOrderStatus } from '../../services/OrderService.js';
-import { formatCOP } from '../../Interfaces/ProductInterface';
+import { useMyOrders } from '../../hooks/useApiQueries.ts';
+import useTranslation from '../../hooks/useTranslation.js';
+import { formatCOP } from '../../Interfaces/ProductInterface.js';
+import { Badge, Card, ErrorNotice, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button } from '../ui/shadcn';
 
-class MyOrdersComponent extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            orders: [],
-            loading: true,
-            error: '',
-            currentLanguage: translationService.getLanguage(),
-        };
-        this.unsubscribeFromLanguage = null;
-    }
+const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
+const statusTones = {
+    CREADA: 'blue',
+    PAGADA: 'green',
+    EMPACADA: 'orange',
+    ENTREGADA: 'green',
+    CANCELADA: 'red',
+};
 
-    async componentDidMount() {
-        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
-            this.setState({ currentLanguage: lang });
-        });
-        try {
-            const orders = await orderService.getMyOrders();
-            this.setState({ orders, loading: false });
-        } catch (error) {
-            this.setState({ loading: false, error: error.message });
-        }
-    }
+function MyOrdersComponent() {
+    const t = useTranslation();
+    const { data: orders = [], isPending, isError, error, refetch } = useMyOrders();
 
-    componentWillUnmount() {
-        if (this.unsubscribeFromLanguage) {
-            this.unsubscribeFromLanguage();
-        }
-    }
+    const getOrderStatusLabel = (status) => {
+        const key = `order_status_${String(status).toLowerCase()}`;
+        const label = t(key);
+        return label === key ? status : label;
+    };
 
-    render() {
-        const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
-        const { orders, loading, error, currentLanguage } = this.state;
-        const t = (key) => translationService.t(key);
-        const getOrderStatusLabel = (status) => {
-            const key = `order_status_${String(status).toLowerCase()}`;
-            const label = t(key);
-            return label === key ? status : label;
-        };
-
-        return (
-            <>
-                <HeaderComponentWithNavigation />
-                <div className="container-fluid pb-5 my-orders-page">
-                    <div className="row px-xl-5">
-                        <div className="col">
-                            <h2 className="section-title position-relative text-uppercase my-4">
-                                <span className="bg-secondary pr-3">{t('my_orders')}</span>
-                            </h2>
-                            {error && <div className="alert alert-danger">{error}</div>}
-                            {loading ? (
-                                <p>{t('loading')}</p>
-                            ) : orders.length === 0 && !error ? (
-                                <div className="bg-light p-30">{t('orders_empty')}</div>
-                            ) : (
-                                orders.map((order) => (
-                                    <div key={order.id} className="bg-light p-30 mb-4 table-responsive">
-                                        <div className="d-flex justify-content-between align-items-center mb-2">
-                                            <h5 className="mb-0">Orden #{order.id}</h5>
-                                            <span className={`badge ${ORDER_STATUS_BADGES[getOrderStatus(order)] || 'badge-secondary'} py-2 px-3`}>
-                                                {getOrderStatusLabel(getOrderStatus(order))}
-                                            </span>
-                                        </div>
-                                        <div className="text-muted mb-2">
-                                            {order.createdAt ? new Date(order.createdAt).toLocaleString(currentLanguage === 'EN' ? 'en-US' : 'es-CO') : ''}
-                                        </div>
-                                        <table className="table table-bordered text-center mb-2">
-                                            <thead className="thead-dark">
-                                                <tr>
-                                                    <th>{t('product')}</th>
-                                                    <th>{t('quantity')}</th>
-                                                    <th>{t('unit_price')}</th>
-                                                    <th>{t('subtotal')}</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {(order.items || []).map((item, index) => (
-                                                    <tr key={`${order.id}-${item.productId}-${index}`}>
-                                                        <td className="text-left">{item.name}</td>
-                                                        <td>{item.quantity}</td>
-                                                        <td>{formatCOP(item.unitPrice)}</td>
-                                                        <td>{formatCOP(item.unitPrice * item.quantity)}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                        <h6 className="text-right mb-0">{t('total')}: {formatCOP(order.total)}</h6>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
+    return (
+        <div className="hu-flex hu-min-h-screen hu-flex-col hu-bg-slate-50 hu-text-slate-900">
+            <HeaderComponentWithNavigation />
+            <main className="hu-mx-auto hu-w-full hu-max-w-7xl hu-flex-1 hu-px-4 hu-py-8 md:hu-px-8">
+                <div className="hu-mb-6">
+                    <p className="hu-mb-2 hu-text-xs hu-font-bold hu-uppercase hu-tracking-[0.16em] hu-text-blue-700">{t('my_account')}</p>
+                    <h1 className="hu-m-0 hu-text-3xl hu-font-bold">{t('my_orders')}</h1>
                 </div>
-                <FooterComponent />
-            </>
-        );
-    }
+                {isError && (
+                    <div className="hu-mb-5 hu-grid hu-gap-3">
+                        <ErrorNotice>{error?.message || t('my_orders_load_failed')}</ErrorNotice>
+                        <Button type="button" variant="secondary" className="hu-w-fit" onClick={() => void refetch()}>Reintentar</Button>
+                    </div>
+                )}
+                {isPending ? (
+                    <p className="hu-py-6 hu-text-sm hu-text-slate-600" role="status">{t('loading')}</p>
+                ) : !orders.length && !isError ? (
+                    <Card className="hu-p-8 hu-text-center hu-text-slate-600">{t('orders_empty')}</Card>
+                ) : (
+                    <div className="hu-grid hu-gap-5">
+                        {orders.map((order) => {
+                            const status = String(order.status ?? '').toUpperCase() === 'DESPACHADA'
+                                ? 'EMPACADA'
+                                : String(order.status ?? '').toUpperCase();
+                            return (
+                                <Card key={order.id} className="hu-overflow-hidden">
+                                    <div className="hu-flex hu-flex-wrap hu-items-center hu-justify-between hu-gap-3 hu-border-b hu-border-slate-200 hu-p-5">
+                                        <div>
+                                            <h2 className="hu-m-0 hu-text-lg hu-font-bold">Orden #{order.id}</h2>
+                                            <p className="hu-mb-0 hu-mt-1 hu-text-sm hu-text-slate-500">
+                                                {order.createdAt ? new Date(order.createdAt).toLocaleString() : ''}
+                                            </p>
+                                        </div>
+                                        <Badge tone={statusTones[status] || 'neutral'}>{getOrderStatusLabel(status)}</Badge>
+                                    </div>
+                                    <div className="hu-overflow-x-auto hu-p-5">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow className="hover:hu-bg-slate-50">
+                                                    <TableHead>{t('product')}</TableHead>
+                                                    <TableHead>{t('quantity')}</TableHead>
+                                                    <TableHead>{t('unit_price')}</TableHead>
+                                                    <TableHead>{t('subtotal')}</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {(order.items || []).map((item, index) => (
+                                                    <TableRow key={`${order.id}-${item.productId}-${index}`}>
+                                                        <TableCell className="hu-font-medium">{item.name}</TableCell>
+                                                        <TableCell>{item.quantity}</TableCell>
+                                                        <TableCell>{formatCOP(item.unitPrice)}</TableCell>
+                                                        <TableCell>{formatCOP(item.unitPrice * item.quantity)}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                        <p className="hu-mb-0 hu-mt-4 hu-text-right hu-font-bold">{t('total')}: {formatCOP(order.total)}</p>
+                                    </div>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                )}
+            </main>
+            <FooterComponent />
+        </div>
+    );
 }
 
 export default MyOrdersComponent;

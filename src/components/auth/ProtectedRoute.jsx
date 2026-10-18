@@ -1,13 +1,12 @@
-import React from 'react';
 import { Navigate, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import translationService from '../../services/TranslationService.js';
 
 export const AccessDenied = () => (
-    <div className="container text-center py-5" role="alert">
-        <h2>{translationService.t('access_denied_title')}</h2>
-        <p>{translationService.t('access_denied_text')}</p>
-        <NavLink to="/" className="btn btn-primary">{translationService.t('back_to_home')}</NavLink>
+    <div className="hu-mx-auto hu-max-w-2xl hu-px-4 hu-py-16 hu-text-center" role="alert">
+        <h2 className="hu-mb-3 hu-text-2xl hu-font-bold hu-text-slate-900">{translationService.t('access_denied_title')}</h2>
+        <p className="hu-mb-6 hu-text-slate-600">{translationService.t('access_denied_text')}</p>
+        <NavLink to="/" className="hu-inline-flex hu-items-center hu-justify-center hu-rounded-lg hu-bg-blue-700 hu-px-4 hu-py-2.5 hu-text-sm hu-font-semibold hu-text-white hu-no-underline hover:hu-bg-blue-800">{translationService.t('back_to_home')}</NavLink>
     </div>
 );
 

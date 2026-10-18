@@ -1,108 +1,60 @@
-import React, { Component } from "react";
-import cartService from "../../../services/CartService";
-import translationService from "../../../services/TranslationService";
-import { formatCOP } from "../../../Interfaces/ProductInterface";
-import ConfirmationModal from "../../ui/ConfirmationModal";
-import './CartControllsComponent.css';
+import { useState } from 'react';
+import cartService from '../../../services/CartService.js';
+import useTranslation from '../../../hooks/useTranslation.js';
+import { Button, Input } from '../../ui/shadcn';
+import ConfirmationModal from '../../ui/ConfirmationModal';
 
-class CartControllsComponent extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            quantity: 1,
-            isProductAdded: false,
-            currentLanguage: translationService.getLanguage(),
-        };
-        this.unsubscribeFromLanguage = null;
-        this.handleIncrement = this.handleIncrement.bind(this);
-        this.handleDecrement = this.handleDecrement.bind(this);
-        this.handleQuantityChange = this.handleQuantityChange.bind(this);
-        this.handleAddToCart = this.handleAddToCart.bind(this);
-    }
-
-    componentDidMount() {
-        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
-            this.setState({ currentLanguage: lang });
-        });
-    }
-
-    componentWillUnmount() {
-        if (this.unsubscribeFromLanguage) {
-            this.unsubscribeFromLanguage();
-        }
-    }
-
-    handleIncrement() {
-        this.setState((prevState) => ({ quantity: prevState.quantity + 1 }));
-    }
-
-    handleDecrement() {
-        this.setState((prevState) => ({ quantity: Math.max(1, prevState.quantity - 1) }));
-    }
-
-    handleQuantityChange(event) {
-        const quantity = Number(event.target.value);
-        if (Number.isFinite(quantity) && quantity > 0) {
-            this.setState({ quantity });
-        }
-    }
-
-    handleAddToCart() {
-        const { product } = this.props;
-        if (!product || !product.id) {
-            return;
-        }
+function CartControllsComponent({ product }) {
+    const t = useTranslation();
+    const [quantity, setQuantity] = useState(1);
+    const [isProductAdded, setIsProductAdded] = useState(false);
+    const changeQuantity = (event) => {
+        const value = Number(event.target.value);
+        if (Number.isInteger(value) && value > 0) setQuantity(value);
+        else if (event.target.value === '') setQuantity('');
+    };
+    const addToCart = () => {
+        if (!product?.id || !Number.isInteger(quantity) || quantity < 1) return;
         cartService.addToCart({
             id: product.id,
             name: product.name,
             price: product.price?.current ?? 0,
             image: product.foto_principal || '/img/no_image.jpg',
-        }, this.state.quantity);
-        this.setState({ quantity: 1, isProductAdded: true });
-    }
+        }, quantity);
+        setQuantity(1);
+        setIsProductAdded(true);
+    };
 
-    render() {
-        const { quantity } = this.state;
-        const t = (key) => translationService.t(key);
-
-        return (
-            <>
-                <div className="d-flex align-items-center pt-2">
-                    <div className="input-group quantity mr-3 quantity-control">
-                        <div className="input-group-btn">
-                             <button type="button" className="btn btn-primary btn-plus" onClick={this.handleIncrement}>
-                                <i className="fa fa-plus" />
-                            </button>
-                        </div>
-                        
-                        <div className="input-group">
-                        <input
-                            type="text"
-                            className="form-control bg-secondary border-0 text-center"
-                            value={quantity}
-                            onChange={this.handleQuantityChange}
-                        />
-                        </div>
-                        <div className="input-group-btn">
-                            <button type="button" className="btn btn-primary btn-minus" onClick={this.handleDecrement}>
-                                <i className="fa fa-minus" />
-                            </button>
-                        </div>
-                    </div>
-                    <button type="button" className="btn btn-primary px-3" onClick={this.handleAddToCart}>
-                        <i className="fa fa-shopping-cart mr-1" /> {t('add_to_cart')}
-                    </button>
-                </div>
-                {this.state.isProductAdded && (
-                    <ConfirmationModal
-                        title={t('product_added_to_cart')}
-                        acceptLabel={t('accept')}
-                        onAccept={() => this.setState({ isProductAdded: false })}
+    return (
+        <>
+            <div className="hu-flex hu-flex-wrap hu-items-center hu-gap-3">
+                <div className="hu-flex hu-items-center">
+                    <Button type="button" className="hu-rounded-r-none hu-px-3" aria-label={t('decrease_quantity')} onClick={() => setQuantity((current) => Math.max(1, (Number(current) || 1) - 1))}>−</Button>
+                    <Input
+                        className="hu-w-20 hu-rounded-none hu-text-center"
+                        type="number"
+                        min="1"
+                        step="1"
+                        aria-label={t('quantity')}
+                        value={quantity}
+                        onChange={changeQuantity}
                     />
-                )}
-            </>
-        );
-    }
+                    <Button type="button" className="hu-rounded-l-none hu-px-3" aria-label={t('increase_quantity')} onClick={() => setQuantity((current) => (Number(current) || 0) + 1)}>+</Button>
+                </div>
+                <Button type="button" onClick={addToCart}>
+                    <i className="fa fa-shopping-cart" aria-hidden="true" />
+                    {t('add_to_cart')}
+                </Button>
+            </div>
+            {isProductAdded && (
+                <ConfirmationModal
+                    title={t('product_added_to_cart')}
+                    acceptLabel={t('accept')}
+                    onAccept={() => setIsProductAdded(false)}
+                />
+            )}
+        </>
+    );
 }
 
 export default CartControllsComponent;

@@ -1,16 +1,24 @@
-import React, { Component } from 'react';
-import './App.css';
-import './bootstrap.css';
+import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import GrowShopApp from './components/GrowShopApp';
- 
-class App extends Component {
-  render() {
-    return (
-      <div className="GrowShopApp">
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+    },
+  },
+});
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <div className="GrowShopApp hu-min-h-screen hu-w-full">
         <GrowShopApp />
       </div>
-    );
-  }
+    </QueryClientProvider>
+  );
 }
 
 export default App;

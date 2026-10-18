@@ -1,83 +1,39 @@
-import React, { Component } from 'react';
-import translationService from '../../services/TranslationService';
-import productosService from '../../services/ProductosService';
+import React from 'react';
 import navigationComponent from '../navigation/NavigationComponent.jsx';
-import './CategoryComponent.css';
+import { useCategories } from '../../hooks/useApiQueries.ts';
+import useTranslation from '../../hooks/useTranslation.js';
 
-class CategoryComponent extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            currentLanguage: translationService.getLanguage(),
-            category: []
-        };
-        this.unsubscribeFromLanguage = null;
-        this.handleCategoryClick = this.handleCategoryClick.bind(this);
-    }
+function CategoryComponent({ navigate }) {
+    const t = useTranslation();
+    const { data: categories = [], isPending, isError, error } = useCategories();
 
-    async componentDidMount() {
-        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
-            this.setState({ currentLanguage: lang });
-        });
-
-        try {
-            const categories = await productosService.listarCategorias();
-            this.setState({ category: categories || [] });
-        } catch (error) {
-            console.error('Error loading categories:', error);
-        }
-    }
-
-    componentWillUnmount() {
-        if (this.unsubscribeFromLanguage) {
-            this.unsubscribeFromLanguage();
-        }
-    }
-
-    handleCategoryClick(categoryId) {
-        this.props.navigate(`/shop?category=${encodeURIComponent(categoryId)}`);
-    }
-
-    render() {
-        const t = (key) => translationService.t(key);
-        const { category } = this.state;
-        const productsLabel = t('products_label');
-
-        return (
-            <div className="container-fluid pt-5">
-                <h2 className="section-title position-relative text-uppercase mx-xl-5 mb-4">
-                    <span className="bg-secondary pr-3">{t('categories')}</span>
-                </h2>
-                <div className="row px-xl-5 pb-3">
-                    {category.map(cat => (
-                        <div className="col-lg-3 col-md-4 col-sm-6 pb-1" key={cat.category_id}>
-                            <button 
-                                type="button" 
-                                className="text-decoration-none btn btn-link p-0 w-100 text-left"
-                                onClick={() => this.handleCategoryClick(cat.category_id)}
-                                style={{ border: 'none', background: 'none' }}
-                            >
-                                <div className="cat-item d-flex align-items-center mb-4">
-                                    <div className="overflow-hidden category-image-wrapper">
-                                        <img className="img-fluid" src={`/img/cat-${cat.category_id}.jpg`} alt={cat.name} />
-                                    </div>
-                                    <div className="flex-fill pl-3">
-                                        <h6 className="text-dark font-weight-bold mb-1">{cat.name}</h6>
-                                        <small className="text-body">{cat.products_count} {productsLabel}</small>
-                                    </div>
-                                </div>
-                            </button>
-                        </div>
-                    ))}
-                    {category.length === 0 && (
-                        <div className="col text-center py-4">
-                            <p className="text-muted">{t('loading_categories')}</p>
-                        </div>
-                    )}
-                </div>
+    return (
+        <section className="hu-mx-auto hu-max-w-7xl hu-px-4 hu-py-8 sm:hu-px-6 lg:hu-px-8">
+            <h2 className="hu-mb-5 hu-border-b hu-border-slate-200 hu-pb-3 hu-text-xl hu-font-bold hu-uppercase hu-tracking-wide">{t('categories')}</h2>
+            <div className="hu-grid hu-gap-4 sm:hu-grid-cols-2 lg:hu-grid-cols-4">
+                {categories.map((category) => (
+                    <div key={category.category_id}>
+                        <button
+                            type="button"
+                            className="hu-flex hu-w-full hu-cursor-pointer hu-items-center hu-gap-4 hu-rounded-xl hu-border hu-border-slate-200 hu-bg-white hu-p-3 hu-text-left hu-transition hover:hu-border-green-600 hover:hu-shadow-md"
+                            onClick={() => navigate(`/shop?category=${encodeURIComponent(category.category_id)}`)}
+                        >
+                            <img className="hu-h-24 hu-w-24 hu-shrink-0 hu-rounded-lg hu-object-cover" src={`/img/cat-${category.category_id}.jpg`} alt="" />
+                            <span className="hu-min-w-0">
+                                <span className="hu-block hu-truncate hu-font-bold hu-text-slate-900">{category.name}</span>
+                                <span className="hu-text-sm hu-text-slate-600">{category.products_count} {t('products_label')}</span>
+                            </span>
+                        </button>
+                    </div>
+                ))}
+                {isPending && <div className="hu-col-span-full hu-py-8 hu-text-center hu-text-slate-500" role="status">{t('loading_categories')}</div>}
+                {isError && <div className="hu-col-span-full hu-py-8 hu-text-center hu-text-red-700" role="alert">{error.message}</div>}
+                {!isPending && !isError && categories.length === 0 && (
+                    <div className="hu-col-span-full hu-py-8 hu-text-center hu-text-slate-500"><p>{t('no_categories_available')}</p></div>
+                )}
             </div>
-        );
-    }
+        </section>
+    );
 }
 
 export default navigationComponent(CategoryComponent);

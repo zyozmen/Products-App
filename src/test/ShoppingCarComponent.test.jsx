@@ -1,11 +1,32 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import cartService from '../services/CartService';
 import orderService from '../services/OrderService';
-import ShoppingCarComponent, { createWhatsAppCheckoutUrl } from '../components/cart/ShoppingCarComponent';
+import { CheckoutForm, createWhatsAppCheckoutUrl } from '../components/cart/ShoppingCarComponent';
 
 afterEach(() => {
     vi.restoreAllMocks();
+    sessionStorage.clear();
 });
+
+const renderCheckout = (props = {}) => {
+    const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    return render(
+        <QueryClientProvider client={queryClient}>
+            <CheckoutForm
+                items={[{ id: '1', name: 'Mochila', price: 10, quantity: 1 }]}
+                subtotal={10}
+                taxAmount={1.6}
+                total={11.6}
+                onOrderConfirmed={vi.fn()}
+                {...props}
+            />
+        </QueryClientProvider>,
+    );
+};
 
 describe('cart product images', () => {
     it('uses the placeholder image when a product image is empty', () => {
@@ -50,59 +71,63 @@ describe('createWhatsAppCheckoutUrl', () => {
         expect(url.searchParams.get('text')).toContain('Total: $23');
     });
 
-    it('opens checkout in a new tab without replacing the cart', async () => {
-        vi.spyOn(cartService, 'getCart').mockReturnValue([
-            { id: '1', name: 'Mochila', price: 10, quantity: 1 },
-        ]);
-        vi.spyOn(cartService, 'getSubtotal').mockReturnValue(10);
-        vi.spyOn(cartService, 'getTaxAmount').mockReturnValue(1.6);
-        vi.spyOn(cartService, 'getTotal').mockReturnValue(11.6);
-        const clearCartSpy = vi.spyOn(cartService, 'clearCart').mockImplementation(() => {});
+    it('saves the order, opens WhatsApp, and confirms checkout', async () => {
         const createOrderSpy = vi.spyOn(orderService, 'createOrder').mockResolvedValue({ id: 1 });
         const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-        const component = new ShoppingCarComponent({});
-        component.setState = (nextState) => {
-            component.state = { ...component.state, ...nextState };
-        };
+        const onOrderConfirmed = vi.fn();
+        renderCheckout({ onOrderConfirmed });
 
-        await component.handleCheckout({ preventDefault: vi.fn() });
+        fireEvent.click(screen.getByRole('checkbox'));
+        fireEvent.change(screen.getByLabelText(/Nombre de la persona que recibe/i), { target: { value: 'Ana Pérez' } });
+        fireEvent.change(screen.getByLabelText('Dirección *'), { target: { value: 'Calle 10' } });
+        fireEvent.change(screen.getByLabelText('Teléfono de contacto *'), { target: { value: '3001234567' } });
+        fireEvent.click(screen.getByRole('button', { name: /Proceder al pago/i }));
 
-        expect(createOrderSpy).toHaveBeenCalledOnce();
-        expect(openSpy).toHaveBeenCalledWith(
+        await waitFor(() => expect(createOrderSpy).toHaveBeenCalledOnce());
+        expect(createOrderSpy).toHaveBeenCalledWith({
+            items: [{ id: '1', name: 'Mochila', price: 10, quantity: 1 }],
+            delivery: expect.objectContaining({
+                recipientName: 'Ana Pérez',
+                address: 'Calle 10',
+                contactPhone: '3001234567',
+            }),
+            subtotal: 10,
+            taxAmount: 1.6,
+            total: 11.6,
+        });
+        await waitFor(() => expect(openSpy).toHaveBeenCalledWith(
             expect.stringContaining('https://wa.me/'),
             '_blank',
-            'noopener,noreferrer'
-        );
-        expect(clearCartSpy).toHaveBeenCalledOnce();
-        expect(component.state.isOrderConfirmed).toBe(true);
+            'noopener,noreferrer',
+        ));
+        expect(onOrderConfirmed).toHaveBeenCalledOnce();
     });
 
-    it('keeps the cart when the order cannot be saved', async () => {
-        vi.spyOn(cartService, 'getCart').mockReturnValue([
-            { id: '1', name: 'Mochila', price: 10, quantity: 1 },
-        ]);
-        vi.spyOn(cartService, 'getSubtotal').mockReturnValue(10);
-        vi.spyOn(cartService, 'getTaxAmount').mockReturnValue(1.6);
-        vi.spyOn(cartService, 'getTotal').mockReturnValue(11.6);
-        const clearCartSpy = vi.spyOn(cartService, 'clearCart').mockImplementation(() => {});
+    it('does not open WhatsApp or confirm when order creation fails', async () => {
         vi.spyOn(orderService, 'createOrder').mockRejectedValue(new Error('fail'));
-        vi.stubGlobal('alert', vi.fn());
         const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-        const component = new ShoppingCarComponent({});
+        const onOrderConfirmed = vi.fn();
+        renderCheckout({ onOrderConfirmed });
 
-        await component.handleCheckout({ preventDefault: vi.fn() });
+        fireEvent.click(screen.getByRole('checkbox'));
+        fireEvent.change(screen.getByLabelText(/Nombre de la persona que recibe/i), { target: { value: 'Ana Pérez' } });
+        fireEvent.change(screen.getByLabelText('Dirección *'), { target: { value: 'Calle 10' } });
+        fireEvent.change(screen.getByLabelText('Teléfono de contacto *'), { target: { value: '3001234567' } });
+        fireEvent.click(screen.getByRole('button', { name: /Proceder al pago/i }));
 
+        expect(await screen.findByRole('alert')).toHaveTextContent('fail');
         expect(openSpy).not.toHaveBeenCalled();
-        expect(clearCartSpy).not.toHaveBeenCalled();
-        vi.unstubAllGlobals();
+        expect(onOrderConfirmed).not.toHaveBeenCalled();
     });
 
-    it('returns to the welcome page when confirmation is accepted', () => {
-        const navigate = vi.fn();
-        const component = new ShoppingCarComponent({ navigate });
+    it('validates delivery details before sending the order', async () => {
+        const createOrderSpy = vi.spyOn(orderService, 'createOrder').mockResolvedValue({ id: 1 });
+        renderCheckout();
 
-        component.handleConfirmationAccept();
+        fireEvent.click(screen.getByRole('checkbox'));
+        fireEvent.click(screen.getByRole('button', { name: /Proceder al pago/i }));
 
-        expect(navigate).toHaveBeenCalledWith('/');
+        expect(await screen.findAllByRole('alert')).toHaveLength(3);
+        expect(createOrderSpy).not.toHaveBeenCalled();
     });
 });

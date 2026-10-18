@@ -1,47 +1,25 @@
-import React, { Component } from "react";
-import translationService from "../../../services/TranslationService";
+import useTranslation from '../../../hooks/useTranslation.js';
 
-class ShareComponent extends Component {
-    constructor(props) {
-        super(props);
-        this.state = { currentLanguage: translationService.getLanguage() };
-        this.unsubscribeFromLanguage = null;
-    }
+function ShareComponent() {
+    const t = useTranslation();
 
-    componentDidMount() {
-        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
-            this.setState({ currentLanguage: lang });
-        });
-    }
-
-    componentWillUnmount() {
-        if (this.unsubscribeFromLanguage) {
-            this.unsubscribeFromLanguage();
-        }
-    }
-
-    render() {
-        const t = (key) => translationService.t(key);
-        return (
-            <div className="d-flex pt-2">
-                <strong className="text-dark mr-2">{t('share_on')}</strong>
-                <div className="d-inline-flex">
-                    <button type="button" className="btn btn-link text-dark px-2 p-0" aria-label={`${t('share_on')} Facebook`}>
-                        <i className="fab fa-facebook-f" />
+    return (
+        <div className="hu-flex hu-items-center hu-gap-3 hu-pt-2">
+            <strong className="hu-text-sm hu-text-slate-800">{t('share_on')}</strong>
+            <div className="hu-flex hu-gap-3">
+                {[
+                    ['Facebook', 'fab fa-facebook-f'],
+                    ['Twitter', 'fab fa-twitter'],
+                    ['LinkedIn', 'fab fa-linkedin-in'],
+                    ['Pinterest', 'fab fa-pinterest'],
+                ].map(([network, icon]) => (
+                    <button key={network} type="button" className="hu-cursor-pointer hu-border-0 hu-bg-transparent hu-p-1 hu-text-slate-700 hover:hu-text-blue-700" aria-label={`${t('share_on')} ${network}`}>
+                        <i className={icon} aria-hidden="true" />
                     </button>
-                    <button type="button" className="btn btn-link text-dark px-2 p-0" aria-label={`${t('share_on')} Twitter`}>
-                        <i className="fab fa-twitter" />
-                    </button>
-                    <button type="button" className="btn btn-link text-dark px-2 p-0" aria-label={`${t('share_on')} LinkedIn`}>
-                        <i className="fab fa-linkedin-in" />
-                    </button>
-                    <button type="button" className="btn btn-link text-dark px-2 p-0" aria-label={`${t('share_on')} Pinterest`}>
-                        <i className="fab fa-pinterest" />
-                    </button>
-                </div>
+                ))}
             </div>
-        );
-    }
+        </div>
+    );
 }
 
 export default ShareComponent;

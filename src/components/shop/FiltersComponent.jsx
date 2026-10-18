@@ -1,71 +1,28 @@
+import NameFilter from './NameFilter.jsx';
+import PriceFilter from './PriceFilter.jsx';
+import CategoryFilter from './CategoryFilter.jsx';
+import useTranslation from '../../hooks/useTranslation.js';
 
-import React, { Component } from "react";
-import NameFilter from "./NameFilter";
-import PriceFilter from "./PriceFilter";
-import CategoryFilter from "./CategoryFilter";
-import translationService from "../../services/TranslationService";
+function FiltersComponent(props) {
+    const t = useTranslation();
+    const sectionTitle = 'hu-mb-3 hu-mt-0 hu-border-b hu-border-slate-200 hu-pb-2 hu-text-sm hu-font-bold hu-uppercase hu-tracking-wide hu-text-slate-700';
 
-class FiltersComponent extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            currentLanguage: translationService.getLanguage(),
-        };
-        this.unsubscribeFromLanguage = null;
-    }
-
-    componentDidMount() {
-        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
-            this.setState({ currentLanguage: lang });
-        });
-    }
-
-    componentWillUnmount() {
-        if (this.unsubscribeFromLanguage) {
-            this.unsubscribeFromLanguage();
-        }
-    }
-
-    render() {
-        const {
-            selectedCategoryIds,
-            onCategorySelectionChange,
-            minPrice,
-            maxPrice,
-            onPriceRangeChange,
-            nameFilter,
-            onNameFilterChange,
-        } = this.props;
-        const t = (key) => translationService.t(key);
-
-        return (
-            <div className="col-lg-3 col-md-4">
-                <h5 className="section-title position-relative text-uppercase mb-3">
-                    <span className="bg-secondary pr-3">{t('filter_by_name')}</span>
-                </h5>
-                <NameFilter
-                    nameFilter={nameFilter}
-                    onNameFilterChange={onNameFilterChange}
-                />
-
-                <h5 className="section-title position-relative text-uppercase mb-3">
-                    <span className="bg-secondary pr-3">{t('filter_by_price')}</span>
-                </h5>
-                <PriceFilter
-                    minPrice={minPrice}
-                    maxPrice={maxPrice}
-                    onPriceRangeChange={onPriceRangeChange}
-                />
-
-                <h5 className="section-title position-relative text-uppercase mb-3">
-                    <span className="bg-secondary pr-3">{t('filter_by_category')}</span>
-                </h5>
-                <CategoryFilter
-                    selectedCategoryIds={selectedCategoryIds}
-                    onCategorySelectionChange={onCategorySelectionChange}
-                />
-            </div>
-        );
-    }
+    return (
+        <aside className="hu-grid hu-content-start hu-gap-5">
+            <section>
+                <h2 className={sectionTitle}>{t('filter_by_name')}</h2>
+                <NameFilter nameFilter={props.nameFilter} onNameFilterChange={props.onNameFilterChange} />
+            </section>
+            <section>
+                <h2 className={sectionTitle}>{t('filter_by_price')}</h2>
+                <PriceFilter minPrice={props.minPrice} maxPrice={props.maxPrice} onPriceRangeChange={props.onPriceRangeChange} />
+            </section>
+            <section>
+                <h2 className={sectionTitle}>{t('filter_by_category')}</h2>
+                <CategoryFilter selectedCategoryIds={props.selectedCategoryIds} onCategorySelectionChange={props.onCategorySelectionChange} />
+            </section>
+        </aside>
+    );
 }
+
 export default FiltersComponent;

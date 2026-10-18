@@ -1,144 +1,75 @@
-import React, { Component } from "react";
-import productosService from "../../../services/ProductosService.js";
-import translationService from "../../../services/TranslationService.js";
-import AuthenticationService from "../../../services/AuthenticationService";
-import { NavLink } from "react-router-dom";
-import CartControllsComponent from "./CartControllsComponent";
-import { toProduct } from "../../../Interfaces/ProductInterface.js";
-import ImageCarousel from "../../ui/ImageCarousel";
-import { formatCOP } from "../../../Interfaces/ProductInterface.js";
+import { NavLink } from 'react-router-dom';
+import AuthenticationService from '../../../services/AuthenticationService.js';
+import { useProduct } from '../../../hooks/useApiQueries.ts';
+import useTranslation from '../../../hooks/useTranslation.js';
+import CartControllsComponent from './CartControllsComponent.jsx';
+import ImageCarousel from '../../ui/ImageCarousel.jsx';
+import { formatCOP } from '../../../Interfaces/ProductInterface.js';
 
-class ProductDetails extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            product: {},
-            currentLanguage: translationService.getLanguage(),
-        }
-        this.unsubscribeFromLanguage = null;
-        this.getProductDetails = this.getProductDetails.bind(this);
+function ProductDetails({ params }) {
+    const t = useTranslation();
+    const productId = String(params?.id ?? '');
+    const { data: product, isPending, isError, error } = useProduct(productId);
+
+    if (isPending) {
+        return <main className="hu-mx-auto hu-max-w-7xl hu-px-4 hu-py-12 hu-text-center hu-text-slate-600" role="status">{t('loading_products')}</main>;
+    }
+    if (isError || !product) {
+        return <main className="hu-mx-auto hu-max-w-7xl hu-px-4 hu-py-12" role="alert">
+            <div className="hu-rounded-lg hu-border hu-border-red-200 hu-bg-red-50 hu-p-4 hu-text-red-800">{error?.message || t('could_not_load_products')}</div>
+        </main>;
     }
 
-    componentDidMount() {
-        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
-            this.setState({ currentLanguage: lang });
-        });
-        this.getProductDetails();
-        console.log(this.state.product);
-    }
+    const categories = Array.isArray(product.categories) ? product.categories : [];
+    const itemImages = [
+        ...(product.foto_principal ? [{ id: 'p', src: product.foto_principal }] : []),
+        ...(Array.isArray(product.fotos_secundarias)
+            ? product.fotos_secundarias.filter(Boolean).map((src, index) => ({ id: `s-${index}`, src }))
+            : []),
+    ];
+    if (itemImages.length === 0) itemImages.push({ id: 'f1', src: '/img/no_image.jpg' });
 
-    componentWillUnmount() {
-        if (this.unsubscribeFromLanguage) {
-            this.unsubscribeFromLanguage();
-        }
-    }
-
-    renderStars(rating) {
-        const clampedRating = Math.min(Math.max(Number(rating) || 0, 0), 5);
-        const fullStars = Math.floor(clampedRating);
-        const hasHalf = (clampedRating - fullStars) >= 0.5;
-        const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
-
-        return [
-            ...Array.from({ length: fullStars }, (_, i) => (
-                <small key={`full-${i}`} className="fas fa-star" />
-            )),
-            ...(hasHalf ? [<small key="half" className="fas fa-star-half-alt" />] : []),
-            ...Array.from({ length: emptyStars }, (_, i) => (
-                <small key={`empty-${i}`} className="far fa-star" />
-            )),
-        ];
-    }
-
-    render() {
-        const t = (key) => translationService.t(key);
-        const ranking = this.state.product.ranking || {};
-        const price = this.state.product.price || {};
-        const categories = Array.isArray(this.state.product.categories)
-            ? this.state.product.categories
-            : [];
-
-        // Configuración dinámica de imágenes para el carrusel
-        const itemImages = [];
-        if (this.state.product.foto_principal) {
-            itemImages.push({ id: 'p', src: this.state.product.foto_principal });
-        }
-        if (Array.isArray(this.state.product.fotos_secundarias)) {
-            this.state.product.fotos_secundarias.forEach((src, idx) => {
-                if (src) {
-                    itemImages.push({ id: `s-${idx}`, src });
-                }
-            });
-        }
-        // Fallback si no tiene imágenes cargadas
-        if (itemImages.length === 0) {
-            itemImages.push({ id: 'f1', src: '/img/no_image.jpg' });
-        }
-
-        return (
-            <div className="container-fluid pb-5">
-                <div className="row px-xl-5">
-                    <div className="col-lg-5 mb-30">
-                        <ImageCarousel
-                            items={itemImages}
-                            altPrefix={t('product_image')}
-                            previousLabel={t('image_navigation_previous')}
-                            nextLabel={t('image_navigation_next')}
-                        />
-                    </div>
-                    <div className="col-lg-7 h-auto mb-30">
-                        <div className="h-auto bg-light p-30">
-                            <h3>{this.state.product.name}</h3>
-                            <div className="mt-10">
-                                <h3 className="font-weight-semi-bold text-primary mt-10">{formatCOP(price?.current ?? 0)}</h3>
-                            </div>
-                            <div className="d-flex mb-3 categories-container">
-                                <ul className="product-categories">
-                                    {categories.length > 0 ? (
-                                        categories.map((category, index) => (
-                                            <li key={`${category.name || 'category'}-${index}`}><span className="label label-custom">{category.name}</span></li>
-                                        ))
-                                    ) : (
-                                        <small className="text-muted">{t('no_categories_available')}</small>
-                                    )}
-                                </ul>
-                            </div>
-                        </div>
-                        <CartControllsComponent product={this.state.product} />
-                        {AuthenticationService.isUserAdmin() && this.state.product.id && (
-                            <div className="bg-light px-30 pb-3">
-                                <NavLink className="btn btn-outline-primary" to={`/editProduct/${this.state.product.id}`}>
-                                    <i className="fa fa-edit mr-2" />
-                                    {t('edit_product_title')}
-                                </NavLink>
-                            </div>
-                        )}
-                        <div className="d-flex h-auto bg-light p-30">
-                            <div className="d-block mb-3 categories-container">
-                                <div className="d-block mb-3">
-                                    <h4 className="mb-1">{t('product_description')}</h4>
-                                </div>
-                                <div className="mb-3">
-                                    <p>{this.state.product.description}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    return (
+        <main className="hu-mx-auto hu-w-full hu-max-w-7xl hu-px-4 hu-py-8 sm:hu-px-6 lg:hu-px-8">
+            <div className="hu-grid hu-items-start hu-gap-8 lg:hu-grid-cols-2">
+                <div className="hu-overflow-hidden hu-rounded-2xl hu-border hu-border-slate-200 hu-bg-white">
+                    <ImageCarousel
+                        items={itemImages}
+                        altPrefix={t('product_image')}
+                        previousLabel={t('image_navigation_previous')}
+                        nextLabel={t('image_navigation_next')}
+                    />
                 </div>
+                <section className="hu-rounded-2xl hu-border hu-border-slate-200 hu-bg-white hu-p-6 sm:hu-p-8">
+                    <h1 className="hu-mb-3 hu-mt-0 hu-text-3xl hu-font-bold hu-text-slate-900">{product.name}</h1>
+                    <p className="hu-mb-6 hu-mt-0 hu-text-2xl hu-font-bold hu-text-green-700">{formatCOP(product.price?.current ?? 0)}</p>
+                    <div className="hu-mb-6">
+                        <h2 className="hu-mb-2 hu-mt-0 hu-text-sm hu-font-semibold hu-uppercase hu-tracking-wide hu-text-slate-600">{t('categories_title')}</h2>
+                        {categories.length > 0 ? (
+                            <ul className="hu-m-0 hu-flex hu-list-none hu-flex-wrap hu-gap-2 hu-p-0">
+                                {categories.map((category, index) => (
+                                    <li key={`${category.name || 'category'}-${index}`} className="hu-rounded-full hu-bg-slate-100 hu-px-3 hu-py-1 hu-text-sm hu-text-slate-700">
+                                        {category.name}
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : <p className="hu-m-0 hu-text-sm hu-text-slate-500">{t('no_categories_available')}</p>}
+                    </div>
+                    <CartControllsComponent product={product} />
+                    {AuthenticationService.isUserAdmin() && product.id && (
+                        <NavLink className="hu-mt-5 hu-inline-flex hu-items-center hu-gap-2 hu-rounded-lg hu-border hu-border-blue-700 hu-px-4 hu-py-2.5 hu-text-sm hu-font-semibold hu-text-blue-700 hover:hu-bg-blue-50" to={`/editProduct/${product.id}`}>
+                            <i className="fa fa-edit" aria-hidden="true" />
+                            {t('edit_product_title')}
+                        </NavLink>
+                    )}
+                    <div className="hu-mt-8 hu-border-t hu-border-slate-200 hu-pt-6">
+                        <h2 className="hu-mb-2 hu-mt-0 hu-text-lg hu-font-bold">{t('product_description')}</h2>
+                        <p className="hu-m-0 hu-whitespace-pre-line hu-leading-7 hu-text-slate-700">{product.description}</p>
+                    </div>
+                </section>
             </div>
-        );
-    }
-
-
-    getProductDetails() {
-        productosService.detalleProducto(this.props.params.id)
-            .then((response) => {
-                console.log("Product details response:", response);
-                this.setState({ product: toProduct(response) });
-            })
-            .catch((error) => {
-                console.error("Error fetching product details:", error);
-            });
-    }
+        </main>
+    );
 }
+
 export default ProductDetails;

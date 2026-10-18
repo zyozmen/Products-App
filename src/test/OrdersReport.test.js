@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { canTransition, getAllowedTransitions, getOrderStatus } from '../services/OrderService.js';
-import { buildOrdersReport, filterOrders, getPeriodRange, monthInputToDate, toMonthInputValue, toWeekInputValue, weekInputToDate } from '../components/admin/OrdersReportHelper.js';
+import { buildOrdersReport, filterOrders, getPeriodRange, monthInputToDate, toMonthInputValue, toWeekInputValue, weekInputToDate } from '../components/admin/orders/OrdersReportHelper.js';
 
 describe('order search', () => {
     const orders = [

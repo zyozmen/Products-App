@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import translationService from '../../services/TranslationService';
-import './ImageCarousel.css';
 
 const ImageCarousel = ({
   items,
@@ -17,20 +16,21 @@ const ImageCarousel = ({
   useEffect(() => translationService.subscribe(setCurrentLanguage), []);
 
   return (
-    <div className="carousel slide image-carousel">
-      <div className="carousel-inner bg-light">
+    <div className="hu-relative hu-aspect-[4/3] hu-overflow-hidden hu-bg-slate-100" aria-roledescription="carousel">
+      <div className="hu-h-full hu-w-full" aria-live="polite">
         {items.map((item, index) => (
-          <div key={item.id || `${resolvedAltPrefix}-${index}`} className={`carousel-item ${index === activeIndex ? 'active' : ''}`}>
-            <img className="w-100 h-100" src={item.src} alt={`${resolvedAltPrefix} ${index + 1}`} />
+          <div key={item.id || `${resolvedAltPrefix}-${index}`} className={`${index === activeIndex ? 'hu-flex' : 'hu-hidden'} hu-h-full hu-w-full hu-items-center hu-justify-center`}>
+            <img className="hu-h-full hu-w-full hu-object-contain" src={item.src} alt={`${resolvedAltPrefix} ${index + 1}`} />
           </div>
         ))}
       </div>
-      <button type="button" className="carousel-control-prev" aria-label={resolvedPreviousLabel} onClick={() => setActiveIndex((prev) => (prev > 0 ? prev - 1 : items.length - 1))}>
-        <i className="fa fa-2x fa-angle-left text-dark" />
+      {items.length > 1 && <button type="button" className="hu-absolute hu-left-2 hu-top-1/2 hu-grid hu-h-10 hu-w-10 hu--translate-y-1/2 hu-place-items-center hu-rounded-full hu-bg-white/90 hu-text-slate-900 hu-shadow hover:hu-bg-white" aria-label={resolvedPreviousLabel} onClick={() => setActiveIndex((prev) => (prev > 0 ? prev - 1 : items.length - 1))}>
+        <i className="fa fa-angle-left" aria-hidden="true" />
       </button>
-      <button type="button" className="carousel-control-next" aria-label={resolvedNextLabel} onClick={() => setActiveIndex((prev) => (prev < items.length - 1 ? prev + 1 : 0))}>
-        <i className="fa fa-2x fa-angle-right" />
-      </button>
+      }
+      {items.length > 1 && <button type="button" className="hu-absolute hu-right-2 hu-top-1/2 hu-grid hu-h-10 hu-w-10 hu--translate-y-1/2 hu-place-items-center hu-rounded-full hu-bg-white/90 hu-text-slate-900 hu-shadow hover:hu-bg-white" aria-label={resolvedNextLabel} onClick={() => setActiveIndex((prev) => (prev < items.length - 1 ? prev + 1 : 0))}>
+        <i className="fa fa-angle-right" aria-hidden="true" />
+      </button>}
     </div>
   );
 };

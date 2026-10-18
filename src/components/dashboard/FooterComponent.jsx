@@ -1,142 +1,73 @@
-import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
-import translationService from '../../services/TranslationService';
-import './FooterComponent.css';
+import useTranslation from '../../hooks/useTranslation.js';
 
-class FooterComponent extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      currentLanguage: translationService.getLanguage(),
-    };
-    this.unsubscribeFromLanguage = null;
-  }
+function FooterComponent() {
+  const t = useTranslation();
+  const linkClass = 'hu-inline-flex hu-items-center hu-gap-2 hu-text-sm hu-text-slate-300 hover:hu-text-white';
+  const titleClass = 'hu-mb-4 hu-mt-0 hu-text-sm hu-font-bold hu-uppercase hu-tracking-wide hu-text-white';
 
-  componentDidMount() {
-    this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
-      this.setState({ currentLanguage: lang });
-    });
-  }
-
-  componentWillUnmount() {
-    if (this.unsubscribeFromLanguage) {
-      this.unsubscribeFromLanguage();
-    }
-  }
-
-  render() {
-    const t = (key) => translationService.t(key);
-    return (
-      <div className="container-fluid bg-dark text-secondary mt-5 pt-5">
-        <div className="row px-xl-5 pt-5">
-          <div className="col-lg-4 col-md-12 mb-5 pr-3 pr-xl-5">
-            <h5 className="text-secondary text-uppercase mb-4">{t('get_in_touch')}</h5>
-            <p className="mb-4">
-              {t('footer_touch_text')}
-            </p>
-            <p className="mb-0">
-              <i className="fa fa-phone-alt text-primary mr-3" />
-              +57 312 4058166
-            </p>
+  return (
+    <footer className="hu-mt-12 hu-bg-slate-950 hu-text-slate-300">
+      <div className="hu-mx-auto hu-grid hu-max-w-7xl hu-gap-10 hu-px-4 hu-py-10 sm:hu-grid-cols-2 sm:hu-px-6 lg:hu-grid-cols-4 lg:hu-px-8">
+        <section>
+          <h2 className={titleClass}>{t('get_in_touch')}</h2>
+          <p className="hu-mb-4 hu-text-sm hu-leading-6">{t('footer_touch_text')}</p>
+          <p className="hu-m-0 hu-text-sm"><i className="fa fa-phone-alt hu-mr-2 hu-text-green-400" aria-hidden="true" />+57 312 4058166</p>
+        </section>
+        <nav aria-label={t('quick_shop')}>
+          <h2 className={titleClass}>{t('quick_shop')}</h2>
+          <div className="hu-flex hu-flex-col hu-items-start hu-gap-3">
+            <Link to="/welcome" className={linkClass}><i className="fa fa-angle-right" aria-hidden="true" />{t('home')}</Link>
+            <Link to="/shop" className={linkClass}><i className="fa fa-angle-right" aria-hidden="true" />{t('our_shop')}</Link>
+            <Link to="/cart" className={linkClass}><i className="fa fa-angle-right" aria-hidden="true" />{t('checkout')}</Link>
+            <Link to="/contact" className={linkClass}><i className="fa fa-angle-right" aria-hidden="true" />{t('contact_us')}</Link>
           </div>
-          <div className="col-lg-8 col-md-12">
-            <div className="row">
-              <div className="col-md-4 mb-5">
-                <h5 className="text-secondary text-uppercase mb-4">{t('quick_shop')}</h5>
-                <div className="d-flex flex-column justify-content-start">
-                  <Link to="/welcome" className="btn btn-link text-secondary mb-2 p-0 text-left">
-                    <i className="fa fa-angle-right mr-2" />
-                    {t('home')}
-                  </Link>
-                   <Link to="/shop"className="btn btn-link text-secondary mb-2 p-0 text-left">
-                    <i className="fa fa-angle-right mr-2" />
-                    {t('our_shop')}
-                  </Link>
-                  <Link to="/cart" className="btn btn-link text-secondary mb-2 p-0 text-left">
-                    <i className="fa fa-angle-right mr-2" />
-                    {t('checkout')}
-                  </Link>
-                  <Link to="/contact" className="btn btn-link text-secondary p-0 text-left">
-                    <i className="fa fa-angle-right mr-2" />
-                    {t('contact_us')}
-                  </Link>
-                </div>
-              </div>
-              <div className="col-md-4 mb-5">
-                <h5 className="text-secondary text-uppercase mb-4">{t('my_account')}</h5>
-                <div className="d-flex flex-column justify-content-start">
-                  <Link to="/welcome" className="btn btn-link text-secondary mb-2 p-0 text-left">
-                    <i className="fa fa-angle-right mr-2" />
-                    {t('home')}
-                  </Link>
-                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
-                    <i className="fa fa-angle-right mr-2" />
-                    {t('shopping_cart')}
-                  </button>
-                  <button type="button" className="btn btn-link text-secondary mb-2 p-0 text-left">
-                    <i className="fa fa-angle-right mr-2" />
-                    {t('checkout')}
-                  </button>
-                  <button type="button" className="btn btn-link text-secondary p-0 text-left">
-                    <i className="fa fa-angle-right mr-2" />
-                    {t('contact_us')}
-                  </button>
-                </div>
-              </div>
-              <div className="col-md-4 mb-5">
-                <h5 className="text-secondary text-uppercase mb-4">{t('newsletter')}</h5>
-                <p>{t('newsletter_text')}</p>
-                <form action="">
-                  <div className="input-group">
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder={t('email_placeholder')}
-                    />
-                    <div className="input-group-append">
-                      <button className="btn btn-primary">{t('sign_up')}</button>
-                    </div>
-                  </div>
-                </form>
-                <h6 className="text-secondary text-uppercase mt-4 mb-3">{t('follow_us')}</h6>
-                <div className="d-flex">
-                  <button type="button" className="btn btn-primary btn-square mr-2" aria-label="Twitter">
-                    <i className="fab fa-twitter" />
-                  </button>
-                  <button type="button" className="btn btn-primary btn-square mr-2" aria-label="Facebook">
-                    <i className="fab fa-facebook-f" />
-                  </button>
-                  <button type="button" className="btn btn-primary btn-square mr-2" aria-label="LinkedIn">
-                    <i className="fab fa-linkedin-in" />
-                  </button>
-                  <button type="button" className="btn btn-primary btn-square" aria-label="Instagram">
-                    <i className="fab fa-instagram" />
-                  </button>
-                </div>
-              </div>
-            </div>
+        </nav>
+        <nav aria-label={t('my_account')}>
+          <h2 className={titleClass}>{t('my_account')}</h2>
+          <div className="hu-flex hu-flex-col hu-items-start hu-gap-3">
+            <Link to="/welcome" className={linkClass}><i className="fa fa-angle-right" aria-hidden="true" />{t('home')}</Link>
+            <Link to="/cart" className={linkClass}><i className="fa fa-angle-right" aria-hidden="true" />{t('shopping_cart')}</Link>
+            <Link to="/cart" className={linkClass}><i className="fa fa-angle-right" aria-hidden="true" />{t('checkout')}</Link>
+            <Link to="/contact" className={linkClass}><i className="fa fa-angle-right" aria-hidden="true" />{t('contact_us')}</Link>
           </div>
-        </div>
-        <div className="row border-top mx-xl-5 py-4 footer-border-top">
-          <div className="col-md-6 px-xl-0">
-            <p className="mb-md-0 text-center text-md-left text-secondary">
-              ©{" "}
-              <button type="button" className="btn btn-link text-primary p-0">
-                Zona Green
+        </nav>
+        <section>
+          <h2 className={titleClass}>{t('newsletter')}</h2>
+          <p className="hu-text-sm hu-leading-6">{t('newsletter_text')}</p>
+          <form className="hu-flex" onSubmit={(event) => event.preventDefault()}>
+            <label className="hu-sr-only" htmlFor="newsletter-email">{t('email_placeholder')}</label>
+            <input
+              id="newsletter-email"
+              type="email"
+              className="hu-min-w-0 hu-flex-1 hu-rounded-l-lg hu-border hu-border-slate-600 hu-bg-slate-900 hu-px-3 hu-py-2 hu-text-sm hu-text-white hu-outline-none focus:hu-border-green-500"
+              placeholder={t('email_placeholder')}
+            />
+            <button type="submit" className="hu-rounded-r-lg hu-bg-green-700 hu-px-4 hu-text-sm hu-font-semibold hu-text-white hover:hu-bg-green-600">{t('sign_up')}</button>
+          </form>
+          <h3 className="hu-mb-3 hu-mt-6 hu-text-sm hu-font-bold hu-uppercase hu-text-white">{t('follow_us')}</h3>
+          <div className="hu-flex hu-gap-2">
+            {[
+              ['Twitter', 'fab fa-twitter'],
+              ['Facebook', 'fab fa-facebook-f'],
+              ['LinkedIn', 'fab fa-linkedin-in'],
+              ['Instagram', 'fab fa-instagram'],
+            ].map(([label, icon]) => (
+              <button key={label} type="button" aria-label={label} className="hu-flex hu-h-9 hu-w-9 hu-items-center hu-justify-center hu-rounded-lg hu-bg-green-700 hu-text-white hover:hu-bg-green-600">
+                <i className={icon} aria-hidden="true" />
               </button>
-              . {t('all_rights_reserved')}
-              <a className="text-primary" href="https://htmlcodex.com">
-                HTML Codex
-              </a>
-            </p>
+            ))}
           </div>
-          <div className="col-md-6 px-xl-0 text-center text-md-right">
-            <img className="img-fluid" src="img/payments.png" alt="" />
-          </div>
+        </section>
+      </div>
+      <div className="hu-border-t hu-border-white/10">
+        <div className="hu-mx-auto hu-flex hu-max-w-7xl hu-flex-col hu-items-center hu-justify-between hu-gap-4 hu-px-4 hu-py-5 hu-text-center sm:hu-flex-row sm:hu-px-6 sm:hu-text-left lg:hu-px-8">
+          <p className="hu-m-0 hu-text-xs">© Zona Green. {t('all_rights_reserved')} <a className="hu-text-green-400 hover:hu-text-green-300" href="https://htmlcodex.com">HTML Codex</a></p>
+          <img className="hu-h-6 hu-w-auto" src="/img/payments.png" alt={t('payment_methods')} />
         </div>
       </div>
-
-    );
-  }
+    </footer>
+  );
 }
-export default FooterComponent; 
+
+export default FooterComponent;

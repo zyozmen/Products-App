@@ -92,8 +92,7 @@ class ShopListComponent extends Component {
     
     return (
 
-<div className="container-fluid">
-  <div className="row px-xl-5">
+<main className="hu-mx-auto hu-grid hu-max-w-7xl hu-items-start hu-gap-6 hu-px-4 hu-py-8 sm:hu-px-6 lg:hu-grid-cols-[280px_minmax(0,1fr)] lg:hu-px-8">
     <FiltersComponent
       selectedCategoryIds={selectedCategoryIds}
       onCategorySelectionChange={this.handleCategorySelectionChange}
@@ -110,8 +109,7 @@ class ShopListComponent extends Component {
       onSortByChange={this.handleSortByChange}
       selectedSortBy={sortBy}
     />
-  </div>
-</div>
+  </main>
     );
   }
 }

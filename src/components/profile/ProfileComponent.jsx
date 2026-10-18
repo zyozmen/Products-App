@@ -1,221 +1,147 @@
-import React, { Component } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import HeaderComponent from '../dashboard/HeaderComponent.jsx';
 import FooterComponent from '../dashboard/FooterComponent.jsx';
 import navigationComponent from '../navigation/NavigationComponent.jsx';
-import UserService from '../../services/UserService.js';
 import AuthenticationService from '../../services/AuthenticationService.js';
-import translationService from '../../services/TranslationService.js';
+import useTranslation from '../../hooks/useTranslation.js';
+import { useUserMutations } from '../../hooks/useApiQueries.ts';
+import { profileSchema } from '../../schemas/profile';
+import { Button, Card, ErrorNotice, Field, Input } from '../ui/shadcn';
 
-class ProfileComponent extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            nombre: '',
-            apellido: '',
-            direccion: '',
-            telefono: '',
+const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
+
+function ProfileComponent({ navigate }) {
+    const t = useTranslation();
+    const user = AuthenticationService.getLoggedInUser();
+    const { updateProfile } = useUserMutations();
+    const [successMessage, setSuccessMessage] = useState('');
+    const [submitError, setSubmitError] = useState('');
+    const form = useForm({
+        resolver: zodResolver(profileSchema),
+        defaultValues: {
+            nombre: user?.nombre || '',
+            apellido: user?.apellido || '',
+            direccion: user?.direccion || '',
+            telefono: user?.telefono || '',
             password: '',
-            successMessage: '',
-            errorMessage: '',
-            isSaving: false,
-            currentLanguage: translationService.getLanguage()
-        };
-        this.handleChange = this.handleChange.bind(this);
-        this.handleSubmit = this.handleSubmit.bind(this);
-        this.unsubscribeFromLanguage = null;
-    }
+        },
+    });
 
-    componentDidMount() {
-        if (!AuthenticationService.isUserLoggedIn()) {
-            this.props.navigate('/login');
-            return;
-        }
+    useEffect(() => {
+        if (!AuthenticationService.isUserLoggedIn()) navigate('/login');
+    }, [navigate]);
 
-        const user = AuthenticationService.getLoggedInUser();
-        if (user) {
-            this.setState({
-                nombre: user.nombre || '',
-                apellido: user.apellido || '',
-                direccion: user.direccion || '',
-                telefono: user.telefono || '',
-            });
-        }
-
-        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
-            this.setState({ currentLanguage: lang });
-        });
-    }
-
-    componentWillUnmount() {
-        if (this.unsubscribeFromLanguage) {
-            this.unsubscribeFromLanguage();
-        }
-    }
-
-    handleChange(event) {
-        const { name, value } = event.target;
-        this.setState({ [name]: value });
-    }
-
-    async handleSubmit(event) {
-        event.preventDefault();
-        this.setState({ isSaving: true, successMessage: '', errorMessage: '' });
-
-        const user = AuthenticationService.getLoggedInUser();
-        if (!user) {
-            this.setState({ isSaving: false, errorMessage: translationService.t('profile_login_required') });
+    const onSubmit = form.handleSubmit(async (values) => {
+        setSuccessMessage('');
+        setSubmitError('');
+        const currentUser = AuthenticationService.getLoggedInUser();
+        if (!currentUser) {
+            setSubmitError(t('profile_login_required'));
             return;
         }
 
         const profileData = {
-            username: user.username,
-            nombre: this.state.nombre.trim(),
-            apellido: this.state.apellido.trim(),
-            direccion: this.state.direccion.trim(),
-            telefono: this.state.telefono.trim(),
+            username: currentUser.username,
+            nombre: values.nombre,
+            apellido: values.apellido,
+            direccion: values.direccion,
+            telefono: values.telefono,
+            ...(values.password ? { password: values.password } : {}),
         };
 
-        if (this.state.password) {
-            profileData.password = this.state.password;
-        }
-
         try {
-            const updatedUser = await UserService.updateProfile(profileData);
-            
-            const mergedProfile = { ...user, ...updatedUser };
+            const updatedUser = await updateProfile.mutateAsync(profileData);
+            const mergedProfile = {
+                ...currentUser,
+                ...(updatedUser || {}),
+                username: currentUser.username,
+                nombre: values.nombre,
+                apellido: values.apellido,
+                direccion: values.direccion,
+                telefono: values.telefono,
+            };
             sessionStorage.setItem('userProfile', JSON.stringify(mergedProfile));
-
-            this.setState({
-                successMessage: translationService.t('profile_update_success'),
-                password: '',
-                isSaving: false
-            });
+            form.setValue('password', '');
+            setSuccessMessage(t('profile_update_success'));
         } catch (error) {
-            this.setState({
-                errorMessage: error.message,
-                isSaving: false
-            });
+            setSubmitError(error instanceof Error ? error.message : t('profile_update_error'));
         }
-    }
+    });
 
-    render() {
-        const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
-        const t = (key) => translationService.t(key);
+    const fieldError = (name) => {
+        const message = form.formState.errors[name]?.message;
+        return message ? t(message) : undefined;
+    };
 
-        return (
-            <>
-                <HeaderComponentWithNavigation />
+    return (
+        <div className="hu-flex hu-min-h-screen hu-flex-col hu-bg-slate-50 hu-text-slate-900">
+            <HeaderComponentWithNavigation />
+            <main className="hu-mx-auto hu-w-full hu-max-w-3xl hu-flex-1 hu-px-4 hu-py-8 md:hu-px-8">
+                <nav className="hu-mb-6 hu-text-sm hu-text-slate-500" aria-label={t('my_account')}>
+                    {t('my_account')} <span className="hu-px-2">/</span>
+                    <span className="hu-font-semibold hu-text-slate-800">{t('profile_title')}</span>
+                </nav>
+                <div className="hu-mb-6">
+                    <p className="hu-mb-2 hu-text-xs hu-font-bold hu-uppercase hu-tracking-[0.16em] hu-text-blue-700">{t('my_account')}</p>
+                    <h1 className="hu-m-0 hu-text-3xl hu-font-bold hu-tracking-tight">{t('profile_title')}</h1>
+                </div>
 
-                <div className="container-fluid">
-                    <div className="row px-xl-5">
-                        <div className="col-12">
-                            <nav className="breadcrumb bg-light mb-30">
-                                <span className="breadcrumb-item text-dark">{t('my_account')}</span>
-                                <span className="breadcrumb-item active">{t('profile_title')}</span>
-                            </nav>
+                <Card className="hu-p-5 md:hu-p-7">
+                    {successMessage && (
+                        <div className="hu-mb-5 hu-rounded-lg hu-border hu-border-green-200 hu-bg-green-50 hu-p-3 hu-text-sm hu-text-green-800" role="status">
+                            {successMessage}
                         </div>
-                    </div>
-                </div>
+                    )}
+                    {submitError && (
+                        <div className="hu-mb-5">
+                            <ErrorNotice>{submitError}</ErrorNotice>
+                        </div>
+                    )}
 
-                <div className="container pb-5" style={{ maxWidth: '600px' }}>
-                    <div className="bg-light p-30 rounded shadow-sm">
-                        <h2 className="section-title position-relative text-uppercase mb-4 text-center">
-                            <span className="bg-secondary pr-3 px-3">{t('profile_title')}</span>
-                        </h2>
-
-                        {this.state.successMessage && (
-                            <div className="alert alert-success text-center py-2 mb-4">
-                                {this.state.successMessage}
-                            </div>
-                        )}
-                        {this.state.errorMessage && (
-                            <div className="alert alert-danger text-center py-2 mb-4">
-                                {this.state.errorMessage}
-                            </div>
-                        )}
-
-                        <form onSubmit={this.handleSubmit}>
-                            <div className="row">
-                                <div className="col-md-6 form-group">
-                                    <label htmlFor="nombre">{t('first_name')} *</label>
-                                    <input
-                                        id="nombre"
-                                        className="form-control"
-                                        type="text"
-                                        name="nombre"
-                                        value={this.state.nombre}
-                                        onChange={this.handleChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="col-md-6 form-group">
-                                    <label htmlFor="apellido">{t('last_name')} *</label>
-                                    <input
-                                        id="apellido"
-                                        className="form-control"
-                                        type="text"
-                                        name="apellido"
-                                        value={this.state.apellido}
-                                        onChange={this.handleChange}
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="direccion">{t('address')} *</label>
-                                <input
-                                    id="direccion"
-                                    className="form-control"
-                                    type="text"
-                                    name="direccion"
-                                    value={this.state.direccion}
-                                    onChange={this.handleChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="telefono">{t('contact_phone')} *</label>
-                                <input
-                                    id="telefono"
-                                    className="form-control"
-                                    type="tel"
-                                    name="telefono"
-                                    value={this.state.telefono}
-                                    onChange={this.handleChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="form-group border-top pt-3 mt-4">
-                                <label htmlFor="password"><strong>{t('password_change_label') || 'Cambiar Contraseña (Opcional)'}</strong></label>
-                                <input
-                                    id="password"
-                                    className="form-control"
-                                    type="password"
-                                    name="password"
-                                    placeholder={t('profile_password_placeholder')}
-                                    value={this.state.password}
-                                    onChange={this.handleChange}
-                                />
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="btn btn-primary btn-block font-weight-bold py-3 mt-4 text-uppercase"
-                                disabled={this.state.isSaving}
+                    <form className="hu-grid hu-gap-5" onSubmit={onSubmit} noValidate>
+                        <div className="hu-grid hu-gap-5 sm:hu-grid-cols-2">
+                            <Field label={`${t('first_name')} *`} htmlFor="nombre" error={fieldError('nombre')}>
+                                <Input id="nombre" autoComplete="given-name" aria-invalid={Boolean(form.formState.errors.nombre)} {...form.register('nombre')} />
+                            </Field>
+                            <Field label={`${t('last_name')} *`} htmlFor="apellido" error={fieldError('apellido')}>
+                                <Input id="apellido" autoComplete="family-name" aria-invalid={Boolean(form.formState.errors.apellido)} {...form.register('apellido')} />
+                            </Field>
+                        </div>
+                        <Field label={`${t('address')} *`} htmlFor="direccion" error={fieldError('direccion')}>
+                            <Input id="direccion" autoComplete="street-address" aria-invalid={Boolean(form.formState.errors.direccion)} {...form.register('direccion')} />
+                        </Field>
+                        <Field label={`${t('contact_phone')} *`} htmlFor="telefono" error={fieldError('telefono')}>
+                            <Input id="telefono" type="tel" autoComplete="tel" aria-invalid={Boolean(form.formState.errors.telefono)} {...form.register('telefono')} />
+                        </Field>
+                        <div className="hu-border-t hu-border-slate-200 hu-pt-5">
+                            <Field
+                                label={t('password_change_label')}
+                                htmlFor="password"
+                                hint={t('profile_password_placeholder')}
+                                error={fieldError('password')}
                             >
-                                {this.state.isSaving ? t('saving_btn') : t('save_profile_btn')}
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <FooterComponent />
-            </>
-        );
-    }
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    autoComplete="new-password"
+                                    aria-invalid={Boolean(form.formState.errors.password)}
+                                    {...form.register('password')}
+                                />
+                            </Field>
+                        </div>
+                        <div className="hu-flex hu-justify-end">
+                            <Button type="submit" disabled={form.formState.isSubmitting || updateProfile.isPending}>
+                                {form.formState.isSubmitting || updateProfile.isPending ? t('saving_btn') : t('save_profile_btn')}
+                            </Button>
+                        </div>
+                    </form>
+                </Card>
+            </main>
+            <FooterComponent />
+        </div>
+    );
 }
 
 export default ProfileComponent;

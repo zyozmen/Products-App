@@ -1,94 +1,41 @@
+import { useEffect, useState } from 'react';
+import useTranslation from '../../hooks/useTranslation.js';
+import { Button, Input } from '../ui/shadcn';
 
-import React, { Component } from "react";
-import translationService from "../../services/TranslationService";
+function NameFilter({ nameFilter, onNameFilterChange }) {
+    const t = useTranslation();
+    const [localName, setLocalName] = useState(nameFilter || '');
 
-class NameFilter extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            localName: props.nameFilter || "",
-            currentLanguage: translationService.getLanguage(),
-        };
-        this.handleInputChange = this.handleInputChange.bind(this);
-        this.handleSubmit = this.handleSubmit.bind(this);
-        this.handleClear = this.handleClear.bind(this);
-        this.unsubscribeFromLanguage = null;
-    }
+    useEffect(() => setLocalName(nameFilter || ''), [nameFilter]);
 
-    componentDidMount() {
-        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
-            this.setState({ currentLanguage: lang });
-        });
-    }
-
-    componentWillUnmount() {
-        if (this.unsubscribeFromLanguage) {
-            this.unsubscribeFromLanguage();
-        }
-    }
-
-    componentDidUpdate(prevProps) {
-        if (prevProps.nameFilter !== this.props.nameFilter) {
-            this.setState({ localName: this.props.nameFilter || "" });
-        }
-    }
-
-    handleInputChange(event) {
-        this.setState({ localName: event.target.value });
-    }
-
-    handleSubmit(event) {
+    const submit = (event) => {
         event.preventDefault();
-        const { onNameFilterChange } = this.props;
-        if (onNameFilterChange) {
-            onNameFilterChange(this.state.localName);
-        }
-    }
+        onNameFilterChange?.(localName);
+    };
+    const clear = () => {
+        setLocalName('');
+        onNameFilterChange?.('');
+    };
 
-    handleClear() {
-        const { onNameFilterChange } = this.props;
-        this.setState({ localName: "" }, () => {
-            if (onNameFilterChange) {
-                onNameFilterChange("");
-            }
-        });
-    }
-
-    render() {
-        const { localName } = this.state;
-        const t = (key) => translationService.t(key);
-        const hasValue = localName.trim().length > 0;
-
-        return (
-            <div className="bg-light p-4 mb-30">
-                <form onSubmit={this.handleSubmit}>
-                    <div className="input-group mb-2">
-                        <input
-                            type="text"
-                            className="form-control"
-                            value={localName}
-                            onChange={this.handleInputChange}
-                            placeholder={t('filter_name_placeholder')}
-                        />
-                        <div className="input-group-append">
-                            <button type="submit" className="input-group-text bg-transparent text-primary">
-                                <i className="fa fa-search" />
-                            </button>
-                        </div>
-                    </div>
-                    {hasValue && (
-                        <button
-                            type="button"
-                            className="btn btn-sm btn-light"
-                            onClick={this.handleClear}
-                        >
-                            {t('clear_btn')}
-                        </button>
-                    )}
-                </form>
+    return (
+        <form className="hu-grid hu-gap-2 hu-rounded-xl hu-border hu-border-slate-200 hu-bg-white hu-p-4" onSubmit={submit}>
+            <label className="hu-sr-only" htmlFor="product-name-filter">{t('filter_name_placeholder')}</label>
+            <div className="hu-flex">
+                <Input
+                    id="product-name-filter"
+                    className="hu-rounded-r-none"
+                    type="search"
+                    value={localName}
+                    onChange={(event) => setLocalName(event.target.value)}
+                    placeholder={t('filter_name_placeholder')}
+                />
+                <Button type="submit" className="hu-rounded-l-none hu-px-3" aria-label={t('filter_name_placeholder')}>
+                    <i className="fa fa-search" aria-hidden="true" />
+                </Button>
             </div>
-        );
-    }
+            {localName.trim() && <Button type="button" variant="secondary" className="hu-justify-self-start" onClick={clear}>{t('clear_btn')}</Button>}
+        </form>
+    );
 }
 
 export default NameFilter;

@@ -1,302 +1,163 @@
-import React, { Component } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import AuthenticationService from '../../services/AuthenticationService.js';
-import UserService from '../../services/UserService.js';
 import { isPendingUser } from '../../services/userState.js';
 import cartService from '../../services/CartService.js';
 import translationService from '../../services/TranslationService.js';
+import useTranslation from '../../hooks/useTranslation.js';
+import { apiQueryKeys, useAdminUsers } from '../../hooks/useApiQueries.ts';
 import DropdownMenu from '../ui/DropdownMenu';
-import CollapseMenu from '../ui/CollapseMenu';
-import './HeaderComponent.css';
 
-class HeaderComponent extends Component {
-    constructor(props) {
-        super(props);
-        const savedTheme = localStorage.getItem('growShopTheme') || 'light';
-        this.state = {
-            searchTerm: '',
-            pendingCount: 0,
-            cartItemCount: cartService.getItemCount(),
-            currentLanguage: translationService.getLanguage(),
-            theme: savedTheme
+function HeaderComponent({ navigate, auth }) {
+    const t = useTranslation();
+    const isAdmin = AuthenticationService.isUserAdmin();
+    const pendingUsersQuery = useAdminUsers(isAdmin);
+    const queryClient = useQueryClient();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [cartItemCount, setCartItemCount] = useState(cartService.getItemCount());
+    const [theme, setTheme] = useState(() => localStorage.getItem('growShopTheme') || 'light');
+    const [menuOpen, setMenuOpen] = useState(false);
+    const isLoggedIn = AuthenticationService.isUserLoggedIn();
+    const isUserAdmin = AuthenticationService.isUserAdmin();
+    const loggedInUser = AuthenticationService.getLoggedInUser();
+    const pendingCount = (pendingUsersQuery.data || []).filter(isPendingUser).length;
+
+    useEffect(() => cartService.subscribe((items) => {
+        setCartItemCount(items.reduce((total, item) => total + item.quantity, 0));
+    }), []);
+
+    useEffect(() => {
+        if (!isAdmin) return undefined;
+        const refreshUsers = () => {
+            void queryClient.invalidateQueries({ queryKey: apiQueryKeys.adminUsers });
         };
-        this.handleSignOut = this.handleSignOut.bind(this);
-        this.handleSignIn = this.handleSignIn.bind(this);
-        this.handleCreateProduct = this.handleCreateProduct.bind(this);
-        this.handleManageUsers = this.handleManageUsers.bind(this);
-        this.handleCartClick = this.handleCartClick.bind(this);
-        this.handleLanguageChange = this.handleLanguageChange.bind(this);
-        this.handleSearchChange = this.handleSearchChange.bind(this);
-        this.handleSearchSubmit = this.handleSearchSubmit.bind(this);
-        this.toggleTheme = this.toggleTheme.bind(this);
-        this.unsubscribeFromCart = null;
-        this.unsubscribeFromLanguage = null;
-    }
+        window.addEventListener('users-changed', refreshUsers);
+        return () => window.removeEventListener('users-changed', refreshUsers);
+    }, [isAdmin, queryClient]);
 
-    componentDidMount() {
-        this.loadPendingCount = this.loadPendingCount.bind(this);
-        this.loadPendingCount();
-        window.addEventListener('users-changed', this.loadPendingCount);
-        this.unsubscribeFromCart = cartService.subscribe((items) => {
-            const cartItemCount = items.reduce((total, item) => total + item.quantity, 0);
-            this.setState({ cartItemCount });
-        });
-        this.unsubscribeFromLanguage = translationService.subscribe((lang) => {
-            this.setState({ currentLanguage: lang });
-        });
+    useEffect(() => {
+        document.body.classList.toggle('dark-theme', theme === 'dark');
+    }, [theme]);
 
-        const savedTheme = localStorage.getItem('growShopTheme') || 'light';
-        if (savedTheme === 'dark') {
-            document.body.classList.add('dark-theme');
-        } else {
-            document.body.classList.remove('dark-theme');
-        }
-    }
-
-    async loadPendingCount() {
-        if (!AuthenticationService.isUserAdmin()) return;
-        try {
-            const users = await UserService.getUsers();
-            const pendingCount = users.filter((u) => isPendingUser(u)).length;
-            if (!this.unmounted) this.setState({ pendingCount });
-        } catch {
-            // El contador es informativo; un fallo no debe afectar al encabezado.
-        }
-    }
-
-    componentWillUnmount() {
-        this.unmounted = true;
-        window.removeEventListener('users-changed', this.loadPendingCount);
-        if (this.unsubscribeFromCart) {
-            this.unsubscribeFromCart();
-        }
-        if (this.unsubscribeFromLanguage) {
-            this.unsubscribeFromLanguage();
-        }
-    }
-
-    handleSignOut(e) {
-        if (this.props.auth) {
-            // Revoca el token en el backend, limpia la sesión y redirige a /login
-            this.props.auth.logout('USER');
+    const signOut = () => {
+        if (auth) {
+            auth.logout('USER');
             return;
         }
         AuthenticationService.logout();
-        this.props.navigate(`/welcome`);
-    }
+        navigate('/welcome');
+    };
 
-    handleCreateProduct(e) {
-        this.props.navigate(`/createProduct`);
-    }
-
-    handleManageUsers(e) {
-        this.props.navigate(`/admin/users`);
-    }
-
-    handleSignIn(e) {
-       this.props.navigate(`/login`);
-    }
-
-    handleCartClick(e) {
-        e.preventDefault();
-        this.props.navigate(`/cart`);
-    }
-
-    handleLanguageChange(lang) {
-        translationService.setLanguage(lang);
-    }
-
-    toggleTheme() {
-        const nextTheme = this.state.theme === 'dark' ? 'light' : 'dark';
-        this.setState({ theme: nextTheme });
+    const toggleTheme = () => {
+        const nextTheme = theme === 'dark' ? 'light' : 'dark';
+        setTheme(nextTheme);
         localStorage.setItem('growShopTheme', nextTheme);
-        if (nextTheme === 'dark') {
-            document.body.classList.add('dark-theme');
-        } else {
-            document.body.classList.remove('dark-theme');
-        }
-    }
+    };
 
-    handleSearchSubmit(event) {
+    const submitSearch = (event) => {
         event.preventDefault();
-        const normalizedSearch = this.state.searchTerm.trim();
-        const targetRoute = normalizedSearch
-            ? `/shop?name=${encodeURIComponent(normalizedSearch)}`
-            : '/shop';
-        this.props.navigate(targetRoute);
-    }
+        const normalizedSearch = searchTerm.trim();
+        navigate(normalizedSearch ? `/shop?name=${encodeURIComponent(normalizedSearch)}` : '/shop');
+        setMenuOpen(false);
+    };
 
-    handleSearchChange(event) {
-        this.setState({ searchTerm: event.target.value });
-    }
+    const menuItemClass = 'hu-block hu-w-full hu-rounded-md hu-px-3 hu-py-1 hu-text-left hu-text-sm hu-text-green-700 hover:hu-bg-green-100';
+    const navLinkClass = ({ isActive }) =>
+        `hu-whitespace-nowrap hu-py-2 hu-text-sm hu-font-medium ${isActive ? 'hu-text-green-400' : 'hu-text-white hover:hu-text-green-300'}`;
+    const brand = (
+        <NavLink to="/welcome" className="hu-inline-flex hu-text-xl hu-font-black hu-no-underline">
+            <span className="hu-bg-white hu-px-2 hu-text-slate-900">Zona</span>
+            <span className="hu-bg-green-700 hu-px-2 hu-text-white">Green</span>
+        </NavLink>
+    );
 
-    render() {
-        const isUserLoggedIn = AuthenticationService.isUserLoggedIn();
-        const isUserAdmin = AuthenticationService.isUserAdmin();
-        const loggedInUser = AuthenticationService.getLoggedInUser();
-        const { searchTerm, cartItemCount, currentLanguage } = this.state;
-        const t = (key) => translationService.t(key);
-        const usernameLabel = isUserLoggedIn && loggedInUser ? loggedInUser.username : t('sign_in');
-        console.log("isUserLoggedIn:", isUserLoggedIn);
-
-        return (
-            <div className="container-fluid p-0">
-                {/* ── TOP BAR (Antiguo HeaderComponent) ── */}
-                <div className="container-fluid bg-light">
-                    <div className="row bg-secondary py-1 px-xl-5">
-                        <div className="col-lg-6 d-none d-lg-block">
-                        </div>
-                        <div className="col-lg-6 text-center text-lg-right">
-                            <div className="d-inline-flex align-items-center">
-                                <DropdownMenu label={usernameLabel}>
-                                    {!isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleSignIn}>
-                                        {t('sign_in')}
-                                    </button>}
-                                    {isUserLoggedIn && <button className="dropdown-item font-weight-bold text-dark" type="button" onClick={() => this.props.navigate('/profile')}>
-                                        {t('manage_profile')}
-                                    </button>}
-                                    {isUserAdmin && <button className="dropdown-item text-primary" type="button" onClick={this.handleManageUsers}>
-                                        {t('manage_users')}
-                                        {this.state.pendingCount > 0 && <span className="badge badge-warning ml-2">{this.state.pendingCount}</span>}
-                                    </button>}
-                                    {isUserLoggedIn && !isUserAdmin && <button className="dropdown-item" type="button" onClick={() => this.props.navigate('/orders')}>
-                                        {t('my_orders')}
-                                    </button>}
-                                    {isUserAdmin && <button className="dropdown-item text-primary" type="button" onClick={() => this.props.navigate('/admin/orders')}>
-                                        {t('manage_orders')}
-                                    </button>}
-                                    {isUserAdmin && <button className="dropdown-item" type="button" onClick={() => this.props.navigate('/admin/orders/report')}>
-                                        {t('orders_report')}
-                                    </button>}
-                                    {isUserAdmin && <button className="dropdown-item" type="button" onClick={this.handleCreateProduct}>
-                                        {t('create_product')}
-                                    </button>}
-                                    {isUserLoggedIn && <button className="dropdown-item" type="button" onClick={this.handleSignOut}>
-                                        {t('logout')}
-                                    </button>}
-                                </DropdownMenu>
-                                <DropdownMenu label={currentLanguage}>
-                                    <button className="dropdown-item" type="button" onClick={() => this.handleLanguageChange('ES')}>
-                                        ES
-                                    </button> 
-                                    <button className="dropdown-item" type="button" onClick={() => this.handleLanguageChange('EN')}>
-                                        EN
-                                    </button> 
-                                </DropdownMenu>
-                                <button 
-                                    className={`btn btn-sm btn-dark ml-2 d-inline-flex align-items-center header-theme-toggle ${this.state.theme === 'dark' ? 'header-theme-toggle-dark' : 'header-theme-toggle-light'}`}
-                                    type="button"
-                                    onClick={this.toggleTheme}
-                                >
-                                    <i className={this.state.theme === 'dark' ? 'fas fa-sun mr-1' : 'fas fa-moon mr-1'} />
-                                    {this.state.theme === 'dark' ? t('switch_to_light') : t('switch_to_dark')}
-                                </button>
-                            </div>
-                            <div className="d-inline-flex align-items-center d-block d-lg-none">
-                                <button type="button" className="btn px-0 ml-2" aria-label={t('view_favs')}>
-                                    <i className="fas fa-heart text-dark" />
-                                    <span className="badge text-dark border border-dark rounded-circle header-badge">
-                                        0
-                                    </span>
-                                </button>
-                                <button type="button" className="btn px-0 ml-2" onClick={this.handleCartClick} aria-label={t('view_cart')}>
-                                    <i className="fas fa-shopping-cart text-dark" />
-                                    <span className="badge text-dark border border-dark rounded-circle header-badge">
-                                        {cartItemCount}
-                                    </span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── NAVIGATION BAR (Antiguo NavBarComponent) ── */}
-                <div className="container-fluid bg-dark mb-30">
-                    <div className="row px-xl-5">
-                        <div className="col-lg-3 d-none d-lg-block">
-                            <div className="row align-items-center bg-dark py-3 px-xl-5 d-none d-lg-flex header-logo-row">
-                                <div className="col-lg-12">
-                                    <NavLink to="/welcome" className="btn btn-link text-decoration-none p-0">
-                                        <span className="h1 text-uppercase text-dark bg-light px-2">
-                                            Zona
-                                        </span>
-                                        <span className="h1 text-uppercase text-light bg-primary px-2 ml-n1">
-                                            Green
-                                        </span>
-                                    </NavLink>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-lg-9">
-                            <nav className="navbar navbar-expand-lg bg-dark navbar-dark py-3 py-lg-0 px-0">
-                                <NavLink to="/welcome" className="text-decoration-none d-block d-lg-none">
-                                    <span className="h1 text-uppercase text-dark bg-light px-2">
-                                        Zona
-                                    </span>
-                                    <span className="h1 text-uppercase text-light bg-primary px-2 ml-n1">
-                                        Green
-                                    </span>
-                                </NavLink>
-                                <CollapseMenu
-                                    className="w-100"
-                                    title={<span className="navbar-toggler-icon" />}
-                                    triggerClassName="navbar-toggler"
-                                    contentClassName="navbar-collapse justify-content-between"
-                                >
-                                    <div className="navbar-nav mr-auto py-0">
-                                        <NavLink to="/shop" className="nav-item nav-link">
-                                            {t('menu_marketplace')}
-                                        </NavLink>
-                                        <NavLink to="/shop" className="nav-item nav-link">
-                                            {t('menu_cursos_online')}
-                                        </NavLink>
-                                        <NavLink to="/shop" className="nav-item nav-link">
-                                            {t('menu_legal')}
-                                        </NavLink>
-                                        <NavLink to="/Legal" className="nav-item nav-link">
-                                            {t('menu_blog')}
-                                        </NavLink> 
-                                        <div className="nav-item px-lg-3 d-flex align-items-center">
-                                            <form onSubmit={this.handleSearchSubmit}>
-                                                <div className="input-group">
-                                                    <input
-                                                        type="text"
-                                                        className="form-control header-search-input"
-                                                        placeholder={t('search_placeholder')}
-                                                        value={searchTerm}
-                                                        onChange={this.handleSearchChange}
-                                                    />
-                                                    <div className="input-group-append">
-                                                        <button type="submit" className="input-group-text bg-transparent text-primary border-left-0">
-                                                            <i className="fa fa-search" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div className="mt-2">
-                                        <p className="m-0 text-muted small text-light">{t('customer_service')}</p>
-                                        <h5 className="m-0 font-weight-bold text-primary">{t('customer_service_num')}</h5>
-                                    </div>
-                                    </div>
-                                    <div className="navbar-nav ml-auto py-0 d-none d-lg-block">
-                                        <NavLink to="/cart" className="btn px-0 ml-3">
-                                            <i className="fas fa-shopping-cart text-primary" />
-                                            <span className="badge text-light border border-secondary rounded-circle header-badge">
-                                                {cartItemCount}
-                                            </span>
-                                        </NavLink>
-                                    </div>
-                                </CollapseMenu>
-                            </nav>
-                        </div>
-                    </div>
+    return (
+        <header className="hu-w-full">
+            <div className="hu-bg-slate-100">
+                <div className="hu-mx-auto hu-flex hu-max-w-7xl hu-flex-wrap hu-items-center hu-justify-end hu-gap-2 hu-px-4 hu-py-2 sm:hu-px-6 lg:hu-px-8">
+                    <DropdownMenu label={isLoggedIn && loggedInUser ? loggedInUser.username : t('sign_in')}>
+                        {!isLoggedIn && <button className={menuItemClass} type="button" onClick={() => navigate('/login')}>{t('sign_in')}</button>}
+                        {isLoggedIn && <button className={menuItemClass} type="button" onClick={() => navigate('/profile')}>{t('manage_profile')}</button>}
+                        {isUserAdmin && (
+                            <button className={menuItemClass} type="button" onClick={() => navigate('/admin/users')}>
+                                {t('manage_users')}
+                                {pendingCount > 0 && <span className="hu-ml-2 hu-rounded-full hu-bg-amber-100 hu-px-2 hu-py-0.5 hu-text-xs hu-text-amber-900">{pendingCount}</span>}
+                                {pendingUsersQuery.isError && <span className="hu-ml-2 hu-text-red-700" role="alert" title={pendingUsersQuery.error?.message}>!</span>}
+                            </button>
+                        )}
+                        {isLoggedIn && !isUserAdmin && <button className={menuItemClass} type="button" onClick={() => navigate('/orders')}>{t('my_orders')}</button>}
+                        {isUserAdmin && <button className={menuItemClass} type="button" onClick={() => navigate('/admin/orders')}>{t('manage_orders')}</button>}
+                        {isUserAdmin && <button className={menuItemClass} type="button" onClick={() => navigate('/admin/proveedores')}>{t('manage_suppliers')}</button>}
+                        {isUserAdmin && <button className={menuItemClass} type="button" onClick={() => navigate('/admin/orders/report')}>{t('orders_report')}</button>}
+                        {isUserAdmin && <button className={menuItemClass} type="button" onClick={() => navigate('/createProduct')}>{t('create_product')}</button>}
+                        {isLoggedIn && <button className={menuItemClass} type="button" onClick={signOut}>{t('logout')}</button>}
+                    </DropdownMenu>
+                    <DropdownMenu label={translationService.getLanguage()}>
+                        <button className={menuItemClass} type="button" onClick={() => translationService.setLanguage('ES')}>ES</button>
+                        <button className={menuItemClass} type="button" onClick={() => translationService.setLanguage('EN')}>EN</button>
+                    </DropdownMenu>
+                    <button
+                        className={`hu-inline-flex hu-items-center hu-gap-2 hu-rounded-full hu-px-3 hu-py-1.5 hu-text-xs hu-font-semibold ${theme === 'dark' ? 'hu-bg-green-700 hu-text-white' : 'hu-bg-slate-900 hu-text-white'}`}
+                        type="button"
+                        onClick={toggleTheme}
+                    >
+                        <i className={theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon'} aria-hidden="true" />
+                        {theme === 'dark' ? t('switch_to_light') : t('switch_to_dark')}
+                    </button>
+                    <NavLink to="/cart" className="hu-inline-flex hu-items-center hu-gap-2 hu-rounded-lg hu-px-2 hu-py-1.5 hu-text-sm hu-text-slate-800 hover:hu-bg-slate-200" aria-label={t('view_cart')}>
+                        <i className="fas fa-shopping-cart" aria-hidden="true" />
+                        <span>{cartItemCount}</span>
+                    </NavLink>
                 </div>
             </div>
-        );
-    }
+
+            <div className="hu-bg-slate-900">
+                <div className="hu-mx-auto hu-flex hu-max-w-7xl hu-flex-wrap hu-items-center hu-justify-between hu-gap-4 hu-px-4 hu-py-4 sm:hu-px-6 lg:hu-flex-nowrap lg:hu-px-8">
+                    <div className="hu-flex hu-w-full hu-items-center hu-justify-between lg:hu-w-auto">
+                        {brand}
+                        <button
+                            className="hu-rounded-md hu-border hu-border-slate-600 hu-px-3 hu-py-2 hu-text-white lg:hu-hidden"
+                            type="button"
+                            aria-expanded={menuOpen}
+                            aria-label={t('toggle_navigation')}
+                            onClick={() => setMenuOpen((open) => !open)}
+                        >
+                            <i className="fas fa-bars" aria-hidden="true" />
+                        </button>
+                    </div>
+                    <nav className={`${menuOpen ? 'hu-flex' : 'hu-hidden'} hu-w-full hu-flex-col hu-items-start hu-gap-3 lg:hu-flex lg:hu-w-auto lg:hu-flex-row lg:hu-items-center lg:hu-gap-6`} aria-label={t('main_navigation')}>
+                        <NavLink to="/shop" className={navLinkClass} onClick={() => setMenuOpen(false)}>{t('menu_marketplace')}</NavLink>
+                        <NavLink to="/shop" className={navLinkClass} onClick={() => setMenuOpen(false)}>{t('menu_cursos_online')}</NavLink>
+                        <NavLink to="/shop" className={navLinkClass} onClick={() => setMenuOpen(false)}>{t('menu_legal')}</NavLink>
+                        <NavLink to="/Legal" className={navLinkClass} onClick={() => setMenuOpen(false)}>{t('menu_blog')}</NavLink>
+                        <form className="hu-flex hu-w-full hu-max-w-sm" onSubmit={submitSearch}>
+                            <label className="hu-sr-only" htmlFor="header-search">{t('search_placeholder')}</label>
+                            <input
+                                id="header-search"
+                                type="search"
+                                className="hu-min-w-0 hu-flex-1 hu-rounded-l-lg hu-border hu-border-slate-300 hu-bg-white hu-px-3 hu-py-2 hu-text-sm hu-text-slate-900 hu-outline-none focus:hu-border-green-500"
+                                placeholder={t('search_placeholder')}
+                                value={searchTerm}
+                                onChange={(event) => setSearchTerm(event.target.value)}
+                            />
+                            <button className="hu-rounded-r-lg hu-bg-green-700 hu-px-3 hu-text-white hover:hu-bg-green-600" type="submit" aria-label={t('search_placeholder')}>
+                                <i className="fa fa-search" aria-hidden="true" />
+                            </button>
+                        </form>
+                        <div className="hu-whitespace-nowrap">
+                            <p className="hu-m-0 hu-text-xs hu-text-slate-300">{t('customer_service')}</p>
+                            <p className="hu-m-0 hu-font-bold hu-text-green-400">{t('customer_service_num')}</p>
+                        </div>
+                        <NavLink to="/cart" className="hu-hidden hu-items-center hu-gap-2 hu-text-white hover:hu-text-green-300 lg:hu-inline-flex" aria-label={t('view_cart')}>
+                            <i className="fas fa-shopping-cart hu-text-green-400" aria-hidden="true" />
+                            {cartItemCount}
+                        </NavLink>
+                    </nav>
+                </div>
+            </div>
+        </header>
+    );
 }
 
 export default HeaderComponent;

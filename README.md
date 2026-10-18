@@ -47,8 +47,10 @@ Usa `.env.local` para la configuracion de desarrollo; este archivo no se publica
 npm run dev              # Servidor de desarrollo en el puerto 4200
 npm run start            # Alias del servidor de desarrollo
 npm run build            # Genera la aplicacion en build/
+npm run typecheck        # Comprueba los tipos TypeScript
 npm run preview          # Sirve localmente la compilacion producida
 npm run test             # Ejecuta Vitest en modo interactivo
+npm run test -- --run    # Ejecuta Vitest una vez y termina
 npm run test:coverage    # Ejecuta pruebas y genera cobertura
 ```
 
@@ -61,8 +63,21 @@ npm run test:coverage    # Ejecuta pruebas y genera cobertura
 - `/login`: inicio de sesion e inicio de registro de clientes con validacion de edad
 - `/profile`: administracion del perfil del usuario (edicion de datos y cambio de contraseña)
 - `/admin/users`: panel de administracion de usuarios (solo admin; activa/inactiva cuentas y restablece claves)
+- `/admin/proveedores`: gestion de proveedores, saldos, recepcion de lotes y abonos (solo admin)
 - `/createProduct`: alta de productos (solo admin)
+- `/editProduct/:productId`: edicion de productos (solo admin)
 - `/welcome/:name`: bienvenida personalizada
+
+## Tecnologias
+
+- **TanStack Query:** gestiona consultas y mutaciones del servidor. Las mutaciones invalidan las consultas afectadas para mantener sincronizada la cache.
+- **React Hook Form y Zod:** gestionan formularios y validaciones en registro/inicio de sesion, perfil, checkout, administracion de productos, proveedores y dialogos de ordenes.
+- **Tailwind CSS:** estiliza la interfaz con el prefijo `hu-`. Los componentes compartidos de `src/components/ui/shadcn.tsx` tienen estilo shadcn/ui, pero son componentes locales y no dependen de la libreria oficial shadcn/ui ni de Radix.
+- **CSS base:** `src/index.css` define los estilos globales y el tema oscuro; Swiper aporta los estilos del carrusel.
+
+El Kanban de ordenes obtiene las ordenes desde TanStack Query, sin mantener una copia local de los datos del servidor. Los cambios de estado y otras mutaciones invalidan la cache para refrescar la vista. El carrito, en cambio, conserva su estado local persistido mediante `CartService`; no es dato remoto gestionado por TanStack Query.
+
+El formulario de reseñas del detalle valida sus campos, pero no puede guardar reseñas: el backend documentado no ofrece un servicio o endpoint de envio de reseñas. La lista visible actualmente es de ejemplo.
 
 ## Gestión de Usuarios, Perfiles y Preferencias
 
@@ -93,7 +108,15 @@ Hemos integrado un completo sistema transaccional de usuarios conectado al backe
 ### 6. Tema Claro / Oscuro (Dark Mode)
 - **Interruptor Global:** Botón con icono dinámico (Sol/Luna) en el menú superior para cambiar el tema en toda la aplicación de manera instantánea.
 - **Persistencia:** Guarda la selección en `localStorage` (`growShopTheme`) para recordar la preferencia del usuario en futuras visitas.
-- **Soporte de Estilos:** Estructurado mediante clases de CSS en `index.css` acopladas dinámicamente al `<body>` para alternar la visualización de cards, tablas, formularios y fondos de forma armoniosa con el diseño de la tienda.
+- **Soporte de Estilos:** Se aplica mediante la clase `dark-theme` en el `<body>`, con reglas en `index.css` que ajustan fondos, textos y bordes de las utilidades Tailwind.
+
+## Gestión de Proveedores y Saldos (HU-01)
+
+La ruta `/admin/proveedores` permite crear proveedores y consultar saldos usando el ID de 24 caracteres devuelto por la API. En el detalle se pueden recibir lotes con varias presentaciones, registrar abonos y evaluar el monto liquidable de ventas/PQR. Los formularios usan React Hook Form y Zod; las consultas y mutaciones se gestionan con TanStack Query.
+
+El backend documentado no incluye un endpoint para listar proveedores o consultar el historial de lotes. Por ello, los proveedores existentes se abren mediante su ID y los lotes recibidos se muestran durante la sesión actual. El endpoint de liquidaciones solo evalúa el monto y no modifica el inventario.
+
+La vista usa TypeScript, Tailwind CSS con utilidades prefijadas y componentes de interfaz locales con estilo shadcn/ui.
 
 ## Ejecucion con Docker
 
