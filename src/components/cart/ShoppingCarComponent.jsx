@@ -220,7 +220,6 @@ class ShoppingCarComponent extends Component {
                 <HeaderComponentWithNavigation />
                 <main className="hu-mx-auto hu-w-full hu-max-w-[1600px] hu-flex-1 hu-px-4 hu-py-8 md:hu-px-8">
                     <div className="hu-mb-6">
-                        <p className="hu-mb-2 hu-text-xs hu-font-bold hu-uppercase hu-tracking-[0.16em] hu-text-blue-700">{t('quick_shop')}</p>
                         <h1 className="hu-m-0 hu-text-3xl hu-font-bold hu-tracking-tight">{t('cart_summary')}</h1>
                     </div>
                     <div className="hu-grid hu-items-start hu-gap-5 lg:hu-grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
@@ -228,7 +227,7 @@ class ShoppingCarComponent extends Component {
                             <div className="hu-overflow-x-auto">
                                 <Table>
                                     <TableHeader>
-                                        <TableRow className="hover:hu-bg-slate-50">
+                                        <TableRow className="hover:hu-bg-slate-50/10">
                                             <TableHead>{t('product')}</TableHead>
                                             <TableHead>{t('price')}</TableHead>
                                             <TableHead>{t('quantity')}</TableHead>

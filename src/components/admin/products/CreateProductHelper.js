@@ -52,20 +52,20 @@ export const formFromProduct = (product) => ({
     updated_at: product.updated_at || "",
 
     // Price
-    price_current: product.price?.current ?? "",
-    price_original: product.price?.original ?? "",
+    price_current: String(product.price?.current ?? ""),
+    price_original: String(product.price?.original ?? ""),
     price_currency: product.price?.currency || "USD",
-    price_discount_percentage: product.price?.discount_percentage ?? "",
+    price_discount_percentage: String(product.price?.discount_percentage ?? ""),
     price_tax_inclusive: product.price?.tax_inclusive ?? false,
 
     // Ranking
-    ranking_average_rating: product.ranking?.average_rating ?? "",
-    ranking_total_reviews: product.ranking?.total_reviews ?? "",
-    ranking_5_star: product.ranking?.rating_distribution?.["5_star"] ?? "",
-    ranking_4_star: product.ranking?.rating_distribution?.["4_star"] ?? "",
-    ranking_3_star: product.ranking?.rating_distribution?.["3_star"] ?? "",
-    ranking_2_star: product.ranking?.rating_distribution?.["2_star"] ?? "",
-    ranking_1_star: product.ranking?.rating_distribution?.["1_star"] ?? "",
+    ranking_average_rating: String(product.ranking?.average_rating ?? ""),
+    ranking_total_reviews: String(product.ranking?.total_reviews ?? ""),
+    ranking_5_star: String(product.ranking?.rating_distribution?.["5_star"] ?? ""),
+    ranking_4_star: String(product.ranking?.rating_distribution?.["4_star"] ?? ""),
+    ranking_3_star: String(product.ranking?.rating_distribution?.["3_star"] ?? ""),
+    ranking_2_star: String(product.ranking?.rating_distribution?.["2_star"] ?? ""),
+    ranking_1_star: String(product.ranking?.rating_distribution?.["1_star"] ?? ""),
 
     // Dynamic arrays
     categories: Array.isArray(product.categories) && product.categories.length > 0

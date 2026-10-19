@@ -15,7 +15,8 @@ describe('registrationSchema', () => {
   const validRegistration = {
     username: 'customer',
     email: 'person@example.com',
-    password: 'secret',
+    password: 'secret123',
+    confirmPassword: 'secret123',
     nombre: 'María',
     apellido: 'Pérez',
     direccion: 'Calle 10',
@@ -37,4 +38,21 @@ describe('registrationSchema', () => {
       mayorDeEdad: false,
     }).success).toBe(false);
   });
+
+  it('requires an eight-character password and matching confirmation', () => {
+    expect(registrationSchema.safeParse({
+      ...validRegistration,
+      password: 'short',
+      confirmPassword: 'short',
+    }).success).toBe(false);
+    expect(registrationSchema.safeParse({
+      ...validRegistration,
+      confirmPassword: 'different123',
+    }).success).toBe(false);
+    expect(registrationSchema.safeParse({
+      ...validRegistration,
+      confirmPassword: '',
+    }).success).toBe(false);
+  });
+
 });

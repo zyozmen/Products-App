@@ -1,0 +1,146 @@
+.age-verification-overlay {
+    position: fixed;
+    z-index: 100;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    overflow-y: auto;
+    padding: 24px;
+    background: #e9d8bd url('/img/age-verification-background.jpg') center / cover no-repeat;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.age-verification-frame {
+    position: relative;
+    width: min(100%, 464px);
+    transform: translateY(48px);
+    padding: 18px;
+    border: 2px solid rgb(255 255 255 / 85%);
+    border-radius: 30px;
+    text-align: center;
+}
+
+.age-verification-logo {
+    position: absolute;
+    z-index: 1;
+    top: -104px;
+    left: 50%;
+    width: 240px;
+    height: auto;
+    transform: translateX(-50%);
+}
+
+.age-verification-card {
+    min-height: 398px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 82px 26px 30px;
+    border-radius: 30px;
+    background: rgb(255 255 255 / 95%);
+}
+
+.age-verification-title {
+    max-width: 340px;
+    margin: 0 0 16px;
+    color: #237d43;
+    font-size: 25px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.age-verification-description {
+    max-width: 320px;
+    margin: 0 0 26px;
+    color: #202820;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.35;
+}
+
+.age-verification-actions {
+    display: grid;
+    width: 100%;
+    gap: 12px;
+}
+
+.age-verification-button {
+    width: 100%;
+    min-height: 52px;
+    padding: 12px 16px;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.age-verification-button-primary {
+    border: 2px solid #16833b;
+    background: #16833b;
+    color: #fff;
+}
+
+.age-verification-button-primary:hover {
+    border-color: #116b30;
+    background: #116b30;
+}
+
+.age-verification-button-secondary {
+    border: 2px solid #5c9b6d;
+    background: transparent;
+    color: #287844;
+}
+
+.age-verification-button-secondary:hover {
+    background: #edf5ee;
+}
+
+.age-verification-button:focus-visible {
+    outline: 3px solid #173f26;
+    outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+    .age-verification-overlay {
+        padding: 18px;
+    }
+
+    .age-verification-frame {
+        padding: 12px;
+        border-radius: 25px;
+    }
+
+    .age-verification-logo {
+        top: -79px;
+        width: 190px;
+    }
+
+    .age-verification-card {
+        min-height: 360px;
+        padding: 74px 18px 22px;
+        border-radius: 23px;
+    }
+
+    .age-verification-title {
+        font-size: 22px;
+    }
+
+    .age-verification-button {
+        min-height: 48px;
+        font-size: 16px;
+    }
+}
+
+@media (max-height: 620px) {
+    .age-verification-overlay {
+        place-items: start center;
+    }
+
+    .age-verification-frame {
+        margin-top: 96px;
+        transform: none;
+    }
+}

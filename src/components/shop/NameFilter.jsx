@@ -18,7 +18,7 @@ function NameFilter({ nameFilter, onNameFilterChange }) {
     };
 
     return (
-        <form className="hu-grid hu-gap-2 hu-rounded-xl hu-border hu-border-slate-200 hu-bg-white hu-p-4" onSubmit={submit}>
+        <form className="hu-grid hu-gap-2 hu-rounded-xl hu-border hu-border-slate-200 kanban-board hu-p-4 " onSubmit={submit}>
             <label className="hu-sr-only" htmlFor="product-name-filter">{t('filter_name_placeholder')}</label>
             <div className="hu-flex">
                 <Input

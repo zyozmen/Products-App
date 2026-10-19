@@ -15,6 +15,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.App.hu-min-h-screen {
+  background: #efe5d6 url('/img/shop-background-light.jpg') center / cover fixed no-repeat;
+}
+
+body.dark-theme .App.hu-min-h-screen {
+  background: #101b14 url('/img/shop-background-dark.jpg') center / cover fixed no-repeat;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

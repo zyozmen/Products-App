@@ -40,6 +40,20 @@ describe('AuthenticationService', () => {
         expect(AuthenticationService.isUserLoggedIn()).toBe(true);
     });
 
+    it('clears authentication and age-verification data on logout', () => {
+        sessionStorage.setItem('authenticatedUser', 'maria');
+        sessionStorage.setItem('token', 'token');
+        sessionStorage.setItem('userProfile', JSON.stringify({ username: 'maria' }));
+        sessionStorage.setItem('age_verified', 'true');
+
+        AuthenticationService.clearSession();
+
+        expect(sessionStorage.getItem('authenticatedUser')).toBeNull();
+        expect(sessionStorage.getItem('token')).toBeNull();
+        expect(sessionStorage.getItem('userProfile')).toBeNull();
+        expect(sessionStorage.getItem('age_verified')).toBeNull();
+    });
+
     it('sends the email (not username) to the login endpoint', async () => {
         const post = vi.spyOn(axios, 'post').mockResolvedValue({
             data: { token: 't', user: { username: 'maria', email: 'maria@example.com', role: 'cliente' } },

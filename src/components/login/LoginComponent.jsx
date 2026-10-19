@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { LOGOUT_NOTICES } from '../../context/AuthContext.jsx';
@@ -10,6 +9,7 @@ import { getErrorCode } from '../../services/httpClient.js';
 import { sanitizeMessage } from '../../services/messageUtils.js';
 import { loginSchema, registrationSchema } from '../../schemas/registration';
 import { Button, Card, ErrorNotice, Field, Input, Select } from '../ui/shadcn';
+import './LoginComponent.css';
 
 const allowedNotices = Object.values(LOGOUT_NOTICES);
 
@@ -31,6 +31,7 @@ function LoginComponent(props) {
             username: '',
             email: '',
             password: '',
+            confirmPassword: '',
             nombre: '',
             apellido: '',
             direccion: '',
@@ -76,7 +77,14 @@ function LoginComponent(props) {
                 : AuthenticationService.login.bind(AuthenticationService);
             const data = await login(values.email, values.password);
             const username = data?.user?.username || data?.username || values.email;
-            props.navigate(`/welcome/${encodeURIComponent(username)}`);
+            const requestedPath = props.location?.state?.from;
+            const returnTo = typeof requestedPath === 'string'
+                && requestedPath.startsWith('/')
+                && !requestedPath.startsWith('//')
+                && requestedPath !== '/login'
+                ? requestedPath
+                : `/welcome/${encodeURIComponent(username)}`;
+            props.navigate(returnTo, { replace: true });
         } catch (error) {
             const status = error.response?.status;
             const data = error.response?.data;
@@ -114,12 +122,14 @@ function LoginComponent(props) {
     };
 
     return (
-        <main className="hu-mx-auto hu-grid hu-min-h-[calc(100vh-8rem)] hu-w-full hu-max-w-6xl hu-content-center hu-gap-6 hu-px-4 hu-py-10 md:hu-grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:hu-px-8">
-            <Card className="hu-p-6 sm:hu-p-8">
+        <main className={`auth-screen${isRegistering ? ' auth-screen-register' : ''}`}>
+            <div className="auth-layout">
+                <h1 className="auth-heading">{isRegistering ? t('create_account') : t('sign_in')}</h1>
+                <Card className="auth-card-frame">
+                    <div className="auth-card-panel">
                 {isRegistering ? (
                     <>
-                        <h1 className="hu-mb-2 hu-mt-0 hu-text-2xl hu-font-bold">{t('create_account')}</h1>
-                        <p className="hu-mb-6 hu-mt-0 hu-text-sm hu-text-slate-600">{t('register_pending_approval')}</p>
+                        <p className="auth-register-intro">{t('register_pending_approval')}</p>
                         {registrationSuccess && (
                             <div className={`hu-mb-4 hu-rounded-lg hu-border hu-p-3 hu-text-sm ${alertTone.blue}`} role="status">
                                 {registrationSuccess}{' '}
@@ -127,7 +137,7 @@ function LoginComponent(props) {
                             </div>
                         )}
                         {registrationError && <div className="hu-mb-4"><ErrorNotice>{registrationError}</ErrorNotice></div>}
-                        <form className="hu-grid hu-gap-4" noValidate onSubmit={registrationForm.handleSubmit(register)}>
+                        <form className="auth-form auth-registration-form" noValidate onSubmit={registrationForm.handleSubmit(register)}>
                             <div className="hu-grid hu-gap-4 sm:hu-grid-cols-2">
                                 <Field label={`${t('user_name_label')} *`} htmlFor="register-username" error={errorFor(registrationForm, 'username')}>
                                     <Input id="register-username" autoComplete="username" aria-invalid={Boolean(registrationForm.formState.errors.username)} {...registrationForm.register('username')} />
@@ -137,6 +147,9 @@ function LoginComponent(props) {
                                 </Field>
                                 <Field label={`${t('password')} *`} htmlFor="register-password" error={errorFor(registrationForm, 'password')}>
                                     <Input id="register-password" type="password" autoComplete="new-password" aria-invalid={Boolean(registrationForm.formState.errors.password)} {...registrationForm.register('password')} />
+                                </Field>
+                                <Field label={`${t('confirm_password')} *`} htmlFor="register-confirm-password" error={errorFor(registrationForm, 'confirmPassword')}>
+                                    <Input id="register-confirm-password" type="password" autoComplete="new-password" aria-invalid={Boolean(registrationForm.formState.errors.confirmPassword)} {...registrationForm.register('confirmPassword')} />
                                 </Field>
                                 <Field label={`${t('first_name')} *`} htmlFor="register-first-name" error={errorFor(registrationForm, 'nombre')}>
                                     <Input id="register-first-name" autoComplete="given-name" aria-invalid={Boolean(registrationForm.formState.errors.nombre)} {...registrationForm.register('nombre')} />
@@ -150,16 +163,19 @@ function LoginComponent(props) {
                                 <Field label={`${t('contact_phone')} *`} htmlFor="register-phone" error={errorFor(registrationForm, 'telefono')}>
                                     <Input id="register-phone" type="tel" autoComplete="tel" aria-invalid={Boolean(registrationForm.formState.errors.telefono)} {...registrationForm.register('telefono')} />
                                 </Field>
-                                <Field label={`${t('identification_number')} *`} htmlFor="register-id-number" error={errorFor(registrationForm, 'numeroIdentificacion')}>
-                                    <div className="hu-flex hu-gap-2">
-                                        <Select className="hu-w-24 hu-shrink-0" aria-label={t('identification_type')} {...registrationForm.register('tipoIdentificacion')}>
+                                <Field label={`${t('identification_type')} *`} htmlFor="register-id-type" error={errorFor(registrationForm, 'tipoIdentificacion')}>
+                                    <div className="hu-flex hu-gap-4">
+                                        <Select aria-label={t('identification_type')} {...registrationForm.register('tipoIdentificacion')}>
                                             <option value="CC">CC</option>
                                             <option value="CE">CE</option>
                                             <option value="Pasaporte">{t('passport')}</option>
                                             <option value="NIT">NIT</option>
                                         </Select>
-                                        <Input id="register-id-number" aria-invalid={Boolean(registrationForm.formState.errors.numeroIdentificacion)} {...registrationForm.register('numeroIdentificacion')} />
                                     </div>
+                                </Field>
+
+                                <Field label={`${t('identification_number')} *`} htmlFor="register-id-number" error={errorFor(registrationForm, 'numeroIdentificacion')}>
+                                    <Input id="register-id-number" aria-invalid={Boolean(registrationForm.formState.errors.numeroIdentificacion)} {...registrationForm.register('numeroIdentificacion')} />
                                 </Field>
                             </div>
                             <div className="hu-text-sm hu-font-medium hu-text-slate-700">
@@ -169,43 +185,33 @@ function LoginComponent(props) {
                                 </label>
                                 {errorFor(registrationForm, 'mayorDeEdad') && <span className="hu-mt-1 hu-block hu-text-xs hu-font-normal hu-text-red-700" role="alert">{errorFor(registrationForm, 'mayorDeEdad')}</span>}
                             </div>
-                            <div className="hu-flex hu-flex-wrap hu-items-center hu-gap-3">
-                                <Button type="submit" disabled={userMutations.register.isPending}>
+                            <div className="auth-actions">
+                                <Button className="auth-button auth-button-primary" type="submit" disabled={userMutations.register.isPending}>
                                     {userMutations.register.isPending ? t('saving_btn') : t('sign_up')}
                                 </Button>
-                                <Button type="button" variant="secondary" onClick={() => setIsRegistering(false)}>{t('sign_in')}</Button>
+                                <Button className="auth-button auth-button-secondary" type="button" variant="secondary" onClick={() => setIsRegistering(false)}>{t('sign_in')}</Button>
                             </div>
                         </form>
                     </>
                 ) : (
                     <>
-                        <NavLink to="/welcome" className="hu-mb-6 hu-inline-flex hu-text-2xl hu-font-black hu-no-underline">
-                            <span className="hu-bg-slate-100 hu-px-2 hu-text-slate-900">Zona</span>
-                            <span className="hu-bg-green-700 hu-px-2 hu-text-white">Green</span>
-                        </NavLink>
-                        <h1 className="hu-mb-6 hu-mt-0 hu-text-2xl hu-font-bold">{t('sign_in')}</h1>
                         {notice && <div className={`hu-mb-4 hu-rounded-lg hu-border hu-p-3 hu-text-sm ${alertTone.amber}`} role="status">{notice}</div>}
                         {loginError && <div className={`hu-mb-4 hu-rounded-lg hu-border hu-p-3 hu-text-sm ${alertTone[loginErrorTone]}`} role="alert">{loginError}</div>}
-                        <form className="hu-grid hu-gap-4" noValidate onSubmit={loginForm.handleSubmit(signIn)}>
+                        <form className="auth-form" noValidate onSubmit={loginForm.handleSubmit(signIn)}>
                             <Field label={t('email')} htmlFor="email" error={errorFor(loginForm, 'email')}>
-                                <Input id="email" type="email" autoComplete="email" aria-invalid={Boolean(loginForm.formState.errors.email)} {...loginForm.register('email')} />
+                                <Input id="email" type="email" autoComplete="email" placeholder="Correo@ejemplo.com" aria-invalid={Boolean(loginForm.formState.errors.email)} {...loginForm.register('email')} />
                             </Field>
                             <Field label={t('password')} htmlFor="password" error={errorFor(loginForm, 'password')}>
-                                <Input id="password" type="password" autoComplete="current-password" aria-invalid={Boolean(loginForm.formState.errors.password)} {...loginForm.register('password')} />
+                                <Input id="password" type="password" autoComplete="current-password" placeholder={t('password')} aria-invalid={Boolean(loginForm.formState.errors.password)} {...loginForm.register('password')} />
                             </Field>
-                            <Button type="submit" disabled={props.auth?.isLoading}>{props.auth?.isLoading ? t('loading') : t('sign_in')}</Button>
+                            <Button className="auth-button auth-button-primary" type="submit" disabled={props.auth?.isLoading}>{props.auth?.isLoading ? t('loading') : t('sign_in')}</Button>
+                            <Button className="auth-button auth-button-secondary" type="button" variant="secondary" onClick={() => setIsRegistering(true)}>{t('sign_up')}</Button>
                         </form>
-                        <p className="hu-mb-0 hu-mt-6 hu-text-center hu-text-sm hu-text-slate-600">
-                            {t('create_account')}?{' '}
-                            <button className="hu-cursor-pointer hu-border-0 hu-bg-transparent hu-p-0 hu-font-semibold hu-text-green-700 hu-underline" type="button" onClick={() => setIsRegistering(true)}>{t('sign_up')}</button>
-                        </p>
                     </>
                 )}
-            </Card>
-            <aside className="hu-hidden hu-flex-col hu-justify-center hu-rounded-2xl hu-bg-gradient-to-br hu-from-green-500 hu-to-green-800 hu-p-10 hu-text-white md:hu-flex">
-                <h2 className="hu-mb-3 hu-mt-0 hu-text-3xl hu-font-bold">{isRegistering ? t('hello_friend') : t('welcome_back')}</h2>
-                <p className="hu-m-0 hu-leading-7">{isRegistering ? t('journey_text') : t('welcome_back_text')}</p>
-            </aside>
+                    </div>
+                </Card>
+            </div>
         </main>
     );
 }

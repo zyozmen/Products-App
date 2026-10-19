@@ -15,23 +15,13 @@ import AdminDashboardComponent from './admin/AdminDashboardComponent.jsx';
 import OrdersKanbanComponent from './admin/orders/OrdersKanbanComponent.jsx';
 import OrdersReportComponent from './admin/orders/OrdersReportComponent.jsx';
 import MyOrdersComponent from './orders/MyOrdersComponent.jsx';
-import AgeVerificationModal from './ui/AgeVerificationModal.jsx';
-import AuthenticationService from '../services/AuthenticationService.js';
 import { AuthProvider } from '../context/AuthContext.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
+import AgeVerificationRouteGate from './auth/AgeVerificationRouteGate.jsx';
 const SupplierManagementPage = React.lazy(() => import('./admin/suppliers/SupplierManagementPage'));
 
 const ADMIN_ROLES = ['admin'];
 
-function AgeVerificationRoute({ location, navigate }) {
-    const allowedPaths = ['/', '/welcome', '/cart', '/shop'];
-    if (!AuthenticationService.isUserLoggedIn() && allowedPaths.includes(location.pathname)) {
-        return <AgeVerificationModal navigate={navigate} />;
-    }
-    return null;
-}
-
-const AgeVerificationRouteWrapper = navigationComponent(AgeVerificationRoute);
 const LoginComponentWithNavigation = navigationComponent(LoginComponent);
 const ShopComponentWithNavigation = navigationComponent(ShopComponent);
 const WelcomeComponentWithParams = paramsComponent(WelcomeComponent);
@@ -67,27 +57,28 @@ function GrowShopApp() {
         <div className="App hu-min-h-screen">
             <BrowserRouter>
                 <AuthProvider>
-                    <AgeVerificationRouteWrapper />
-                    <Routes>
-                        <Route path="/login" element={<LoginComponentWithNavigation />} />
-                        <Route path="/" element={<WelcomeComponent />} />
-                        <Route path="/welcome" element={<WelcomeComponent />} />
-                        <Route path="/shop" element={<ShopComponentWithNavigation />} />
-                        <Route path="/cart" element={<ShoppingCarComponentWithNavigation />} />
-                        <Route path="/welcome/:name" element={<ProtectedRoute><WelcomeComponentWithParams /></ProtectedRoute>} />
-                        <Route path="/product/:id" element={<ProtectedRoute><ProductDetailComponentWithParams /></ProtectedRoute>} />
-                        <Route path="/createProduct" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CreateProductComponentWithNavigation /></ProtectedRoute>} />
-                        <Route path="/editProduct/:productId" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CreateProductComponentWithNavigation /></ProtectedRoute>} />
-                        <Route path="/admin" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AdminDashboardComponent /></ProtectedRoute>} />
-                        <Route path="/admin/users" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><UserAdminComponentWithNavigation /></ProtectedRoute>} />
-                        <Route path="/admin/proveedores" element={<SupplierRoute />} />
-                        <Route path="/admin/proveedores/:id" element={<SupplierRoute />} />
-                        <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><OrdersKanbanComponentWithNavigation /></ProtectedRoute>} />
-                        <Route path="/admin/orders/report" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><OrdersReportComponentWithNavigation /></ProtectedRoute>} />
-                        <Route path="/orders" element={<ProtectedRoute><MyOrdersComponentWithNavigation /></ProtectedRoute>} />
-                        <Route path="/profile" element={<ProtectedRoute><ProfileComponentWithNavigation /></ProtectedRoute>} />
-                        <Route path="*" element={<ErrorComponent />} />
-                    </Routes>
+                    <AgeVerificationRouteGate>
+                        <Routes>
+                            <Route path="/login" element={<LoginComponentWithNavigation />} />
+                            <Route path="/" element={<WelcomeComponent />} />
+                            <Route path="/welcome" element={<WelcomeComponent />} />
+                            <Route path="/shop" element={<ShopComponentWithNavigation />} />
+                            <Route path="/cart" element={<ShoppingCarComponentWithNavigation />} />
+                            <Route path="/welcome/:name" element={<ProtectedRoute><WelcomeComponentWithParams /></ProtectedRoute>} />
+                            <Route path="/product/:id" element={<ProtectedRoute><ProductDetailComponentWithParams /></ProtectedRoute>} />
+                            <Route path="/createProduct" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CreateProductComponentWithNavigation /></ProtectedRoute>} />
+                            <Route path="/editProduct/:productId" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CreateProductComponentWithNavigation /></ProtectedRoute>} />
+                            <Route path="/admin" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AdminDashboardComponent /></ProtectedRoute>} />
+                            <Route path="/admin/users" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><UserAdminComponentWithNavigation /></ProtectedRoute>} />
+                            <Route path="/admin/proveedores" element={<SupplierRoute />} />
+                            <Route path="/admin/proveedores/:id" element={<SupplierRoute />} />
+                            <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><OrdersKanbanComponentWithNavigation /></ProtectedRoute>} />
+                            <Route path="/admin/orders/report" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><OrdersReportComponentWithNavigation /></ProtectedRoute>} />
+                            <Route path="/orders" element={<ProtectedRoute><MyOrdersComponentWithNavigation /></ProtectedRoute>} />
+                            <Route path="/profile" element={<ProtectedRoute><ProfileComponentWithNavigation /></ProtectedRoute>} />
+                            <Route path="*" element={<ErrorComponent />} />
+                        </Routes>
+                    </AgeVerificationRouteGate>
                 </AuthProvider>
             </BrowserRouter>
         </div>

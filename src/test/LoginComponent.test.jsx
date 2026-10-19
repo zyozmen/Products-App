@@ -1,17 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import LoginComponent from '../components/login/LoginComponent.jsx';
 
-const renderLogin = () => {
+const renderLogin = (props = {}) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return render(
     <MemoryRouter>
       <QueryClientProvider client={queryClient}>
-        <LoginComponent navigate={vi.fn()} location={{ state: null }} />
+        <LoginComponent navigate={vi.fn()} location={{ state: null }} {...props} />
       </QueryClientProvider>
     </MemoryRouter>,
   );
@@ -37,5 +37,21 @@ describe('LoginComponent', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
     expect(screen.getByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument();
+  });
+
+  it('returns to the requested page after successful login', async () => {
+    const navigate = vi.fn();
+    const login = vi.fn().mockResolvedValue({ user: { username: 'customer' } });
+    renderLogin({
+      auth: { login, isLoading: false },
+      location: { state: { from: '/profile?tab=orders' } },
+      navigate,
+    });
+
+    fireEvent.change(screen.getByLabelText('Correo electrónico'), { target: { value: 'customer@example.com' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/profile?tab=orders', { replace: true }));
   });
 });

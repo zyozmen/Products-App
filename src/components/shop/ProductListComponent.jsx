@@ -8,6 +8,7 @@ import ConfirmationModal from '../ui/ConfirmationModal.jsx';
 import { useProductList } from '../../hooks/useApiQueries.ts';
 import useTranslation from '../../hooks/useTranslation.js';
 import { Button } from '../ui/shadcn';
+import './ProductListComponent.css';
 
 function ProductListComponent({ selectedCategoryIds = [], filters = {}, selectedSortBy, onSortByChange, location }) {
     const t = useTranslation();
@@ -62,7 +63,7 @@ function ProductListComponent({ selectedCategoryIds = [], filters = {}, selected
     };
 
     const renderPaginationControls = () => (
-        <div className="hu-col-span-full hu-mt-3">
+        <div className="product-list-pagination hu-col-span-full hu-mt-3 kanban-board">
             <div className="hu-flex hu-flex-wrap hu-items-center hu-justify-between hu-gap-3">
                 {!first ? (
                     <Button type="button" variant="secondary" onClick={() => setPageNumber((page) => Math.max(0, page - 1))}>
@@ -72,7 +73,7 @@ function ProductListComponent({ selectedCategoryIds = [], filters = {}, selected
                 <ul className="hu-m-0 hu-flex hu-list-none hu-flex-wrap hu-items-center hu-gap-1 hu-p-0">
                     {visiblePages.map((page) => (
                         <li key={page}>
-                            <button type="button" aria-current={page === pageNumber ? 'page' : undefined} className={`hu-h-9 hu-min-w-9 hu-cursor-pointer hu-rounded-lg hu-border hu-px-3 hu-text-sm ${page === pageNumber ? 'hu-border-green-700 hu-bg-green-700 hu-text-white' : 'hu-border-slate-300 hu-bg-white hu-text-slate-700 hover:hu-bg-slate-50'}`} onClick={() => setPageNumber(page)}>
+                            <button type="button" aria-current={page === pageNumber ? 'page' : undefined} className={`product-list-page-button hu-h-9 hu-min-w-9 hu-cursor-pointer hu-rounded-lg hu-border hu-px-3 hu-text-sm ${page === pageNumber ? 'product-list-page-current hu-border-green-700 hu-bg-green-700 hu-text-white' : 'hu-border-slate-300 hu-bg-white hu-text-slate-700 hover:hu-bg-slate-50'}`} onClick={() => setPageNumber(page)}>
                                 {page + 1}
                             </button>
                         </li>
@@ -92,8 +93,8 @@ function ProductListComponent({ selectedCategoryIds = [], filters = {}, selected
 
     const isUserAdmin = AuthenticationService.isUserLoggedIn() && AuthenticationService.isUserAdmin();
     return (
-        <div className="hu-min-w-0">
-            <div className="hu-grid hu-gap-4 sm:hu-grid-cols-2 xl:hu-grid-cols-3">
+        <div className="product-list">
+            <div className="product-list-grid hu-grid hu-gap-4">
                 <FilterProducts
                     selectedPageSize={pageSize}
                     pageSizeOptions={[15, 30, 45]}
@@ -115,7 +116,7 @@ function ProductListComponent({ selectedCategoryIds = [], filters = {}, selected
                     const isInactive = status === 'INACTIVE';
                     const isDraft = status === 'DRAFT';
                     const productImage = (
-                        <div className="hu-group hu-relative hu-overflow-hidden hu-bg-slate-100">
+                        <div className="product-list-image hu-group hu-relative hu-overflow-hidden hu-bg-slate-100">
                             {isInactive ? (
                                 <img
                                     className="hu-h-[280px] hu-w-full hu-object-cover hu-transition hu-duration-300 group-hover:hu-scale-105"
@@ -151,10 +152,10 @@ function ProductListComponent({ selectedCategoryIds = [], filters = {}, selected
                         </div>
                     );
                     return (
-                        <div key={product.id} className="hu-overflow-hidden hu-rounded-xl hu-border hu-border-slate-200 hu-bg-white hu-shadow-sm">
+                        <div key={product.id} className="product-list-card hu-overflow-hidden hu-rounded-xl hu-border hu-border-slate-200 hu-bg-white hu-shadow-sm">
                             <div className={`${isInactive ? 'hu-opacity-50' : ''}${isDraft ? ' hu-border-t-4 hu-border-amber-400' : ''}`}>
                                 {productImage}
-                                <div className="hu-p-4 hu-text-center">
+                                <div className="product-list-card-details hu-p-4 hu-text-center !hu-bg-green-800/90">
                                     {isInactive ? (
                                         <span className="hu-block hu-truncate hu-font-semibold">{product.name}</span>
                                     ) : (

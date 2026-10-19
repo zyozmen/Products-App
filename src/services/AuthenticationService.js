@@ -58,6 +58,7 @@ class AuthenticationService {
         sessionStorage.removeItem('authenticatedUser');
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('userProfile');
+        sessionStorage.removeItem('age_verified');
     }
 
     logout() {

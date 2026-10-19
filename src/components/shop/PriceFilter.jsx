@@ -15,7 +15,7 @@ function PriceFilter({ minPrice, maxPrice, onPriceRangeChange }) {
     const isAllSelected = minPrice === null && maxPrice === null;
 
     return (
-        <div className="hu-rounded-xl hu-border hu-border-slate-200 hu-bg-white hu-p-4">
+        <div className="hu-rounded-xl hu-border hu-border-slate-200 hu-p-4 kanban-board">
             <div className="hu-grid hu-gap-3">
                 <label className="hu-flex hu-items-center hu-gap-3 hu-text-sm hu-text-slate-700">
                     <input

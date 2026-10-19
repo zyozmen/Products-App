@@ -19,8 +19,8 @@ function CategoryFilter({ selectedCategoryIds = [], onCategorySelectionChange })
     };
 
     return (
-        <section className="hu-rounded-xl hu-border hu-border-slate-200 hu-bg-white hu-p-4">
-            <div className="hu-mb-3 hu-flex hu-items-center hu-justify-between hu-gap-3">
+        <section className="hu-rounded-xl hu-border hu-border-slate-200 hu-bg-white hu-p-4 kanban-board">
+            <div className="hu-mb-3 hu-flex hu-items-center hu-justify-between hu-gap-3 ">
                 <input
                     type="checkbox"
                     className="hu-h-4 hu-w-4 hu-accent-blue-700"
