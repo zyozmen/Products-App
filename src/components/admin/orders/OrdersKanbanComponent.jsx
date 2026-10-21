@@ -149,7 +149,7 @@ function OrdersKanbanComponent({ navigate }) {
     const errorMessage = error || (ordersQuery.isError ? ordersQuery.error?.message || t('orders_load_error') : '');
 
     return (
-        <div className="hu-flex hu-min-h-screen hu-flex-col admin-page-bg hu-text-slate-900">
+        <div className="hu-flex hu-min-h-screen hu-flex-col hu-overflow-x-hidden admin-page-bg hu-text-slate-900">
             <HeaderComponentWithNavigation />
             <AdminNav />
             <main className="hu-mx-auto hu-w-full hu-max-w-[1600px] hu-flex-1 hu-px-4 hu-py-8 md:hu-px-8">
@@ -167,7 +167,7 @@ function OrdersKanbanComponent({ navigate }) {
                     </div>
                 </div>
 
-                <Card className="hu-mb-5 hu-grid hu-gap-4 hu-p-5 md:hu-grid-cols-[minmax(200px,280px)_1fr] md:hu-items-end kanban-board">
+                <Card className="hu-mb-5 hu-grid hu-grid-cols-[minmax(0,1fr)] hu-gap-4 hu-p-5 md:hu-grid-cols-[minmax(200px,280px)_1fr] md:hu-items-end kanban-board">
                     <label className="hu-grid hu-min-w-0 hu-gap-1.5 hu-text-sm hu-font-medium hu-text-slate-700" htmlFor="orders-day">
                         {t('orders_day')}
                         <Input id="orders-day" type="date" className="hu-box-border hu-h-11 hu-min-w-0" value={selectedDate} onChange={(event) => event.target.value && setSelectedDate(event.target.value)} />
@@ -212,14 +212,14 @@ function OrdersKanbanComponent({ navigate }) {
                                 {searchTerm && dayOrders.length > 0 ? t('search_orders_no_results') : t('orders_no_orders_day')}
                             </div>
                         )}
-                        <div className="hu-grid hu-items-start hu-gap-4 xl:hu-grid-cols-5 kanban-board">
+                        <div className="hu-grid hu-grid-cols-[minmax(0,1fr)] hu-items-start hu-gap-4 xl:hu-grid-cols-5 kanban-board">
                             {ORDER_STATUSES.map((status) => {
                                 const columnOrders = visibleOrders.filter((order) => getOrderStatus(order) === status);
                                 const isDragOver = dragOverStatus === status;
                                 return (
                                     <section
                                         key={status}
-                                        className={`hu-min-w-[250px] hu-rounded-xl hu-border hu-border-slate-200 hu-p-3 ${isDragOver ? 'hu-border-amber-500 hu-bg-amber-50' : 'hu-border-slate-200 hu-bg-white'}`}
+                                        className={`hu-min-w-0 hu-rounded-xl hu-border hu-border-slate-200 hu-p-3 ${isDragOver ? 'hu-border-amber-500 hu-bg-amber-50' : 'hu-border-slate-200 hu-bg-white'}`}
                                         onDragOver={(event) => {
                                             event.preventDefault();
                                             if (!isDragOver) setDragOverStatus(status);

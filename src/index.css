@@ -15,6 +15,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Sin preflight de Tailwind: evita que `w-full` + padding (px-4) desborde el ancho y cause scroll lateral en móvil. */
+[class*='hu-w-full'] {
+  box-sizing: border-box;
+}
+
 .App.hu-min-h-screen {
   background: #efe5d6 url('/img/shop-background-light.jpg') center / cover fixed no-repeat;
 }

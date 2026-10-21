@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import useTranslation from '../../hooks/useTranslation.js';
 
 const ITEMS = [
@@ -18,9 +19,20 @@ const linkClass = ({ isActive }) => (
 
 function AdminNav() {
     const t = useTranslation();
+    const { pathname } = useLocation();
+    const scrollerRef = useRef(null);
+
+    // Cada página monta su propio menú (el scroll vuelve a 0): se centra la pestaña activa.
+    useEffect(() => {
+        const scroller = scrollerRef.current;
+        const active = scroller?.querySelector('[aria-current="page"]');
+        if (!scroller || !active) return;
+        scroller.scrollLeft = active.offsetLeft - (scroller.clientWidth - active.offsetWidth) / 2;
+    }, [pathname]);
+
     return (
         <nav className="hu-border-0 hu-border-b hu-border-solid hu-border-slate-200 hu-bg-white" aria-label={t('admin_section')}>
-            <div className="hu-mx-auto hu-flex hu-max-w-[1600px] hu-overflow-x-auto hu-px-4 md:hu-px-8">
+            <div ref={scrollerRef} className="hu-relative hu-mx-auto hu-flex hu-max-w-[1600px] hu-overflow-x-auto hu-px-4 md:hu-px-8">
                 {ITEMS.map(({ to, labelKey, end }) => (
                     <NavLink key={to} to={to} end={end} className={linkClass}>{t(labelKey)}</NavLink>
                 ))}
