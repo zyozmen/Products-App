@@ -7,7 +7,7 @@ import useTranslation from '../../hooks/useTranslation.js';
 import AuthenticationService from '../../services/AuthenticationService.js';
 import { getErrorCode } from '../../services/httpClient.js';
 import { sanitizeMessage } from '../../services/messageUtils.js';
-import { loginSchema, registrationSchema } from '../../schemas/registration';
+import { getMissingPasswordRequirements, loginSchema, registrationSchema } from '../../schemas/registration';
 import { Button, Card, ErrorNotice, Field, Input, Select } from '../ui/shadcn';
 import './LoginComponent.css';
 
@@ -42,6 +42,7 @@ function LoginComponent(props) {
         },
     });
     const noticeKey = props.location?.state?.notice;
+    const missingPasswordRules = getMissingPasswordRequirements(registrationForm.watch('password') || '');
     const notice = allowedNotices.includes(noticeKey) ? t(noticeKey) : '';
 
     const register = async (values) => {
@@ -145,12 +146,20 @@ function LoginComponent(props) {
                                 <Field label={`${t('email')} *`} htmlFor="register-email" error={errorFor(registrationForm, 'email')}>
                                     <Input id="register-email" type="email" autoComplete="email" aria-invalid={Boolean(registrationForm.formState.errors.email)} {...registrationForm.register('email')} />
                                 </Field>
-                                <Field label={`${t('password')} *`} htmlFor="register-password" error={errorFor(registrationForm, 'password')}>
-                                    <Input id="register-password" type="password" autoComplete="new-password" aria-invalid={Boolean(registrationForm.formState.errors.password)} {...registrationForm.register('password')} />
-                                </Field>
-                                <Field label={`${t('confirm_password')} *`} htmlFor="register-confirm-password" error={errorFor(registrationForm, 'confirmPassword')}>
-                                    <Input id="register-confirm-password" type="password" autoComplete="new-password" aria-invalid={Boolean(registrationForm.formState.errors.confirmPassword)} {...registrationForm.register('confirmPassword')} />
-                                </Field>
+                                <div className="password-group sm:hu-col-span-2">
+                                    <Field label={`${t('password')} *`} htmlFor="register-password" error={errorFor(registrationForm, 'password')}>
+                                        <Input id="register-password" type="password" autoComplete="new-password" aria-invalid={Boolean(registrationForm.formState.errors.password)} {...registrationForm.register('password')} />
+                                    </Field>
+                                    <Field label={`${t('confirm_password')} *`} htmlFor="register-confirm-password" error={errorFor(registrationForm, 'confirmPassword')}>
+                                        <Input id="register-confirm-password" type="password" autoComplete="new-password" aria-invalid={Boolean(registrationForm.formState.errors.confirmPassword)} {...registrationForm.register('confirmPassword')} />
+                                    </Field>
+                                    {missingPasswordRules.length > 0 && (
+                                        <div id="register-password-tooltip" role="tooltip" className="password-tooltip">
+                                            <strong>{t('password_missing_hint')}</strong>
+                                            <ul>{missingPasswordRules.map((rule) => <li key={rule}>{t(rule)}</li>)}</ul>
+                                        </div>
+                                    )}
+                                </div>
                                 <Field label={`${t('first_name')} *`} htmlFor="register-first-name" error={errorFor(registrationForm, 'nombre')}>
                                     <Input id="register-first-name" autoComplete="given-name" aria-invalid={Boolean(registrationForm.formState.errors.nombre)} {...registrationForm.register('nombre')} />
                                 </Field>

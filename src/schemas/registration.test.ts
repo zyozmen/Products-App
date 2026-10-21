@@ -15,8 +15,8 @@ describe('registrationSchema', () => {
   const validRegistration = {
     username: 'customer',
     email: 'person@example.com',
-    password: 'secret123',
-    confirmPassword: 'secret123',
+    password: 'secret123!',
+    confirmPassword: 'secret123!',
     nombre: 'María',
     apellido: 'Pérez',
     direccion: 'Calle 10',
