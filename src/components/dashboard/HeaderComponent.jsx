@@ -20,12 +20,20 @@ function HeaderComponent({ navigate, auth }) {
     const [theme, setTheme] = useState(() => localStorage.getItem('growShopTheme') || 'light');
     const [menuOpen, setMenuOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
     const { pathname } = useLocation();
     const isHome = pathname === '/' || pathname.startsWith('/welcome');
     const isLoggedIn = AuthenticationService.isUserLoggedIn();
     const isUserAdmin = AuthenticationService.isUserAdmin();
     const loggedInUser = AuthenticationService.getLoggedInUser();
     const pendingCount = (pendingUsersQuery.data || []).filter(isPendingUser).length;
+
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 8);
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
 
     useEffect(() => cartService.subscribe((items) => {
         setCartItemCount(items.reduce((total, item) => total + item.quantity, 0));
@@ -84,7 +92,7 @@ function HeaderComponent({ navigate, auth }) {
     ));
 
     return (
-        <header className={`hu-z-30 hu-w-full ${isHome ? 'hu-absolute hu-inset-x-0 hu-top-0 hu-bg-transparent' : 'hu-relative site-header-bg'}`}>
+        <header className={`hu-z-40 hu-w-full ${isHome ? `${scrolled ? 'site-header-bg' : 'hu-bg-transparent'} hu-fixed hu-inset-x-0 hu-top-0 md:hu-absolute md:hu-bg-transparent` : 'hu-sticky hu-top-0 md:hu-relative site-header-bg'}`}>
             <div className="hu-mx-auto hu-flex hu-max-w-[1600px] hu-items-center hu-justify-between hu-gap-4 hu-px-4 hu-py-3 sm:hu-px-8 lg:hu-px-12">
                 <NavLink to="/welcome" className="hu-inline-flex hu-shrink-0" aria-label="Cheyn Verde">
                     <img className="hu-h-20 hu-w-auto" src="/img/logo-cheyn-verde.png" alt="Cheyn Verde" />
