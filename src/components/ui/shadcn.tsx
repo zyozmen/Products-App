@@ -67,7 +67,7 @@ export function Field({
   htmlFor?: string;
 }) {
   return (
-    <label htmlFor={htmlFor} className="hu-grid hu-gap-1.5 hu-text-sm hu-font-medium hu-text-slate-700">
+    <label htmlFor={htmlFor} className="hu-grid hu-content-start hu-gap-1.5 hu-text-sm hu-font-medium hu-text-slate-700">
       <span>{label}</span>
       {children}
       {error && <span className="hu-text-xs hu-font-normal hu-text-red-700" role="alert">{error}</span>}

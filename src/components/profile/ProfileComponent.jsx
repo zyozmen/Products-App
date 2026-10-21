@@ -8,6 +8,7 @@ import AuthenticationService from '../../services/AuthenticationService.js';
 import useTranslation from '../../hooks/useTranslation.js';
 import { useUserMutations } from '../../hooks/useApiQueries.ts';
 import { profileSchema } from '../../schemas/profile';
+import PasswordFields from '../ui/PasswordFields.jsx';
 import { Button, Card, ErrorNotice, Field, Input } from '../ui/shadcn';
 
 const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
@@ -26,6 +27,7 @@ function ProfileComponent({ navigate }) {
             direccion: user?.direccion || '',
             telefono: user?.telefono || '',
             password: '',
+            confirmPassword: '',
         },
     });
 
@@ -64,6 +66,7 @@ function ProfileComponent({ navigate }) {
             };
             sessionStorage.setItem('userProfile', JSON.stringify(mergedProfile));
             form.setValue('password', '');
+            form.setValue('confirmPassword', '');
             setSuccessMessage(t('profile_update_success'));
         } catch (error) {
             setSubmitError(error instanceof Error ? error.message : t('profile_update_error'));
@@ -76,21 +79,16 @@ function ProfileComponent({ navigate }) {
     };
 
     return (
-        <div className="hu-flex hu-min-h-screen hu-flex-col hu-bg-slate-50 hu-text-slate-900">
+        <div className="hu-flex hu-min-h-screen hu-flex-col admin-page-bg hu-text-slate-900">
             <HeaderComponentWithNavigation />
             <main className="hu-mx-auto hu-w-full hu-max-w-3xl hu-flex-1 hu-px-4 hu-py-8 md:hu-px-8">
-                <nav className="hu-mb-6 hu-text-sm hu-text-slate-500" aria-label={t('my_account')}>
-                    {t('my_account')} <span className="hu-px-2">/</span>
-                    <span className="hu-font-semibold hu-text-slate-800">{t('profile_title')}</span>
-                </nav>
                 <div className="hu-mb-6">
-                    <p className="hu-mb-2 hu-text-xs hu-font-bold hu-uppercase hu-tracking-[0.16em] hu-text-blue-700">{t('my_account')}</p>
-                    <h1 className="hu-m-0 hu-text-3xl hu-font-bold hu-tracking-tight">{t('profile_title')}</h1>
+                    <h1 className="hu-m-0 hu-text-3xl hu-font-bold hu-tracking-tight hu-text-green-800 admin-title">{t('profile_title')}</h1>
                 </div>
 
-                <Card className="hu-p-5 md:hu-p-7">
+                <Card className="hu-p-5 md:hu-p-7 kanban-board">
                     {successMessage && (
-                        <div className="hu-mb-5 hu-rounded-lg hu-border hu-border-green-200 hu-bg-green-50 hu-p-3 hu-text-sm hu-text-green-800" role="status">
+                        <div className="hu-mb-5 hu-rounded-lg hu-border hu-border-green-200 hu-bg-green-50 hu-p-3 hu-text-sm hu-text-green-800 dark:hu-border-[#3d6b4c] dark:hu-bg-[#18251e] dark:hu-text-green-200" role="status">
                             {successMessage}
                         </div>
                     )}
@@ -115,21 +113,14 @@ function ProfileComponent({ navigate }) {
                         <Field label={`${t('contact_phone')} *`} htmlFor="telefono" error={fieldError('telefono')}>
                             <Input id="telefono" type="tel" autoComplete="tel" aria-invalid={Boolean(form.formState.errors.telefono)} {...form.register('telefono')} />
                         </Field>
-                        <div className="hu-border-t hu-border-slate-200 hu-pt-5">
-                            <Field
-                                label={t('password_change_label')}
-                                htmlFor="password"
+                        <div className="hu-border-0 hu-border-t hu-border-solid hu-border-[#74a782] hu-pt-5 dark:hu-border-[#3d6b4c]">
+                            <PasswordFields
+                                form={form}
+                                idPrefix="profile"
+                                passwordLabel={t('password_change_label')}
+                                confirmLabel={t('confirm_password')}
                                 hint={t('profile_password_placeholder')}
-                                error={fieldError('password')}
-                            >
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    aria-invalid={Boolean(form.formState.errors.password)}
-                                    {...form.register('password')}
-                                />
-                            </Field>
+                            />
                         </div>
                         <div className="hu-flex hu-justify-end">
                             <Button type="submit" disabled={form.formState.isSubmitting || updateProfile.isPending}>
