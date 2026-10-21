@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import useTranslation from '../../hooks/useTranslation.js';
+import CreatedOrdersBadge from './orders/CreatedOrdersBadge.jsx';
 
 const ITEMS = [
     { to: '/admin', labelKey: 'admin_section', end: true },
@@ -34,7 +35,10 @@ function AdminNav() {
         <nav className="hu-sticky hu-top-[104px] hu-z-30 hu-border-0 hu-border-b hu-border-solid hu-border-slate-200 hu-bg-white md:hu-static" aria-label={t('admin_section')}>
             <div ref={scrollerRef} className="hu-relative hu-mx-auto hu-flex hu-max-w-[1600px] hu-overflow-x-auto hu-px-4 md:hu-px-8">
                 {ITEMS.map(({ to, labelKey, end }) => (
-                    <NavLink key={to} to={to} end={end} className={linkClass}>{t(labelKey)}</NavLink>
+                    <NavLink key={to} to={to} end={end} className={linkClass}>
+                        {t(labelKey)}
+                        {to === '/admin/orders' && <CreatedOrdersBadge />}
+                    </NavLink>
                 ))}
             </div>
         </nav>

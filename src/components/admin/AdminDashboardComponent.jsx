@@ -5,6 +5,7 @@ import navigationComponent from '../navigation/NavigationComponent.jsx';
 import useTranslation from '../../hooks/useTranslation.js';
 import { useAdminUsers } from '../../hooks/useApiQueries.ts';
 import { isPendingUser } from '../../services/userState.js';
+import CreatedOrdersBadge from './orders/CreatedOrdersBadge.jsx';
 
 const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
 
@@ -43,6 +44,7 @@ function AdminDashboardComponent() {
                             {badge > 0 && (
                                 <span className="hu-absolute hu-right-4 hu-top-4 hu-rounded-full hu-bg-green-500 hu-px-2 hu-py-0.5 hu-text-xs hu-font-bold hu-text-white">{badge}</span>
                             )}
+                            {to === '/admin/orders' && <span className="hu-absolute hu-right-4 hu-top-4"><CreatedOrdersBadge /></span>}
                         </Link>
                     ))}
                 </div>

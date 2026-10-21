@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supplierService } from '../services/supplierService';
-import type { SupplierResponse } from '../Interfaces/supplier';
+import type { SupplierLotSort, SupplierResponse } from '../Interfaces/supplier';
 
 export const supplierKeys = {
   all: ['suppliers'] as const,
@@ -11,8 +11,19 @@ export const supplierKeys = {
   payments: (id: string) => [...supplierKeys.detail(id), 'payments'] as const,
   paymentsPage: (id: string, page: number, size: number) => [...supplierKeys.payments(id), page, size] as const,
   lots: ['supplierLots'] as const,
+  lotLists: (id: string) => ['supplierLotLists', id] as const,
+  lotList: (id: string, search: string, page: number, size: number, sort: SupplierLotSort) =>
+    [...supplierKeys.lotLists(id), search, page, size, sort] as const,
   lot: (id: string) => [...supplierKeys.lots, id] as const,
 };
+
+export function useSupplierLots(id: string, search: string, page: number, size: number, sort: SupplierLotSort) {
+  return useQuery({
+    queryKey: supplierKeys.lotList(id, search, page, size, sort),
+    queryFn: () => supplierService.getSupplierLots(id, search, page, size, sort),
+    enabled: Boolean(id),
+  });
+}
 
 export function useSupplierSearch(search: string, page: number, size: number) {
   return useQuery({
@@ -65,6 +76,7 @@ export function useCreateLot(supplierId: string) {
       return Promise.all([
         client.invalidateQueries({ queryKey: supplierKeys.detail(supplierId) }),
         client.invalidateQueries({ queryKey: supplierKeys.payments(supplierId) }),
+        client.invalidateQueries({ queryKey: supplierKeys.lotLists(supplierId) }),
       ]);
     },
     onError: (error) => {
@@ -72,6 +84,7 @@ export function useCreateLot(supplierId: string) {
         return Promise.all([
           client.invalidateQueries({ queryKey: supplierKeys.detail(supplierId) }),
           client.invalidateQueries({ queryKey: supplierKeys.payments(supplierId) }),
+          client.invalidateQueries({ queryKey: supplierKeys.lotLists(supplierId) }),
         ]);
       }
     },
@@ -86,8 +99,10 @@ export function useRegisterPayment(supplierId: string) {
     onSuccess: (supplier) => {
       client.setQueryData<SupplierResponse>(supplierKeys.detail(supplierId), supplier);
       return Promise.all([
+        client.invalidateQueries({ queryKey: supplierKeys.detail(supplierId) }),
         client.invalidateQueries({ queryKey: supplierKeys.payments(supplierId) }),
         client.invalidateQueries({ queryKey: supplierKeys.lots }),
+        client.invalidateQueries({ queryKey: supplierKeys.lotLists(supplierId) }),
       ]);
     },
     onError: (error) => {
@@ -96,6 +111,7 @@ export function useRegisterPayment(supplierId: string) {
           client.invalidateQueries({ queryKey: supplierKeys.detail(supplierId) }),
           client.invalidateQueries({ queryKey: supplierKeys.payments(supplierId) }),
           client.invalidateQueries({ queryKey: supplierKeys.lots }),
+          client.invalidateQueries({ queryKey: supplierKeys.lotLists(supplierId) }),
         ]);
       }
     },

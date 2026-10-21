@@ -15,6 +15,8 @@ export interface SupplierResponse {
   totalDeuda: number;
   totalPagado: number;
   saldoPendiente: number;
+  lotesPagados?: number;
+  lotesPorPagar?: number;
   estado: SupplierState;
   fechaCreacion: string;
   ultimaActualizacion: string;
@@ -29,6 +31,13 @@ export interface SupplierCreateRequest {
 
 export interface SupplierSearchResult {
   suppliers: SupplierResponse[];
+  total: number;
+}
+
+export type SupplierLotSort = `${'fechaIngreso' | 'codigoLote' | 'costoTotalLote' | 'saldoPendienteLote'},${'asc' | 'desc'}`;
+
+export interface SupplierLotsPage {
+  lots: LotResponse[];
   total: number;
 }
 
@@ -51,7 +60,10 @@ export interface ContainerResponse extends ContainerCreateRequest {
   presentacionId: string | null;
   cantidadDisponible: number;
   subtotal: number;
-  estado: 'RECIBIDO';
+  estado: 'RECIBIDO' | 'PROCESADO';
+  codigoContenedor?: string;
+  precioBaseUnidad?: number;
+  presentaciones?: PresentationResponse[];
 }
 
 export interface LotResponse {
@@ -62,9 +74,37 @@ export interface LotResponse {
   montoPagadoLote: number;
   saldoPendienteLote: number;
   estadoPago: LotPaymentState;
-  estado: 'RECIBIDO' | null;
+  estado: 'RECIBIDO' | 'PROCESADO' | null;
+  costoTotalEmpaquetado?: number;
   contenedores: ContainerResponse[];
   fechaIngreso: string;
+}
+
+export interface PresentationPhoto {
+  nombre: string;
+  extension: 'png' | 'jpg' | 'jpeg' | 'webp';
+  filepart: string;
+}
+
+export interface PresentationCreateRequest {
+  presentacionId?: string;
+  sku: string;
+  nombre: string;
+  contenidoUnidad: string | number;
+  unidadesCreadas: number;
+  precioVenta: string | number;
+  activoMarketplace: boolean;
+  confirmacionMargenNegativo: boolean;
+  fotografia?: PresentationPhoto;
+}
+
+export interface PresentationResponse extends Omit<PresentationCreateRequest, 'fotografia'> {
+  presentacionId: string;
+  stockDisponible: number;
+  costoPresentacionCalculado: number;
+  contenidoUnidad: number;
+  precioVenta: number;
+  fotografia: PresentationPhoto | null;
 }
 
 export interface SupplierPaymentResponse {

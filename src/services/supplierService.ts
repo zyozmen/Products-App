@@ -1,16 +1,20 @@
 import axios from 'axios';
 import { getApiBaseUrl } from './apiConfig.js';
+import { serializePresentations } from '../utils/serializePresentations';
 import type {
   LiquidationEvaluation,
   LiquidationRequest,
   LotCreateRequest,
   LotResponse,
   PaymentRequest,
+  PresentationCreateRequest,
   SupplierCreateRequest,
   SupplierPaymentResponse,
   SupplierPaymentsPage,
   SupplierResponse,
   SupplierSearchResult,
+  SupplierLotSort,
+  SupplierLotsPage,
 } from '../Interfaces/supplier';
 
 const endpoint = (path: string) => `${getApiBaseUrl()}${path}`;
@@ -25,6 +29,31 @@ function readTotalCount(header: unknown): number {
 }
 
 export const supplierService = {
+  async getSupplierLots(id: string, search = '', page = 0, size = 10, sort: SupplierLotSort = 'fechaIngreso,desc'): Promise<SupplierLotsPage> {
+    const params = new URLSearchParams({
+      buscar: search.trim(),
+      page: String(page),
+      size: String(size),
+      sort,
+    });
+    const { data, headers } = await axios.get<LotResponse[]>(
+      `${endpoint(`/proveedores/${encodeURIComponent(id)}/lotes`)}?${params}`,
+    );
+    return { lots: data, total: readTotalCount(headers['x-total-count']) };
+  },
+
+  async packageContainer(lotId: string, containerId: string, presentations: PresentationCreateRequest[]) {
+    const { data } = await axios.post<LotResponse>(
+      endpoint(`/v1/lotes/${encodeURIComponent(lotId)}/contenedores/${encodeURIComponent(containerId)}/presentaciones`),
+      presentations,
+      {
+        headers: { 'Content-Type': 'application/json' },
+        transformRequest: [(rows: PresentationCreateRequest[]) => serializePresentations(rows)],
+      },
+    );
+    return data;
+  },
+
   async searchSuppliers(search: string, page = 0, size = 20): Promise<SupplierSearchResult> {
     const { data, headers } = await axios.get<SupplierResponse[]>(endpoint('/proveedores'), {
       params: { buscar: search.trim(), page, size },

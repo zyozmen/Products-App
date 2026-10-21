@@ -123,6 +123,8 @@ const translations = {
                 manage_users: 'Manage Users',
                 manage_suppliers: 'Manage Suppliers and Balances',
                 manage_orders: 'Manage Orders',
+                created_orders_count: 'Created orders',
+                created_orders_count_error: 'Unable to load the order count',
                 my_orders: 'My Orders',
                 orders_report: 'Orders Report',
                 report_date: 'Report date',

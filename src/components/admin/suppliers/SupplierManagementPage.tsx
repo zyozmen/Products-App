@@ -5,15 +5,17 @@ import {
   Building2,
   Check,
   CircleDollarSign,
+  History,
   PackagePlus,
   Plus,
+  Search,
   ShieldCheck,
   Trash2,
   Wallet,
 } from 'lucide-react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import HeaderComponent from '../../dashboard/HeaderComponent.jsx';
 import AdminNav from '../AdminNav.jsx';
 import FooterComponent from '../../dashboard/FooterComponent.jsx';
@@ -24,9 +26,11 @@ import {
   useEvaluateLiquidation,
   useRegisterPayment,
   useSupplier,
+  useLot,
 } from '../../../hooks/useSupplierQueries';
 import { calculateContainerSubtotalCents, calculateLotTotalCents, centsToAmount } from '../../../utils/supplierCalculations';
 import {
+  containerSchema,
   liquidationSchema,
   lotSchema,
   paymentSchemaForBalance,
@@ -41,6 +45,8 @@ import { getApiErrorMessage } from '../../../services/supplierService';
 import SupplierSearch from './SupplierSearch';
 import type { LiquidationEvaluation, LotResponse, SupplierResponse } from '../../../Interfaces/supplier';
 import SupplierPaymentsTable from './SupplierPaymentsTable';
+import SupplierLotsList from './SupplierLotsList';
+import DesgloseContenedorForm from './DesgloseContenedorForm';
 import { Badge, Button, Card, ErrorNotice, Field, Input, Select } from '../../ui/shadcn';
 
 const cop = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -174,6 +180,7 @@ function LotCard({
 }) {
   const evaluate = useEvaluateLiquidation();
   const [evaluation, setEvaluation] = useState<LiquidationEvaluation | null>(null);
+  const [containerId, setContainerId] = useState<string | null>(null);
   const form = useForm<LiquidationFormValues>({
     resolver: zodResolver(liquidationSchema),
     defaultValues: { montoLiquidable: 0 },
@@ -214,14 +221,23 @@ function LotCard({
         <p className="hu-m-0 hu-text-sm"><span className="hu-block hu-text-xs hu-text-slate-500">Abonado</span>{formatCop(lot.montoPagadoLote)}</p>
         <p className="hu-m-0 hu-text-sm"><span className="hu-block hu-text-xs hu-text-slate-500">Contenedores</span>{lot.contenedores?.length ?? 0}</p>
       </div>
+      {lot.costoTotalEmpaquetado !== undefined && <p className="hu-text-sm">Costo total empaquetado: {formatCop(lot.costoTotalEmpaquetado)} · El costo de recepción y la deuda no cambian.</p>}
 
       {lot.contenedores?.length ? (
         <div className="hu-mb-4 hu-grid hu-gap-2">
           {lot.contenedores.map((container) => (
-            <div className="hu-flex hu-flex-wrap hu-items-center hu-justify-between hu-gap-2 hu-rounded-lg hu-bg-slate-50 hu-p-3 hu-text-sm" key={container.id}>
-              <span className="hu-font-medium">{container.tipoCepa} · {container.capacidadUnidadesBase} {container.unidadBase}</span>
-              <span>{formatCop(container.subtotal)}</span>
-            </div>
+            <details className="hu-rounded-lg hu-bg-slate-50 hu-p-3 hu-text-sm" key={container.id}>
+              <summary className="hu-cursor-pointer hu-rounded hu-font-medium focus-visible:hu-outline-none focus-visible:hu-ring-2 focus-visible:hu-ring-green-500">
+                {container.codigoContenedor ?? container.id} · {container.tipoCepa} · {container.capacidadUnidadesBase} {container.unidadBase}
+              </summary>
+              <div className="hu-mt-3 hu-flex hu-flex-wrap hu-items-center hu-justify-between hu-gap-2">
+                <span>{formatCop(container.subtotal)} · Sin empaquetar: {container.cantidadDisponible} {container.unidadBase}</span>
+                <Button type="button" variant="secondary" onClick={() => setContainerId(containerId === container.id ? null : container.id)}>
+                  {containerId === container.id ? 'Cerrar desglose' : 'Desglosar contenedor'}
+                </Button>
+              </div>
+              {containerId === container.id && <DesgloseContenedorForm loteId={lot.id} codigoLote={lot.codigoLote} contenedor={container} />}
+            </details>
           ))}
         </div>
       ) : (
@@ -256,6 +272,17 @@ function LotCard({
   );
 }
 
+function ConsultedLot({ lotId, supplierId, supplierPaidOff }: { lotId: string; supplierId: string; supplierPaidOff: boolean }) {
+  const { data, isPending, isError, error, refetch, isFetching } = useLot(lotId);
+  if (isPending) return <p role="status">Cargando lote…</p>;
+  if (isError) return <Card className="hu-grid hu-gap-3 hu-p-4"><ErrorNotice>{getApiErrorMessage(error)}</ErrorNotice><Button variant="secondary" onClick={() => void refetch()}>Reintentar lote</Button></Card>;
+  if (data.proveedorId !== supplierId) return <ErrorNotice>El lote no pertenece al proveedor consultado.</ErrorNotice>;
+  return <div>
+    <Button type="button" variant="ghost" disabled={isFetching} onClick={() => void refetch()}>Actualizar lote</Button>
+    <LotCard lot={data} supplierId={supplierId} supplierPaidOff={supplierPaidOff} />
+  </div>;
+}
+
 function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreated: (lot: LotResponse) => void }) {
   const supplierId = supplier.id;
   const createLot = useCreateLot(supplierId);
@@ -273,6 +300,7 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
     },
   });
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'contenedores' });
+  const containerCards = useRef(new Map<string, HTMLDetailsElement>());
   const containers = useWatch({ control: form.control, name: 'contenedores' }) ?? [];
   const initialPayment = useWatch({ control: form.control, name: 'abonoInicial' }) ?? 0;
   const totalCents = calculateLotTotalCents(containers);
@@ -306,6 +334,13 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
     } catch {
       // Mutation errors are shown in the form below.
     }
+  }, (errors) => {
+    fields.forEach((field, index) => {
+      if (errors.contenedores?.[index]) {
+        const card = containerCards.current.get(field.id);
+        if (card) card.open = true;
+      }
+    });
   });
 
   return (
@@ -329,7 +364,20 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
             </Button>
           </div>
           {fields.map((field, index) => (
-            <div className="hu-grid hu-items-start hu-gap-3 hu-rounded-xl hu-border hu-border-slate-200 hu-bg-slate-50 hu-p-3 sm:hu-grid-cols-2" key={field.id}>
+            <details className="hu-rounded-xl hu-border hu-border-slate-200 hu-bg-slate-50 hu-p-3" key={field.id} open
+              ref={(node) => {
+                if (node) containerCards.current.set(field.id, node);
+                else containerCards.current.delete(field.id);
+              }}>
+              <summary className="hu-cursor-pointer hu-rounded hu-text-sm hu-font-semibold focus-visible:hu-outline-none focus-visible:hu-ring-2 focus-visible:hu-ring-green-500">
+                {containers[index]?.tipoCepa?.trim() || `Contenedor ${index + 1}`}
+                {containerSchema.safeParse(containers[index]).success && (
+                  <span className="hu-ml-2 hu-inline-flex hu-items-center hu-gap-1 hu-text-green-700">
+                    <Check size={17} aria-hidden="true" /> Datos completos
+                  </span>
+                )}
+              </summary>
+              <div className="hu-mt-3 hu-grid hu-items-start hu-gap-3 sm:hu-grid-cols-2">
               <Field label="Tipo / cepa" error={form.formState.errors.contenedores?.[index]?.tipoCepa?.message}>
                 <Input {...form.register(`contenedores.${index}.tipoCepa`)} placeholder="Sativa Premium" />
               </Field>
@@ -355,8 +403,9 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
                 <Button type="button" variant="ghost" aria-label={`Eliminar contenedor ${index + 1}`} disabled={fields.length === 1} className="hu-mb-1 hu-p-2 hu-text-red-700" onClick={() => remove(index)}>
                   <Trash2 size={17} />
                 </Button>
+                </div>
               </div>
-            </div>
+            </details>
           ))}
           {form.formState.errors.contenedores?.message && <p className="hu-m-0 hu-text-xs hu-text-red-700" role="alert">{form.formState.errors.contenedores.message}</p>}
         </div>
@@ -442,8 +491,10 @@ function PaymentForm({ supplier, onPaid }: { supplier: SupplierResponse; onPaid:
 function SupplierDetailPage({ supplierId }: { supplierId: string }) {
   const { data: supplier, isPending, isError, error, refetch } = useSupplier(supplierId);
   const [lots, setLots] = useState<LotResponse[]>([]);
-  const [lotsStale, setLotsStale] = useState(false);
+  const [lotIds, setLotIds] = useState<string[]>([]);
+  const [lookupLotId, setLookupLotId] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [activeSection, setActiveSection] = useState<'reception' | 'payment' | 'lots' | 'history' | null>(null);
   const navigate = useNavigate();
 
   if (!positiveId.test(supplierId)) {
@@ -485,55 +536,103 @@ function SupplierDetailPage({ supplierId }: { supplierId: string }) {
         </div>
       </div>
 
-      <section className="hu-mb-8 hu-grid hu-gap-4 md:hu-grid-cols-3" aria-label="Resumen de saldos">
+      <section className="hu-mb-8 hu-grid hu-gap-4 md:hu-grid-cols-2 xl:hu-grid-cols-4" aria-label="Resumen de saldos">
         <SummaryCard title="Total Deuda" amount={supplier.totalDeuda} icon={<BadgeDollarSign size={20} />} />
         <SummaryCard title="Total Pagado" amount={supplier.totalPagado} icon={<Check size={20} />} emphasis="blue" />
         <SummaryCard title="Saldo Pendiente" amount={supplier.saldoPendiente} icon={<Wallet size={20} />} emphasis={isPaidOff ? 'blue' : 'orange'} />
+        <Card className="hu-p-5">
+          <div className="hu-flex hu-items-start hu-justify-between hu-gap-3">
+            <h2 className="hu-m-0 hu-text-sm hu-font-medium hu-text-slate-500">Estado de pago de lotes</h2>
+            <span className="hu-flex hu-h-10 hu-w-10 hu-shrink-0 hu-items-center hu-justify-center hu-rounded-xl hu-bg-slate-100 hu-text-slate-700">
+              <PackagePlus size={20} aria-hidden="true" />
+            </span>
+          </div>
+          {typeof supplier.lotesPagados === 'number' && Number.isSafeInteger(supplier.lotesPagados) && supplier.lotesPagados >= 0
+            && typeof supplier.lotesPorPagar === 'number' && Number.isSafeInteger(supplier.lotesPorPagar) && supplier.lotesPorPagar >= 0 ? (
+            <dl className="hu-mb-0 hu-mt-2 hu-grid hu-grid-cols-2 hu-gap-3">
+              <div>
+                <dt className="hu-text-xs hu-text-slate-500">Lotes pagados</dt>
+                <dd className="hu-m-0 hu-text-2xl hu-font-bold hu-text-green-700">{supplier.lotesPagados}</dd>
+              </div>
+              <div>
+                <dt className="hu-text-xs hu-text-slate-500">Lotes por pagar</dt>
+                <dd className="hu-m-0 hu-text-2xl hu-font-bold hu-text-orange-700">{supplier.lotesPorPagar}</dd>
+              </div>
+            </dl>
+          ) : (
+            <ErrorNotice>La API no devolvió conteos válidos de lotes pagados y por pagar.</ErrorNotice>
+          )}
+        </Card>
       </section>
 
+      <nav className="hu-mb-6 hu-grid hu-gap-3 sm:hu-grid-cols-2 xl:hu-grid-cols-4" aria-label="Acciones del proveedor">
+        {([
+          { id: 'reception', label: 'Recibir lote', icon: PackagePlus },
+          { id: 'payment', label: 'Registrar un abono', icon: Wallet },
+          { id: 'lots', label: 'Buscar un lote', icon: Search },
+          { id: 'history', label: 'Ver histórico de abonos', icon: History },
+        ] as const).map(({ id, label, icon: Icon }) => (
+          <Button key={id} type="button" id={`supplier-action-${id}`}
+            variant={activeSection === id ? 'primary' : 'secondary'}
+            aria-expanded={activeSection === id} aria-controls={`supplier-section-${id}`}
+            onClick={() => setActiveSection((current) => current === id ? null : id)}>
+            <Icon size={19} aria-hidden="true" /> {label}
+          </Button>
+        ))}
+      </nav>
+
       {feedback && <div className="hu-mb-6 hu-rounded-lg hu-border hu-border-green-200 hu-bg-green-50 hu-p-3 hu-text-sm hu-text-green-900" role="status">{feedback}</div>}
-      <div className="hu-grid hu-items-start hu-gap-6 xl:hu-grid-cols-2">
+      <section id="supplier-section-reception" aria-labelledby="supplier-action-reception" hidden={activeSection !== 'reception'}>
         {supplier.estado === 'ACTIVO' ? (
           <LotForm supplier={supplier} onCreated={(lot) => {
             setLots((current) => [lot, ...current]);
-            setLotsStale(false);
+            setLotIds((current) => [lot.id, ...current.filter((id) => id !== lot.id)]);
             setFeedback(`Lote ${lot.codigoLote} registrado; los saldos se actualizaron con los valores confirmados por el servidor.`);
           }} />
         ) : (
           <Card className="hu-p-5"><ErrorNotice>No se pueden recibir lotes porque este proveedor está inactivo.</ErrorNotice></Card>
         )}
+      </section>
+      <section id="supplier-section-payment" aria-labelledby="supplier-action-payment" hidden={activeSection !== 'payment'}>
         <PaymentForm supplier={supplier} onPaid={() => {
-          setLots([]);
-          setLotsStale(true);
           setFeedback('Pago registrado y saldos del proveedor actualizados.');
         }} />
-      </div>
+      </section>
 
-      <section className="hu-mt-9">
+      <section id="supplier-section-lots" aria-labelledby="supplier-action-lots" hidden={activeSection !== 'lots'}>
         <div className="hu-mb-4 hu-flex hu-flex-wrap hu-items-end hu-justify-between hu-gap-2">
           <div>
             <h2 className="hu-m-0 hu-text-xl hu-font-bold">Lotes y tope de liquidación</h2>
-            <p className="hu-mb-0 hu-mt-1 hu-text-sm hu-text-slate-500">Los lotes recibidos durante esta sesión se muestran aquí; la API aún no documenta un endpoint para consultar el historial.</p>
+            <p className="hu-mb-0 hu-mt-1 hu-text-sm hu-text-slate-500">Busca los lotes del proveedor por cepa, presentación o SKU y desglosa sus contenedores. Se incluyen lotes saldados e históricos.</p>
           </div>
-          <Badge tone="blue">Inventario: no se modifica desde este módulo</Badge>
+          <Badge tone="blue">Recepción y empaquetado separados</Badge>
         </div>
-        {lotsStale ? (
-          <Card className="hu-p-5">
-            <p className="hu-m-0 hu-text-sm hu-text-orange-900">Se ocultó el saldo por lote después del pago para evitar mostrar datos desactualizados. La API no ofrece una consulta para recuperar esos saldos.</p>
-          </Card>
-        ) : lots.length ? (
+        <SupplierLotsList key={supplier.id} supplierId={supplier.id}
+          renderLot={(lot) => <LotCard lot={lot} supplierId={supplier.id} supplierPaidOff={isPaidOff} />} />
+        <details className="hu-mt-5">
+          <summary className="hu-cursor-pointer hu-text-sm hu-font-semibold">Consulta directa por ID del lote</summary>
+        <form className="hu-mb-4 hu-flex hu-flex-wrap hu-items-end hu-gap-3" onSubmit={(event) => {
+          event.preventDefault();
+          const id = lookupLotId.trim();
+          if (positiveId.test(id)) setLotIds((current) => [id, ...current.filter((item) => item !== id)]);
+        }}>
+          <Field label="ID del lote a consultar"><Input value={lookupLotId} onChange={(event) => setLookupLotId(event.target.value)} /></Field>
+          <Button type="submit" disabled={!positiveId.test(lookupLotId.trim())}>Consultar lote</Button>
+        </form>
+        {lotIds.length ? (
           <div className="hu-grid hu-gap-4">
-            {lots.map((lot) => <LotCard key={lot.id} lot={lot} supplierId={supplier.id} supplierPaidOff={isPaidOff} />)}
+            {lotIds.map((id) => <ConsultedLot key={id} lotId={id} supplierId={supplier.id} supplierPaidOff={isPaidOff} />)}
           </div>
         ) : (
           <Card className="hu-p-8 hu-text-center">
             <PackagePlus className="hu-mx-auto hu-mb-3 hu-text-slate-400" size={28} aria-hidden="true" />
-            <p className="hu-m-0 hu-text-sm hu-text-slate-600">Todavía no has recibido lotes en esta sesión.</p>
+            <p className="hu-m-0 hu-text-sm hu-text-slate-600">Ingresa un ID para consultar un lote directamente.</p>
           </Card>
         )}
+        </details>
       </section>
 
-      <section className="hu-mt-9">
+      <section id="supplier-section-history" aria-labelledby="supplier-action-history" hidden={activeSection !== 'history'}>
         <div className="hu-mb-4">
           <h2 className="hu-m-0 hu-text-xl hu-font-bold">Historial de abonos</h2>
           <p className="hu-mb-0 hu-mt-1 hu-text-sm hu-text-slate-500">
@@ -548,5 +647,5 @@ function SupplierDetailPage({ supplierId }: { supplierId: string }) {
 
 export default function SupplierManagementPage() {
   const { id } = useParams<{ id: string }>();
-  return id ? <SupplierDetailPage supplierId={id} /> : <SupplierEntryPage />;
+  return id ? <SupplierDetailPage key={id} supplierId={id} /> : <SupplierEntryPage />;
 }

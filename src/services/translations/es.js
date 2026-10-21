@@ -123,6 +123,8 @@ const translations = {
                 manage_users: 'Administrar Usuarios',
                 manage_suppliers: 'Gestión de Proveedores y Saldos',
                 manage_orders: 'Administrar Órdenes',
+                created_orders_count: 'Órdenes creadas',
+                created_orders_count_error: 'No se pudo consultar el contador de órdenes',
                 my_orders: 'Mis Órdenes',
                 orders_report: 'Reporte de Órdenes',
                 report_date: 'Fecha del reporte',

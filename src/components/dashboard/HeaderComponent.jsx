@@ -8,6 +8,7 @@ import translationService from '../../services/TranslationService.js';
 import useTranslation from '../../hooks/useTranslation.js';
 import { apiQueryKeys, useAdminUsers } from '../../hooks/useApiQueries.ts';
 import DropdownMenu from '../ui/DropdownMenu';
+import CreatedOrdersBadge from '../admin/orders/CreatedOrdersBadge.jsx';
 import './HeaderComponent.css';
 
 function HeaderComponent({ navigate, auth }) {
@@ -119,6 +120,7 @@ function HeaderComponent({ navigate, auth }) {
                             <button className={menuItemClass} type="button" onClick={() => navigate('/admin')}>
                                 {t('admin_section')}
                                 {pendingCount > 0 && <span className="hu-ml-2 hu-rounded-full hu-bg-green-500 hu-px-2 hu-py-0.5 hu-text-xs hu-font-bold hu-text-white">{pendingCount}</span>}
+                                <CreatedOrdersBadge />
                                 {pendingUsersQuery.isError && <span className="hu-ml-2 hu-text-red-400" role="alert" title={pendingUsersQuery.error?.message}>!</span>}
                             </button>
                         )}

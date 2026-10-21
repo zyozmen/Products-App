@@ -181,10 +181,12 @@ export function useMyOrders() {
   });
 }
 
-export function useAdminOrders() {
+export function useAdminOrders(enabled = true) {
   return useQuery({
     queryKey: apiQueryKeys.adminOrders,
     queryFn: () => orderService.getAllOrders(),
+    enabled,
+    refetchInterval: 30 * 1000,
   });
 }
 
