@@ -177,7 +177,7 @@ function OrdersReportComponent() {
                 </div>
 
                 <Card className="hu-mb-5 hu-p-5 kanban-board">
-                    <div className="hu-grid hu-items-end hu-gap-4 md:hu-grid-cols-2 xl:hu-grid-cols-4 ">
+                    <div className="hu-grid hu-items-end hu-gap-4 sm:hu-grid-cols-2 xl:hu-grid-cols-4 [&>*]:hu-min-w-0">
                         <Field label={t('report_date')} htmlFor="report-date">
                             <Input
                                 id="report-date"

@@ -38,7 +38,7 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
 export function Input({ className = '', ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
-      className={`hu-w-full hu-rounded-lg hu-border hu-border-slate-300 hu-bg-white hu-px-3 hu-py-2.5 hu-text-sm hu-text-slate-900 hu-outline-none placeholder:hu-text-slate-400 focus:hu-border-green-600 focus:hu-ring-2 focus:hu-ring-green-100 disabled:hu-bg-slate-100 ${className}`}
+      className={`hu-box-border hu-w-full hu-min-w-0 hu-rounded-lg hu-border hu-border-slate-300 hu-bg-white hu-px-3 hu-py-2.5 hu-text-sm hu-text-slate-900 hu-outline-none placeholder:hu-text-slate-400 focus:hu-border-green-600 focus:hu-ring-2 focus:hu-ring-green-100 disabled:hu-bg-slate-100 ${className}`}
       {...props}
     />
   );
@@ -47,7 +47,7 @@ export function Input({ className = '', ...props }: InputHTMLAttributes<HTMLInpu
 export function Select({ className = '', ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
-      className={`hu-w-full hu-rounded-lg hu-border hu-border-slate-300 hu-bg-white hu-px-3 hu-py-2.5 hu-text-sm hu-text-slate-900 hu-outline-none focus:hu-border-green-600 focus:hu-ring-2 focus:hu-ring-green-100 disabled:hu-bg-slate-100 ${className}`}
+      className={`hu-box-border hu-w-full hu-min-w-0 hu-rounded-lg hu-border hu-border-slate-300 hu-bg-white hu-px-3 hu-py-2.5 hu-text-sm hu-text-slate-900 hu-outline-none focus:hu-border-green-600 focus:hu-ring-2 focus:hu-ring-green-100 disabled:hu-bg-slate-100 ${className}`}
       {...props}
     />
   );
