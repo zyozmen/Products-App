@@ -167,31 +167,30 @@ function OrdersKanbanComponent({ navigate }) {
                     </div>
                 </div>
 
-                <Card className="hu-mb-5 hu-grid hu-gap-4 hu-p-5 md:hu-grid-cols-[minmax(200px,280px)_1fr] kanban-board">
-                    <label className="hu-grid hu-gap-1.5 hu-text-sm hu-font-medium hu-text-slate-700" htmlFor="orders-day">
+                <Card className="hu-mb-5 hu-grid hu-gap-4 hu-p-5 md:hu-grid-cols-[minmax(200px,280px)_1fr] md:hu-items-end kanban-board">
+                    <label className="hu-grid hu-min-w-0 hu-gap-1.5 hu-text-sm hu-font-medium hu-text-slate-700" htmlFor="orders-day">
                         {t('orders_day')}
-                        <Input id="orders-day" type="date" value={selectedDate} onChange={(event) => event.target.value && setSelectedDate(event.target.value)} />
+                        <Input id="orders-day" type="date" className="hu-box-border hu-h-11 hu-min-w-0" value={selectedDate} onChange={(event) => event.target.value && setSelectedDate(event.target.value)} />
                     </label>
-                    <div className="hu-flex hu-flex-wrap hu-items-end hu-gap-3">
+                    <div className="hu-flex hu-min-w-0 hu-flex-wrap hu-items-center hu-gap-3">
                         <Input
                             type="search"
                             placeholder={t('search_orders_placeholder')}
                             aria-label={t('search_orders_placeholder')}
                             value={searchTerm}
                             onChange={(event) => setSearchTerm(event.target.value)}
-                            className="hu-min-w-0 hu-flex-1"
+                            className="hu-box-border hu-h-11 hu-min-w-[200px] hu-flex-1"
                         />
                         {searchTerm && (
-                            <Button className="hu-mb-2" type="button" variant="secondary" onClick={() => setSearchTerm('')}>
+                            <Button className="hu-h-11" type="button" variant="secondary" onClick={() => setSearchTerm('')}>
                                 {t('clear_btn')}
                             </Button>
                         )}
-                        <Button type="button" className="hu-mb-2" variant="secondary" onClick={() => setSelectedDate(toDateInputValue(new Date()))}>
+                        <Button type="button" className="hu-h-11" variant="secondary" onClick={() => setSelectedDate(toDateInputValue(new Date()))}>
                             {t('orders_today')}
                         </Button>
                     </div>
                 </Card>
-
                 {errorMessage && (
                     <div className="hu-mb-5">
                         <ErrorNotice>

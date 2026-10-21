@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AuthenticationService from './AuthenticationService.js';
 import { getApiBaseUrl } from './apiConfig.js';
-import { isValidUserState, normalizeUserState } from './userState.js';
+import { isAssignableUserState, normalizeUserState } from './userState.js';
 
 const serverMessage = (error) => error?.response?.data?.message;
 
@@ -30,10 +30,10 @@ class UserService {
         }
     }
 
-    // Solo el rol ADMIN puede cambiar el estado (ACTIVO | INACTIVO | PENDIENTE); el backend debe validarlo también.
+    // Solo el rol ADMIN puede cambiar el estado (ACTIVO | INACTIVO); PENDIENTE nunca se envía; el backend debe validarlo también.
     async updateUserState(username, state) {
         const nextState = normalizeUserState(state);
-        if (!isValidUserState(nextState)) {
+        if (!isAssignableUserState(nextState)) {
             throw new Error(`Estado de usuario inválido: ${state}`);
         }
         if (!AuthenticationService.isUserAdmin()) {

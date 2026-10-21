@@ -6,7 +6,7 @@ import navigationComponent from '../../navigation/NavigationComponent.jsx';
 import AuthenticationService from '../../../services/AuthenticationService.js';
 import useTranslation from '../../../hooks/useTranslation.js';
 import { useAdminUsers, useUserMutations } from '../../../hooks/useApiQueries.ts';
-import { USER_STATES, USER_STATE_VALUES, normalizeUserState } from '../../../services/userState.js';
+import { ASSIGNABLE_USER_STATES, USER_STATES, isAssignableUserState, normalizeUserState } from '../../../services/userState.js';
 import { Badge, Button, Card, ErrorNotice, Select, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/shadcn';
 
 const STATE_LABEL_KEYS = {
@@ -44,6 +44,7 @@ function UserAdminComponent() {
     const handleChangeState = (username, state) => {
         if (!isAdmin) return;
         const nextState = normalizeUserState(state);
+        if (!isAssignableUserState(nextState)) return;
         if (nextState === USER_STATES.INACTIVE && !window.confirm(t('confirm_set_inactive'))) return;
 
         setStateError('');
@@ -153,7 +154,8 @@ function UserAdminComponent() {
                                                                 disabled={isSelf || !isAdmin}
                                                                 title={isSelf ? t('cannot_disable_admin') : t('change_state')}
                                                             >
-                                                                {USER_STATE_VALUES.map((value) => (
+                                                                {isUserPending && <option value={USER_STATES.PENDING} disabled hidden>{t(STATE_LABEL_KEYS[USER_STATES.PENDING])}</option>}
+                                                                {ASSIGNABLE_USER_STATES.map((value) => (
                                                                     <option key={value} value={value}>{t(STATE_LABEL_KEYS[value])}</option>
                                                                 ))}
                                                             </Select>

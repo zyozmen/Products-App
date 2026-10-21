@@ -31,11 +31,12 @@ describe('UserService.updateUserState', () => {
         expect(put).not.toHaveBeenCalled();
     });
 
-    it('rejects states outside ACTIVO, INACTIVO and PENDIENTE', async () => {
+    it('rejects PENDIENTE and states outside ACTIVO and INACTIVO', async () => {
         loginAs('admin');
         const put = vi.spyOn(axios, 'put');
 
         await expect(UserService.updateUserState('nuevo', 'BLOQUEADO')).rejects.toThrow(/inválido/);
+        await expect(UserService.updateUserState('nuevo', 'PENDIENTE')).rejects.toThrow(/inválido/);
         expect(put).not.toHaveBeenCalled();
     });
 });
