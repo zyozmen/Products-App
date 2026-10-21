@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import productosService from '../services/ProductosService.js';
+import categoryService from '../services/categoryService.js';
 import userService from '../services/UserService.js';
 import orderService from '../services/OrderService.js';
 
@@ -66,11 +67,27 @@ export function useFeaturedProducts() {
 export function useCategories() {
   return useQuery({
     queryKey: apiQueryKeys.categories,
-    queryFn: () => productosService.listarCategorias(),
+    queryFn: () => categoryService.getCategories(),
     staleTime: 10 * 60 * 1000,
   });
 }
 
+export interface CategoryPayload {
+  id?: string;
+  name: string;
+  description: string;
+  image?: File | null;
+}
+
+export function useCategoryMutations() {
+  const queryClient = useQueryClient();
+  return {
+    saveCategory: useMutation({
+      mutationFn: (category: CategoryPayload) => categoryService.saveCategory(category),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: apiQueryKeys.categories }),
+    }),
+  };
+}
 export function useProductMutations() {
   const queryClient = useQueryClient();
   const invalidateProducts = () =>

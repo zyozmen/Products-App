@@ -6,7 +6,7 @@ function CategoryFilter({ selectedCategoryIds = [], onCategorySelectionChange })
     const t = useTranslation();
     const { data: categories = [], isPending, isError, error } = useCategories();
     const totalProductsInCategories = categories.reduce(
-        (total, category) => total + Number(category.products_count ?? 0),
+        (total, category) => total + (Number(category.products_count) || 0),
         0,
     );
 

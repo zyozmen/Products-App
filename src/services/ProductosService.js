@@ -42,6 +42,8 @@ const toCategory = (raw = {}) => ({
     category_id: String(raw.category_id ?? raw.id ?? '').trim(),
     name: String(raw.name ?? raw.nombre ?? raw.Description ?? '').trim(),
     slug: String(raw.slug ?? '').trim(),
+    description: String(raw.description ?? raw.descripcion ?? '').trim(),
+    image_url: String(raw.image_url ?? raw.imageUrl ?? raw.image ?? '').trim(),
     products_count: Number(raw.products_count ?? 0),
 });
 
@@ -112,10 +114,11 @@ class ProductosService extends BaseRequestService {
             queryParams.set('max_rating', String(maxRating));
         }
 
-        if (Array.isArray(categoryIds) && categoryIds.length > 0) {
-            categoryIds.forEach((categoryId) => {
-                queryParams.append('category_ids', String(categoryId));
-            });
+        // Un solo id usa `categoryId`; varios usan `category_ids` separado por comas. Nunca ambos.
+        if (Array.isArray(categoryIds) && categoryIds.length === 1) {
+            queryParams.set('categoryId', String(categoryIds[0]));
+        } else if (Array.isArray(categoryIds) && categoryIds.length > 1) {
+            queryParams.set('category_ids', categoryIds.join(','));
         }
 
         const requestUrl = `${this.url}?${queryParams.toString()}`;

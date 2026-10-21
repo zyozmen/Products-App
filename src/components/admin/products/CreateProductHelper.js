@@ -276,6 +276,12 @@ export const createSlug = (name) =>
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
 
+// categoryId numérico (referencia a /api/v1/categories); se omite si no hay un id válido.
+const getNumericCategoryId = (categories) => {
+    const match = categories.map((c) => Number(c.category_id)).find((id) => Number.isInteger(id) && id > 0);
+    return match;
+};
+
 export const buildProductPayload = (form) => {
     const current = Number(form.price_current);
     const original = form.price_original ? Number(form.price_original) : current;
@@ -288,6 +294,7 @@ export const buildProductPayload = (form) => {
         descripcion: form.description.trim(),
         sku: form.sku.trim() || createSku(form.name),
         status: form.status,
+        categoryId: getNumericCategoryId(form.categories),
         created_at: form.created_at || undefined,
         updated_at: form.updated_at || undefined,
 

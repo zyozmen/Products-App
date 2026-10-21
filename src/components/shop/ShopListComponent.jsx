@@ -2,6 +2,7 @@
 import React, { Component } from "react";
 import FiltersComponent from "./FiltersComponent";
 import ProductListComponent from "./ProductListComponent";  
+import ActiveCategoryFilter from "./ActiveCategoryFilter";
 
 class ShopListComponent extends Component {
   constructor(props) {
@@ -102,13 +103,19 @@ class ShopListComponent extends Component {
       nameFilter={nameFilter}
       onNameFilterChange={this.handleNameFilterChange}
     />
-    <ProductListComponent
-      location={location}
-      selectedCategoryIds={selectedCategoryIds}
-      filters={filters}
-      onSortByChange={this.handleSortByChange}
-      selectedSortBy={sortBy}
-    />
+    <div className="hu-min-w-0">
+      <ActiveCategoryFilter
+        selectedCategoryIds={selectedCategoryIds}
+        onCategorySelectionChange={this.handleCategorySelectionChange}
+      />
+      <ProductListComponent
+        location={location}
+        selectedCategoryIds={selectedCategoryIds}
+        filters={filters}
+        onSortByChange={this.handleSortByChange}
+        selectedSortBy={sortBy}
+      />
+    </div>
   </main>
     );
   }
