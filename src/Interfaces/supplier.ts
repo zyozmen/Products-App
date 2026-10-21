@@ -3,15 +3,15 @@ export type LotPaymentState = 'PENDIENTE' | 'PAGO_PARCIAL' | 'PAGADO_TOTAL';
 export type PaymentType = 'ABONO' | 'PAGO_CORTESIA' | 'AJUSTE_PQR';
 
 export interface SupplierContact {
-  telefono?: string;
-  email?: string;
+  telefono?: string | null;
+  email?: string | null;
 }
 
 export interface SupplierResponse {
   id: string;
   nombre: string;
   nit: string;
-  contacto?: SupplierContact;
+  contacto?: SupplierContact | null;
   totalDeuda: number;
   totalPagado: number;
   saldoPendiente: number;
@@ -27,21 +27,31 @@ export interface SupplierCreateRequest {
   email?: string;
 }
 
-export interface PresentationRequest {
-  presentacionId: string;
-  cantidadUnidades: number;
-  costoUnitario: number;
+export interface SupplierSearchResult {
+  suppliers: SupplierResponse[];
+  total: number;
+}
+
+export interface ContainerCreateRequest {
+  tipoCepa: string;
+  unidadBase: string;
+  presentacionId?: string | null;
+  capacidadUnidadesBase: number;
+  costoBasePorUnidad: number;
 }
 
 export interface LotCreateRequest {
   proveedorId: string;
-  codigoLote: string;
-  presentaciones: PresentationRequest[];
+  contenedores: ContainerCreateRequest[];
   abonoInicial?: number;
 }
 
-export interface LotPresentation extends PresentationRequest {
+export interface ContainerResponse extends ContainerCreateRequest {
+  id: string;
+  presentacionId: string | null;
+  cantidadDisponible: number;
   subtotal: number;
+  estado: 'RECIBIDO';
 }
 
 export interface LotResponse {
@@ -52,15 +62,31 @@ export interface LotResponse {
   montoPagadoLote: number;
   saldoPendienteLote: number;
   estadoPago: LotPaymentState;
-  presentaciones: LotPresentation[];
+  estado: 'RECIBIDO' | null;
+  contenedores: ContainerResponse[];
   fechaIngreso: string;
+}
+
+export interface SupplierPaymentResponse {
+  id: string;
+  fecha: string;
+  monto: number;
+  proveedorId: string;
+  loteId: string;
+  tipo: PaymentType | 'ABONO_INICIAL';
+  observaciones: string | null;
+}
+
+export interface SupplierPaymentsPage {
+  payments: SupplierPaymentResponse[];
+  total: number;
 }
 
 export interface PaymentRequest {
   monto: number;
-  loteId?: string;
+  loteId?: string | null;
   tipo?: PaymentType;
-  observaciones?: string;
+  observaciones?: string | null;
 }
 
 export interface LiquidationRequest {

@@ -1,7 +1,16 @@
 import { z } from 'zod';
+import { calculateLotTotalCents } from '../utils/supplierCalculations';
 
-const hasAtMostTwoDecimals = (amount: number) =>
-  Number.isFinite(amount) && Math.abs(amount * 100 - Math.round(amount * 100)) < 1e-8;
+const hasAtMostDecimals = (amount: number, places: number) => {
+  if (!Number.isFinite(amount)) return false;
+  const [coefficient, exponentText] = amount.toString().toLowerCase().split('e');
+  const decimalPlaces = coefficient.split('.')[1]?.length ?? 0;
+  const exponent = Number(exponentText ?? 0);
+  return Math.max(0, decimalPlaces - exponent) <= places;
+};
+
+const hasAtMostTwoDecimals = (amount: number) => hasAtMostDecimals(amount, 2);
+const belowMaximumAmount = (amount: number) => amount < 1_000_000_000_000_000;
 
 const optionalTrimmed = (max: number) =>
   z.string().trim().max(max).optional().or(z.literal(''));
@@ -19,32 +28,40 @@ export const supplierSchema = z.object({
   ),
 });
 
-export const presentationSchema = z.object({
-  presentacionId: z.string().trim().min(1, 'Ingresa la presentación.'),
-  cantidadUnidades: z.number({ error: 'Ingresa una cantidad válida.' })
-    .int('La cantidad debe ser un número entero.')
-    .min(1, 'La cantidad mínima es 1.'),
-  costoUnitario: z.number({ error: 'Ingresa un costo válido.' })
+export const containerSchema = z.object({
+  tipoCepa: z.string().trim().min(1, 'Ingresa el tipo o cepa.'),
+  unidadBase: z.string().trim().min(1, 'Ingresa la unidad base.'),
+  presentacionId: z.string().trim().optional().or(z.literal('')),
+  capacidadUnidadesBase: z.number({ error: 'Ingresa una capacidad válida.' })
+    .positive('La capacidad debe ser mayor que cero.')
+    .refine(belowMaximumAmount, 'La capacidad admite máximo 15 enteros.')
+    .refine((value) => hasAtMostDecimals(value, 3), 'Usa máximo 3 decimales.'),
+  costoBasePorUnidad: z.number({ error: 'Ingresa un costo válido.' })
     .min(0.01, 'El costo mínimo es $0,01.')
+    .refine(belowMaximumAmount, 'El costo admite máximo 15 enteros.')
     .refine(hasAtMostTwoDecimals, 'Usa máximo 2 decimales.'),
 });
 
 export const lotSchema = z.object({
-  codigoLote: z.string().trim().min(1, 'Ingresa el código del lote.'),
-  presentaciones: z.array(presentationSchema).min(1, 'Agrega al menos una presentación.'),
+  contenedores: z.array(containerSchema).min(1, 'Agrega al menos un contenedor.'),
   abonoInicial: z.preprocess(
-    (value) => typeof value === 'number' && Number.isNaN(value) ? undefined : value,
+    (value) => value === null || (typeof value === 'number' && Number.isNaN(value)) ? undefined : value,
     z.number({ error: 'Ingresa un valor válido.' })
       .min(0, 'El abono no puede ser negativo.')
+      .refine(belowMaximumAmount, 'El abono admite máximo 15 enteros.')
       .refine(hasAtMostTwoDecimals, 'Usa máximo 2 decimales.')
       .optional(),
   ),
 }).superRefine((values, context) => {
-  const totalCents = values.presentaciones.reduce(
-    (sum, item) => sum + Math.round(item.costoUnitario * 100) * item.cantidadUnidades,
-    0,
-  );
+  const totalCents = calculateLotTotalCents(values.contenedores);
   const paymentCents = Math.round((values.abonoInicial ?? 0) * 100);
+  if (totalCents <= 0) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['contenedores'],
+      message: 'El valor total redondeado del lote debe ser mayor que cero.',
+    });
+  }
   if (paymentCents > totalCents) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
@@ -57,6 +74,7 @@ export const lotSchema = z.object({
 export const paymentSchema = z.object({
   monto: z.number({ error: 'Ingresa un monto válido.' })
     .positive('El monto debe ser mayor a $0.')
+    .refine(belowMaximumAmount, 'El monto admite máximo 15 enteros.')
     .refine(hasAtMostTwoDecimals, 'Usa máximo 2 decimales.'),
   loteId: z.string().trim().optional().refine(
     (value) => !value || /^[a-f\d]{24}$/i.test(value),

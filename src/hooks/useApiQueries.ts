@@ -3,6 +3,7 @@ import productosService from '../services/ProductosService.js';
 import categoryService from '../services/categoryService.js';
 import userService from '../services/UserService.js';
 import orderService from '../services/OrderService.js';
+import AuthenticationService from '../services/AuthenticationService.js';
 
 export interface ProductListFilters {
   searchTerm?: string;
@@ -42,7 +43,7 @@ export const apiQueryKeys = {
 
 export function useProductList(page: number, size: number, filters: ProductListFilters) {
   return useQuery({
-    queryKey: apiQueryKeys.productList(page, size, filters),
+    queryKey: [...apiQueryKeys.productList(page, size, filters), AuthenticationService.isUserAdmin()],
     queryFn: () => productosService.listarProductos(page, size, filters),
     placeholderData: (previous) => previous,
   });

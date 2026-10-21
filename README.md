@@ -174,11 +174,15 @@ Hemos integrado un completo sistema transaccional de usuarios conectado al backe
 
 ## Gestión de Proveedores y Saldos (HU-01)
 
-La ruta `/admin/proveedores` permite crear proveedores y consultar saldos usando el ID de 24 caracteres devuelto por la API. En el detalle se pueden recibir lotes con varias presentaciones, registrar abonos y evaluar el monto liquidable de ventas/PQR. Los formularios usan React Hook Form y Zod; las consultas y mutaciones se gestionan con TanStack Query.
+La ruta `/admin/proveedores` permite crear proveedores y buscarlos por nombre o NIT, con resultados paginados de 20 registros y acceso al detalle. Se consulta `GET /api/proveedores?buscar=...&page=0&size=20`: la respuesta es un arreglo de proveedores y el encabezado `X-Total-Count` indica el total de coincidencias. Si el backend se sirve desde otro origen, debe exponer ese encabezado mediante CORS (`Access-Control-Expose-Headers: X-Total-Count`). Una busqueda vacia lista todos; el backend aplica coincidencia parcial literal en nombre o NIT sin distinguir mayusculas, conservando acentos, puntuacion y espacios internos. Tambien se mantiene la consulta directa por ID de 24 caracteres.
 
-El backend documentado no incluye un endpoint para listar proveedores o consultar el historial de lotes. Por ello, los proveedores existentes se abren mediante su ID y los lotes recibidos se muestran durante la sesión actual. El endpoint de liquidaciones solo evalúa el monto y no modifica el inventario.
+Los resultados incluyen proveedores activos e inactivos; ambos se pueden consultar, pero solo los activos pueden recibir lotes. En el detalle se pueden recibir lotes con contenedores, registrar abonos, consultar su historial y evaluar el monto liquidable de ventas/PQR. Los formularios usan React Hook Form y Zod; las consultas y mutaciones se gestionan con TanStack Query. El backend no incluye un endpoint para listar lotes por proveedor, por lo que los lotes recibidos se muestran durante la sesion actual. El endpoint de liquidaciones solo evalua el monto y no modifica el inventario.
 
 La vista usa TypeScript, Tailwind CSS con utilidades prefijadas y componentes de interfaz locales con estilo shadcn/ui.
+
+El historial de abonos usa paginacion del servidor mediante `GET /api/proveedores/{id}/abonos?page=0&size=50`. Cada respuesta contiene un arreglo de hasta 50 movimientos y el encabezado `X-Total-Count` con el total real (tambien debe exponerse por CORS si aplica). El servidor ordena por fecha descendente y, en caso de empate, por ID descendente. Los botones consultan cada pagina por separado y las recepciones/pagos invalidan todas las paginas del historial.
+
+Organizacion del modulo: componentes en `src/components/admin/suppliers`, servicio en `src/services/supplierService.ts`, hooks en `src/hooks/useSupplierQueries.ts`, esquemas en `src/schemas/supplier.ts`, tipos en `src/Interfaces/supplier.ts`, calculos en `src/utils/supplierCalculations.ts` y pruebas en `src/test/suppliers`.
 
 ## Ejecucion con Docker
 

@@ -43,12 +43,55 @@ function SupplierPageFallback() {
     );
 }
 
+class SupplierPageErrorBoundary extends React.Component {
+    state = { error: null };
+
+    static getDerivedStateFromError(error) {
+        return { error };
+    }
+
+    componentDidCatch(error) {
+        console.error('No se pudo mostrar la gestión de proveedores.', error);
+    }
+
+    render() {
+        if (this.state.error) {
+            return (
+                <div className="admin-page-bg hu-flex hu-min-h-screen hu-items-center hu-justify-center hu-p-6 hu-text-slate-900">
+                    <div className="hu-w-full hu-max-w-xl hu-rounded-2xl hu-border hu-border-red-200 hu-bg-white hu-p-6 hu-shadow-panel">
+                        <h1 className="hu-m-0 hu-text-xl hu-font-bold">No se pudo mostrar el detalle del proveedor</h1>
+                        <p className="hu-mb-0 hu-mt-2 hu-text-sm hu-text-slate-600">
+                            Ocurrió un error al cargar esta pantalla. Recarga para intentarlo nuevamente.
+                        </p>
+                        {this.state.error instanceof Error && (
+                            <pre className="hu-mb-0 hu-mt-4 hu-overflow-auto hu-whitespace-pre-wrap hu-rounded-lg hu-bg-slate-50 hu-p-3 hu-text-xs hu-text-slate-700">
+                                {this.state.error.message}
+                            </pre>
+                        )}
+                        <button
+                            type="button"
+                            className="hu-mt-5 hu-inline-flex hu-cursor-pointer hu-items-center hu-justify-center hu-rounded-lg hu-border-0 hu-bg-green-700 hu-px-4 hu-py-2.5 hu-text-sm hu-font-semibold hu-text-white hover:hu-bg-green-800"
+                            onClick={() => window.location.reload()}
+                        >
+                            Recargar página
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
+
 function SupplierRoute() {
     return (
         <ProtectedRoute allowedRoles={ADMIN_ROLES}>
-            <Suspense fallback={<SupplierPageFallback />}>
-                <SupplierManagementPage />
-            </Suspense>
+            <SupplierPageErrorBoundary>
+                <Suspense fallback={<SupplierPageFallback />}>
+                    <SupplierManagementPage />
+                </Suspense>
+            </SupplierPageErrorBoundary>
         </ProtectedRoute>
     );
 }
