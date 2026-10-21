@@ -108,7 +108,7 @@ Regla: los botones de login, registro y modales son verdes; no usar `blue-*` par
 
 ### Header y hero
 
-- `HeaderComponent` es transparente y absoluto solo en `/` y `/welcome`; en las demas paginas usa el degradado verde.
+- `HeaderComponent` es transparente y absoluto solo en `/` y `/welcome`; en las demas paginas usa la imagen de fondo `public/img/Fondo-head.jpg` (clase `.site-header-bg` en `HeaderComponent.css`).
 - Incluye logo, menu (Marketplace, Cursos Online, Legal, Blog), tema, perfil, busqueda y carrito.
 - El menu de perfil (`DropdownMenu`) acepta `buttonClassName`, `menuClassName`, `panelClassName` y `ariaLabel` para personalizar su estilo.
 - El hero (`SwiperCarousel`) ocupa todo el ancho; su texto sale de las claves `hero_*` en `src/services/translations/es.js` y `en.js`.
@@ -133,6 +133,7 @@ Recomendaciones segun como se muestra cada imagen en la interfaz. Usar JPG o Web
 | Producto (detalle / galeria) | `ImageCarousel` | JPG / WebP | 1200 x 900 px | 4:3 | `object-contain`, no se recorta; fondo claro uniforme |
 | Miniatura de carrito | `ShoppingCarComponent` | misma imagen del producto | se escala a 56 x 56 px | 1:1 | `object-cover` |
 | Categoria | `public/img/cat-<category_id>.jpg` (`CategoryComponent`) | JPG | 400 x 400 px | 1:1 | `object-cover` a 96 x 96 px |
+| Fondo del header | `public/img/Fondo-head.jpg` (`.site-header-bg` en `HeaderComponent.css`) | JPG / WebP | 1920 x 194 px (96 dpi; actual: ~42 KB) | ~10:1 | `cover` centrado; el header mide ~80-100 px de alto, asi que se recorta arriba y abajo. Mantener tonos verde oscuro (texto blanco encima), zona clara a la izquierda y el detalle visual a la derecha. Para pantallas retina usar 3840 x 388 px |
 | Logo | `public/img/logo-cheyn-verde.png` | PNG transparente | 400 x 313 px | ~1.3:1 | se muestra a 80 px de alto |
 
 Notas:

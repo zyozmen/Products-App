@@ -8,6 +8,7 @@ import translationService from '../../services/TranslationService.js';
 import useTranslation from '../../hooks/useTranslation.js';
 import { apiQueryKeys, useAdminUsers } from '../../hooks/useApiQueries.ts';
 import DropdownMenu from '../ui/DropdownMenu';
+import './HeaderComponent.css';
 
 function HeaderComponent({ navigate, auth }) {
     const t = useTranslation();
@@ -82,7 +83,7 @@ function HeaderComponent({ navigate, auth }) {
     ));
 
     return (
-        <header className={`hu-z-30 hu-w-full ${isHome ? 'hu-absolute hu-inset-x-0 hu-top-0 hu-bg-transparent' : 'hu-relative hu-bg-gradient-to-r hu-from-green-800 hu-to-green-950'}`}>
+        <header className={`hu-z-30 hu-w-full ${isHome ? 'hu-absolute hu-inset-x-0 hu-top-0 hu-bg-transparent' : 'hu-relative site-header-bg'}`}>
             <div className="hu-mx-auto hu-flex hu-max-w-[1600px] hu-items-center hu-justify-between hu-gap-4 hu-px-4 hu-py-3 sm:hu-px-8 lg:hu-px-12">
                 <NavLink to="/welcome" className="hu-inline-flex hu-shrink-0" aria-label="Cheyn Verde">
                     <img className="hu-h-20 hu-w-auto" src="/img/logo-cheyn-verde.png" alt="Cheyn Verde" />
