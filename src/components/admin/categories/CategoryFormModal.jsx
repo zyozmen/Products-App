@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Button, Card, ErrorNotice, Field, Input } from '../../ui/shadcn';
+import { ErrorNotice, Field, Input } from '../../ui/shadcn';
 import { categorySchema, validateCategoryImage } from '../../../schemas/category';
 import { getCategoryImageSrc } from '../../../services/categoryService.js';
-
-const overlayClass = 'hu-fixed hu-inset-0 hu-z-[9999] hu-flex hu-items-center hu-justify-center hu-bg-black/60 hu-p-5';
+import './CategoryFormModal.css';
 
 function CategoryFormModal({ category, onCancel, onSubmit, isSaving, serverError, t }) {
     const isEditing = Boolean(category);
@@ -50,12 +49,14 @@ function CategoryFormModal({ category, onCancel, onSubmit, isSaving, serverError
     const currentImage = previewUrl || (isEditing ? getCategoryImageSrc(category) : '');
 
     return (
-        <div className={overlayClass} role="dialog" aria-modal="true" aria-labelledby="category-modal-title">
-            <Card className="hu-max-h-[90vh] hu-w-full hu-max-w-lg hu-overflow-y-auto hu-p-6">
-                <form className="hu-grid hu-gap-4" onSubmit={submit} noValidate>
-                    <h2 id="category-modal-title" className="hu-m-0 hu-text-lg hu-font-bold">
+        <div className="category-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="category-modal-title">
+            <div className="category-modal">
+                <header className="category-modal-header">
+                    <h2 id="category-modal-title" className="category-modal-title">
                         {isEditing ? t('edit_category') : t('create_category')}
                     </h2>
+                </header>
+                <form className="category-modal-form" onSubmit={submit} noValidate>
                     {serverError && <ErrorNotice>{serverError}</ErrorNotice>}
                     <Field label={`${t('category_name')} *`} htmlFor="category-name" error={fieldError('name')}>
                         <Input id="category-name" maxLength={100} aria-invalid={Boolean(form.formState.errors.name)} {...form.register('name')} />
@@ -64,7 +65,7 @@ function CategoryFormModal({ category, onCancel, onSubmit, isSaving, serverError
                         <textarea
                             id="category-description"
                             rows={3}
-                            className="hu-w-full hu-rounded-lg hu-border hu-border-slate-300 hu-bg-white hu-px-3 hu-py-2.5 hu-text-sm hu-outline-none focus:hu-border-green-600"
+                            className="hu-w-full hu-px-3 hu-py-2.5 hu-text-sm"
                             {...form.register('description')}
                         />
                     </Field>
@@ -79,16 +80,15 @@ function CategoryFormModal({ category, onCancel, onSubmit, isSaving, serverError
                         />
                     </Field>
                     {currentImage && (
-                        <img className="hu-h-40 hu-w-40 hu-rounded-2xl hu-object-cover" src={currentImage} alt={t('category_image_preview')} />
+                        <img className="category-modal-preview" src={currentImage} alt={t('category_image_preview')} />
                     )}
-                    <div className="hu-flex hu-justify-end hu-gap-3">
-                        <Button type="button" variant="secondary" onClick={onCancel} disabled={isSaving}>{t('cancel')}</Button>
-                        <Button type="submit" disabled={isSaving}>{isSaving ? t('saving_btn') : t('save_category')}</Button>
+                    <div className="category-modal-actions">
+                        <button type="button" className="category-modal-button category-modal-button-secondary" onClick={onCancel} disabled={isSaving}>{t('cancel')}</button>
+                        <button type="submit" className="category-modal-button category-modal-button-primary" disabled={isSaving}>{isSaving ? t('saving_btn') : t('save_category')}</button>
                     </div>
                 </form>
-            </Card>
+            </div>
         </div>
     );
 }
-
 export default CategoryFormModal;

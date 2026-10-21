@@ -152,8 +152,9 @@ function ProductListComponent({ selectedCategoryIds = [], filters = {}, selected
                         </div>
                     );
                     return (
-                        <div key={product.id} className="product-list-card hu-overflow-hidden hu-rounded-xl hu-border hu-border-slate-200 hu-bg-white hu-shadow-sm">
-                            <div className={`${isInactive ? 'hu-opacity-50' : ''}${isDraft ? ' hu-border-t-4 hu-border-amber-400' : ''}`}>
+                        <div key={product.id} className={`product-list-card hu-relative hu-overflow-hidden hu-rounded-xl hu-border hu-border-slate-200 hu-bg-white hu-shadow-sm${isDraft ? ' product-list-card--draft' : ''}`}>
+                            {isDraft && <span className="product-list-draft-badge">{t('status_draft')}</span>}
+                            <div className={isInactive ? 'hu-opacity-50' : ''}>
                                 {productImage}
                                 <div className="product-list-card-details hu-p-4 hu-text-center !hu-bg-green-800/90">
                                     {isInactive ? (
