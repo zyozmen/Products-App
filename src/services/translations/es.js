@@ -361,6 +361,8 @@ const translations = {
                 secondary_images_help: 'Sube hasta 5 fotos adicionales.',
 
                 // Shop
+                filters_button: 'Filtros',
+                featured_of_the_month: 'Destacados del mes',
                 filter_by_name: 'Filtrar por Nombre',
                 filter_by_price: 'Filtrar por Precio',
                 filter_by_category: 'Filtrar por Categoría',

@@ -13,7 +13,7 @@ function CategoryComponent({ navigate }) {
     const isEmpty = !isPending && !isError && categories.length === 0;
 
     return (
-        <section className="category-section" aria-labelledby="category-heading">
+        <section className="category-section kanban-board" aria-labelledby="category-heading">
             <h2 id="category-heading" className="category-heading">
                 {t('explore_universe_prefix')} <span>{t('explore_universe_highlight')}</span>
             </h2>

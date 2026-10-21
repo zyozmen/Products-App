@@ -42,6 +42,7 @@ function HeaderComponent({ navigate, auth }) {
 
     useEffect(() => {
         document.body.classList.toggle('dark-theme', theme === 'dark');
+        document.body.dataset.theme = theme === 'dark' ? 'dark' : 'light';
     }, [theme]);
 
     const signOut = () => {
@@ -67,8 +68,8 @@ function HeaderComponent({ navigate, auth }) {
         setSearchOpen(false);
     };
 
-    const menuItemClass = 'hu-block hu-w-full hu-cursor-pointer hu-rounded-none hu-border-0 hu-bg-transparent hu-px-4 hu-py-2.5 hu-text-left hu-text-sm hu-font-medium hu-text-white hu-shadow-none hu-outline-none hover:hu-bg-green-700 focus-visible:hu-bg-green-700';
-    const dropdownPanelClass = 'hu-rounded-sm hu-border-0 hu-bg-green-950 hu-shadow-none';
+    const menuItemClass = 'hu-block hu-w-full hu-cursor-pointer hu-rounded-none hu-border-0 hu-bg-transparent hu-px-4 hu-py-2.5 hu-text-left hu-text-sm hu-font-semibold hu-text-[#116b30] hu-shadow-none hu-outline-none hover:hu-bg-[#16833b] hover:hu-text-white focus-visible:hu-bg-[#16833b] focus-visible:hu-text-white dark:hu-text-white';
+    const dropdownPanelClass = 'hu-overflow-hidden hu-rounded-xl hu-border hu-border-solid hu-border-[#74a782] hu-bg-white hu-shadow-lg dark:hu-border-[#3d6b4c] dark:hu-bg-[#18251e]';
     const navLinkClass = ({ isActive }) =>
         `hu-whitespace-nowrap hu-border-0 hu-border-b-2 hu-border-solid hu-py-1 hu-text-base hu-font-medium hu-text-white hu-no-underline ${isActive ? 'hu-border-green-500' : 'hu-border-transparent hover:hu-text-green-300'}`;
     const iconButtonClass = 'hu-relative hu-inline-flex hu-h-10 hu-w-10 hu-cursor-pointer hu-items-center hu-justify-center hu-rounded-full hu-border-0 hu-bg-transparent hu-p-0 hu-text-xl hu-text-white hu-no-underline hover:hu-bg-white/10';
@@ -99,10 +100,11 @@ function HeaderComponent({ navigate, auth }) {
                         ariaLabel={t('user_menu')}
                         buttonClassName={iconButtonClass}
                         menuClassName="hu-right-0"
+                        showArrow={false}
                         panelClassName={dropdownPanelClass}
                         label={<i className="far fa-user-circle" aria-hidden="true" />}
                     >
-                        <p className="hu-m-0 hu-px-3 hu-py-1 hu-text-xs hu-font-bold hu-uppercase hu-tracking-wider hu-text-green-400">{isLoggedIn && loggedInUser ? loggedInUser.username : t('sign_in')}</p>
+                        <p className="hu-m-0 hu-px-3 hu-py-1 hu-text-xs hu-font-bold hu-uppercase hu-tracking-wider hu-text-[#287844] dark:hu-text-green-400">{isLoggedIn && loggedInUser ? loggedInUser.username : t('sign_in')}</p>
                         {!isLoggedIn && <button className={menuItemClass} type="button" onClick={() => navigate('/login')}>{t('sign_in')}</button>}
                         {isLoggedIn && <button className={menuItemClass} type="button" onClick={() => navigate('/profile')}>{t('manage_profile')}</button>}
                         {isUserAdmin && (
@@ -113,11 +115,11 @@ function HeaderComponent({ navigate, auth }) {
                             </button>
                         )}
                         {isLoggedIn && !isUserAdmin && <button className={menuItemClass} type="button" onClick={() => navigate('/orders')}>{t('my_orders')}</button>}                        {isLoggedIn && <button className={menuItemClass} type="button" onClick={signOut}>{t('logout')}</button>}
-                        <div className="hu-mt-1 hu-flex hu-border-0 hu-border-t hu-border-solid hu-border-green-800">
+                        <div className="hu-mt-1 hu-flex hu-border-0 hu-border-t hu-border-solid hu-border-[#74a782] dark:hu-border-[#3d6b4c]">
                             {['ES', 'EN'].map((lang) => (
                                 <button
                                     key={lang}
-                                    className={`${menuItemClass} hu-text-center ${translationService.getLanguage() === lang ? 'hu-bg-green-600 hu-font-bold' : ''}`}
+                                    className={`${menuItemClass} hu-text-center ${translationService.getLanguage() === lang ? 'hu-bg-[#16833b] hu-font-bold hu-text-white' : ''}`}
                                     type="button"
                                     onClick={() => translationService.setLanguage(lang)}
                                 >{lang}</button>

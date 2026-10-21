@@ -1,1 +1,1 @@
-export { default } from '../dashboard/FeaturedProducts.jsx';
+export { default } from './ProductSortBar.jsx';

@@ -13,7 +13,7 @@ import './ProductListComponent.css';
 function ProductListComponent({ selectedCategoryIds = [], filters = {}, selectedSortBy, onSortByChange, location }) {
     const t = useTranslation();
     const [pageNumber, setPageNumber] = useState(0);
-    const [pageSize, setPageSize] = useState(15);
+    const [pageSize, setPageSize] = useState(5);
     const [isOrderConfirmed, setIsOrderConfirmed] = useState(false);
     const queryParams = useMemo(() => new URLSearchParams(location?.search || ''), [location?.search]);
     const searchTerm = queryParams.get('name') || queryParams.get('search') || '';
@@ -97,7 +97,7 @@ function ProductListComponent({ selectedCategoryIds = [], filters = {}, selected
             <div className="product-list-grid hu-grid hu-gap-4">
                 <FilterProducts
                     selectedPageSize={pageSize}
-                    pageSizeOptions={[15, 30, 45]}
+                    pageSizeOptions={[5, 15, 30, 45]}
                     onPageSizeChange={(nextPageSize) => {
                         setPageSize(Number(nextPageSize));
                         setPageNumber(0);

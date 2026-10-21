@@ -361,6 +361,8 @@ const translations = {
                 secondary_images_help: 'Upload up to 5 additional photos.',
 
                 // Shop
+                filters_button: 'Filters',
+                featured_of_the_month: 'Featured of the month',
                 filter_by_name: 'Filter by Name',
                 filter_by_price: 'Filter by Price',
                 filter_by_category: 'Filter by Category',

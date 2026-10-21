@@ -60,13 +60,13 @@ function CategoryManagementComponent() {
                 <div className="hu-mb-6 hu-flex hu-flex-wrap hu-items-end hu-justify-between hu-gap-4">
                     <div>
                         <h1 className="hu-m-0 hu-font-display hu-text-3xl hu-text-green-800 admin-title">{t('manage_categories')}</h1>
-                        <p className="hu-mb-0 hu-mt-1 hu-text-sm hu-text-[#3f4a41] dark:hu-text-green-200">{t('admin_categories_description')}</p>
+                        <p className="hu-mb-0 hu-mt-1 hu-text-sm hu-text-[#3f4a41] dark:hu-text-white">{t('admin_categories_description')}</p>
                     </div>
                     <Button type="button" onClick={() => openModal()}>{t('create_category')}</Button>
                 </div>
-                {isPending && <p role="status" className="hu-text-slate-600 dark:hu-text-green-200">{t('loading_categories')}</p>}
+                {isPending && <p role="status" className="hu-text-slate-600 dark:hu-text-white">{t('loading_categories')}</p>}
                 {isError && <ErrorNotice>{error?.message || t('could_not_load_categories')}</ErrorNotice>}
-                {!isPending && !isError && categories.length === 0 && <p className="hu-text-slate-600 dark:hu-text-green-200">{t('no_categories_available')}</p>}
+                {!isPending && !isError && categories.length === 0 && <p className="hu-text-slate-600 dark:hu-text-white">{t('no_categories_available')}</p>}
                 <div className="hu-grid hu-gap-5 sm:hu-grid-cols-2 lg:hu-grid-cols-4">
                     {categories.map((category) => (
                         <article key={category.category_id} className="hu-flex hu-flex-col hu-overflow-hidden hu-rounded-2xl hu-bg-[#12301e] hu-text-white hu-shadow-md hu-transition hu-duration-200 hover:-hu-translate-y-0.5 hover:hu-shadow-lg dark:hu-border dark:hu-border-solid dark:hu-border-[#2f4a38] dark:hu-bg-[#18251e]">
