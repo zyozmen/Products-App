@@ -17,7 +17,7 @@ const renderCheckout = (props = {}) => {
     return render(
         <QueryClientProvider client={queryClient}>
             <CheckoutForm
-                items={[{ id: '1', name: 'Mochila', price: 10, quantity: 1 }]}
+                items={[{ id: '1', presentationId: '1', name: 'Mochila', price: 10, quantity: 1 }]}
                 subtotal={10}
                 taxAmount={1.6}
                 total={11.6}
@@ -34,6 +34,7 @@ describe('cart product images', () => {
 
         cartService.addToCart({
             id: productId,
+            presentationId: productId,
             name: 'Product without image',
             price: 10,
             image: ' ',
@@ -85,7 +86,7 @@ describe('createWhatsAppCheckoutUrl', () => {
 
         await waitFor(() => expect(createOrderSpy).toHaveBeenCalledOnce());
         expect(createOrderSpy).toHaveBeenCalledWith({
-            items: [{ id: '1', name: 'Mochila', price: 10, quantity: 1 }],
+            items: [{ id: '1', presentationId: '1', name: 'Mochila', price: 10, quantity: 1 }],
             delivery: expect.objectContaining({
                 recipientName: 'Ana Pérez',
                 address: 'Calle 10',

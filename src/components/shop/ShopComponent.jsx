@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import HeaderComponent from "../dashboard/HeaderComponent";
 import FooterComponent from "../dashboard/FooterComponent";
-import ShopListComponent from "./ShopListComponent";
+import MarketplaceShopList from "./MarketplaceShopList";
 import navigationComponent from "../navigation/NavigationComponent";
 
 class ShopComponent extends Component {
@@ -12,7 +12,7 @@ class ShopComponent extends Component {
     return (
       <>
             <HeaderComponentWithNavigation />
-            <ShopListComponent location={location} navigate={navigate} />
+            <MarketplaceShopList location={location} navigate={navigate} />
             <FooterComponent />
       </>
     );

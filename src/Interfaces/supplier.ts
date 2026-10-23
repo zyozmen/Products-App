@@ -42,7 +42,7 @@ export interface SupplierLotsPage {
 }
 
 export interface ContainerCreateRequest {
-  tipoCepa: string;
+  cepaId: string;
   unidadBase: string;
   presentacionId?: string | null;
   capacidadUnidadesBase: number;
@@ -55,9 +55,14 @@ export interface LotCreateRequest {
   abonoInicial?: number;
 }
 
-export interface ContainerResponse extends ContainerCreateRequest {
+export interface ContainerResponse {
   id: string;
+  cepaId?: string;
+  tipoCepa: string;
+  unidadBase: string;
   presentacionId: string | null;
+  capacidadUnidadesBase: number;
+  costoBasePorUnidad: number;
   cantidadDisponible: number;
   subtotal: number;
   estado: 'RECIBIDO' | 'PROCESADO';

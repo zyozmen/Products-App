@@ -5,6 +5,7 @@ import HeaderComponent from "../dashboard/HeaderComponent";
 import FooterComponent from "../dashboard/FooterComponent";
 import navigationComponent from "../navigation/NavigationComponent";
 import cartService, { DEFAULT_TAX_RATE } from "../../services/CartService";
+import { marketplaceService } from '../../services/marketplaceService.ts';
 import translationService from "../../services/TranslationService";
 import AuthenticationService from "../../services/AuthenticationService";
 import { formatCOP } from "../../Interfaces/ProductInterface";
@@ -71,7 +72,41 @@ export function CheckoutForm({ items, subtotal, taxAmount, total, onOrderConfirm
         try {
             await create.mutateAsync({ items, delivery, subtotal, taxAmount, total });
         } catch (error) {
-            setSubmitError(error instanceof Error ? error.message : t('checkout_create_error'));
+            const message = error instanceof Error ? error.message : t('checkout_create_error');
+            if (/precio|total.*coincide|presentaci|stock|disponible/i.test(message) &&
+                items.every((item) => item.presentationId && item.cepaId)) {
+                try {
+                    await Promise.all(items.map(async (item) => {
+                        try {
+                            const detail = await marketplaceService.detail(item.cepaId, item.presentationId);
+                            const current = detail.presentaciones.find((option) => option.presentacionId === item.presentationId);
+                            cartService.refreshPresentation(item.presentationId, current ? {
+                                strainName: detail.nombre,
+                                presentationName: current.nombre,
+                                sku: current.sku,
+                                content: current.contenidoUnidad,
+                                baseUnit: current.unidadBase,
+                                price: current.precioVenta,
+                                stock: current.stockDisponible,
+                                fotografia: current.fotografia || detail.fotografia,
+                            } : null);
+                        } catch (refreshError) {
+                            if (refreshError?.response?.status === 404) {
+                                cartService.refreshPresentation(item.presentationId, null);
+                                return;
+                            }
+                            throw refreshError;
+                        }
+                    }));
+                } catch (refreshError) {
+                    const refreshMessage = refreshError instanceof Error ? refreshError.message : 'Error de actualización desconocido.';
+                    setSubmitError(`${message} No se pudo revalidar el catálogo: ${refreshMessage}. La orden no se reenvió.`);
+                    return;
+                }
+                setSubmitError(`${message} Se actualizaron precio y disponibilidad del carrito; revísalos y vuelve a confirmar. La orden no se reenvió.`);
+            } else {
+                setSubmitError(message);
+            }
             return;
         }
 
@@ -120,6 +155,8 @@ export function CheckoutForm({ items, subtotal, taxAmount, total, onOrderConfirm
                     </Field>
                 </div>
             </div>
+            {items.some((item) => !item.presentationId) && <ErrorNotice>Este artículo pertenece al catálogo anterior y no se puede comprar desde el marketplace. Retíralo y selecciona una presentación disponible.</ErrorNotice>}
+            {items.some((item) => item.unavailable || (Number.isFinite(item.stock) && item.quantity > item.stock)) && <ErrorNotice>Una presentación ya no tiene disponibilidad suficiente. Ajusta la cantidad o retírala antes de continuar.</ErrorNotice>}
             {submitError && <ErrorNotice>{submitError}</ErrorNotice>}
             <div className="hu-grid hu-gap-2 hu-border-b hu-border-slate-200 hu-pb-2">
                 <div className="hu-flex hu-justify-between hu-text-sm">
@@ -135,7 +172,7 @@ export function CheckoutForm({ items, subtotal, taxAmount, total, onOrderConfirm
                     <strong>{formatCOP(total)}</strong>
                 </div>
             </div>
-            <Button type="submit" className="hu-w-full" disabled={items.length === 0 || form.formState.isSubmitting || create.isPending}>
+            <Button type="submit" className="hu-w-full" disabled={items.length === 0 || items.some((item) => !item.presentationId || item.unavailable || (Number.isFinite(item.stock) && item.quantity > item.stock)) || form.formState.isSubmitting || create.isPending}>
                 {form.formState.isSubmitting || create.isPending ? t('saving_btn') : t('proceed_checkout')}
             </Button>
         </form>
@@ -147,6 +184,7 @@ class ShoppingCarComponent extends Component {
         super(props);
         this.state = {
             items: cartService.getCart(),
+            migrationNotice: cartService.consumeMigrationNotice(),
             isOrderConfirmed: false,
             currentLanguage: translationService.getLanguage(),
         };
@@ -222,6 +260,11 @@ class ShoppingCarComponent extends Component {
                     <div className="hu-mb-6">
                         <h1 className="hu-m-0 hu-text-3xl hu-font-bold hu-tracking-tight">{t('cart_summary')}</h1>
                     </div>
+                    {this.state.migrationNotice && (
+                        <div className="hu-mb-4 hu-rounded-lg hu-border hu-border-amber-200 hu-bg-amber-50 hu-p-4 hu-text-sm hu-text-amber-900" role="status">
+                            El carrito anterior usaba productos del catálogo antiguo. Esos artículos se retiraron porque ya no se pueden asociar con una presentación comprable.
+                        </div>
+                    )}
                     <div className="hu-grid hu-items-start hu-gap-5 lg:hu-grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
                         <Card className="hu-overflow-hidden">
                             <div className="hu-overflow-x-auto">
@@ -252,6 +295,7 @@ class ShoppingCarComponent extends Component {
                                                     className="hu-mr-3 hu-inline-block hu-h-14 hu-w-14 hu-rounded-lg hu-object-cover"
                                                 />
                                                 <span className="hu-font-medium">{item.name}</span>
+                                                {item.sku && <span className="hu-ml-2 hu-text-xs hu-text-slate-500">SKU: {item.sku}</span>}
                                             </TableCell>
                                             <TableCell>{formatCOP(item.price)}</TableCell>
                                             <TableCell>

@@ -118,22 +118,17 @@ class OrderService {
         }
     }
 
-    async createPqrOrder({ username, productName, quantity, delivery, notes }) {
+    async createPqrOrder({ username, items, delivery, notes }) {
         try {
             const payload = {
                 username,
-                pqr: true,
-                items: [{
-                    name: productName,
-                    quantity,
-                    unitPrice: 0,
-                    lineTotal: 0,
-                }],
+                items: items.map((item) => ({
+                    productId: item.productId,
+                    name: item.name,
+                    quantity: item.quantity,
+                })),
                 delivery,
                 notes,
-                subtotal: 0,
-                taxAmount: 0,
-                total: 0,
             };
             const response = await axios.post(`${apiBaseUrl}/admin/orders/pqr`, payload, { headers: authHeaders() });
             return response.data;

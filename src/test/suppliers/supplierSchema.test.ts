@@ -19,8 +19,8 @@ describe('supplier form validation', () => {
 
 describe('container validation and lot calculations', () => {
   const containers = [
-    { tipoCepa: 'Sativa Premium', unidadBase: 'gramo', capacidadUnidadesBase: 1000, costoBasePorUnidad: 5000 },
-    { tipoCepa: 'Indica Gold', unidadBase: 'gramo', capacidadUnidadesBase: 500, costoBasePorUnidad: 6000 },
+    { cepaId: 'strain-1', unidadBase: 'gramo', capacidadUnidadesBase: 1000, costoBasePorUnidad: 5000 },
+    { cepaId: 'strain-2', unidadBase: 'gramo', capacidadUnidadesBase: 500, costoBasePorUnidad: 6000 },
   ];
 
   it('calculates rounded subtotals in cents and totals the rounded values', () => {
@@ -33,13 +33,13 @@ describe('container validation and lot calculations', () => {
 
   it('requires valid type, base unit, positive capacity, and valid monetary precision', () => {
     expect(containerSchema.safeParse({
-      tipoCepa: '  Sativa  ',
+      cepaId: 'strain-1',
       unidadBase: ' gramo ',
       presentacionId: '',
       capacidadUnidadesBase: 0.125,
       costoBasePorUnidad: 1.25,
     }).success).toBe(true);
-    expect(containerSchema.safeParse({ ...containers[0], tipoCepa: '  ' }).success).toBe(false);
+    expect(containerSchema.safeParse({ ...containers[0], cepaId: '  ' }).success).toBe(false);
     expect(containerSchema.safeParse({ ...containers[0], unidadBase: ' ' }).success).toBe(false);
     expect(containerSchema.safeParse({ ...containers[0], capacidadUnidadesBase: 0 }).success).toBe(false);
     expect(containerSchema.safeParse({ ...containers[0], capacidadUnidadesBase: 0.1234 }).success).toBe(false);

@@ -122,6 +122,7 @@ const translations = {
                 back_to_home: 'Volver al inicio',
                 manage_users: 'Administrar Usuarios',
                 manage_suppliers: 'Gestión de Proveedores y Saldos',
+                manage_strains: 'Gestión de Cepas',
                 manage_orders: 'Administrar Órdenes',
                 created_orders_count: 'Órdenes creadas',
                 created_orders_count_error: 'No se pudo consultar el contador de órdenes',

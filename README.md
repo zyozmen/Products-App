@@ -57,8 +57,9 @@ npm run test:coverage    # Ejecuta pruebas y genera cobertura
 ## Funcionalidades y rutas
 
 - `/`: pagina de bienvenida
-- `/shop`: catalogo y filtros de productos
+- `/shop`: catalogo del marketplace agrupado por cepa, con filtros de nombre, precio y categoria
 - `/product/:id`: detalle de un producto
+- `/producto/:cepaId/:presentacionId`: detalle publico de marketplace; conserva el carrusel y los controles originales de cantidad y carrito. Las presentaciones se seleccionan con radio buttons y el precio principal muestra el precio unitario seleccionado multiplicado por la cantidad.
 - `/cart`: carrito de compra (requiere login para compra segura, autocompletado y opcion de tercero receptor)
 - `/login`: inicio de sesion e inicio de registro de clientes con validacion de edad
 - `/profile`: administracion del perfil del usuario (edicion de datos y cambio de contraseña)
@@ -67,9 +68,44 @@ npm run test:coverage    # Ejecuta pruebas y genera cobertura
 - `/admin/orders`: kanban de ordenes (solo admin)
 - `/admin/orders/report`: reporte de ordenes (solo admin)
 - `/admin/proveedores`: gestion de proveedores, saldos, recepcion de lotes y abonos (solo admin)
+- `/admin/cepas`: nombres, categorias compartidas y fotografia principal de cepas (solo admin)
 - `/createProduct`: alta de productos (solo admin)
 - `/editProduct/:productId`: edicion de productos (solo admin)
 - `/welcome/:name`: bienvenida personalizada
+
+### Filtros del marketplace
+
+`/shop` conserva la barra lateral original de nombre, rangos de precio y seleccion multiple de categorias, con panel desplegable en movil y etiquetas para retirar categorias activas. Los filtros se conservan en la URL (`buscar`, `categoryIds` repetido, `minPrice` y `maxPrice`); los enlaces anteriores con `name`, `category` o `category_id` siguen funcionando. Cambiar un filtro reinicia la pagina y permite volver con la navegacion del navegador.
+
+La consulta usa `GET /api/marketplace/presentaciones` con los filtros combinados y paginacion del servidor, no filtra unicamente la pagina descargada. Una cepa coincide con cualquiera de las categorias seleccionadas y con el precio si alguna presentacion activa con stock cumple ambos limites inclusivos. El resultado mantiene todas sus opciones disponibles y su `precioDesde` original, aunque la opcion mas barata quede fuera del rango.
+
+En `/admin/cepas` se asignan categorias existentes al crear o editar la cepa; todas sus presentaciones comparten esa asignacion. Las cepas anteriores sin categorias siguen visibles sin filtro, pero deben categorizarse para aparecer al seleccionar una categoria. Guardar invalida las consultas de cepas y marketplace. Esto requiere desplegar tambien el backend actualizado con soporte para estos parametros y `categoryIds` en cepas.
+
+Los rangos de precio son inclusivos en ambos extremos, por lo que una presentacion de exactamente $100.000 aparece en "$50.000 - $100.000" y en "$100.000 - $150.000". El contador por categoria solo se muestra si el servidor lo envia.
+
+#### Asignar categorias a una cepa
+
+1. Inicia sesion con un usuario `ADMIN` y abre `/admin/cepas`.
+2. En la tarjeta de la cepa, marca las categorias en **Categorias de la cepa**.
+3. Pulsa **Guardar cambios** de esa misma tarjeta. Debe aparecer **Cepa actualizada.**; **Cargar fotografia** no guarda categorias.
+4. Recarga la pagina para confirmar que las casillas siguen marcadas y prueba el filtro en `/shop`.
+
+Para una cepa nueva, marca las categorias en el formulario **Nueva cepa** antes de pulsar **Crear cepa**.
+
+#### Solucion de problemas de filtros
+
+- **Una categoria no devuelve resultados:** revisa que la cepa tenga `categoryIds` en `GET /api/cepas/{id}` y presentaciones `ACTIVO` con stock mayor que cero.
+- **Al guardar no aparece ningun mensaje, o la categoria no persiste:** confirma que el backend en ejecucion incluye `categoryIds` en cepas. Un backend anterior ignora ese campo sin error. Reinicia el backend despues de actualizarlo y recarga el frontend con Ctrl+F5.
+- **El filtro de precio no cambia el listado:** verifica en la pestana Red que la peticion incluya `minPrice` y `maxPrice`. Si los incluye, revisa que algun precio disponible de la cepa este dentro del rango.
+
+## Marketplace por cepa (HU-05)
+
+- **Administracion de cepas (`/admin/cepas`):** crea, renombra y categoriza cepas, y carga su fotografia principal. El listado usa `GET /api/cepas?page=0&size=20` y lee el total de `X-Total-Count`. Renombrar envia la `version` vigente; si la version esta desactualizada o el nombre normalizado ya existe, se muestra el error 409 para recargar e intentar de nuevo. La fotografia se envia como multipart `fotoPrincipal` a `POST /api/v1/images/{cepaId}?target=CEPA` y acepta PNG, JPG/JPEG o WebP de hasta 2 MiB cuyo MIME coincida con la extension.
+- **Recepcion de lotes:** cada contenedor selecciona una cepa registrada y envia su `cepaId`. Por eso, las cepas deben crearse antes de recibir el lote. Las tarjetas de contenedor muestran el nombre actual de la cepa, y el desglose ofrece **Ver en marketplace** cuando la presentacion esta publicada.
+- **Catalogo (`/shop`):** `GET /api/marketplace/presentaciones` pagina por cepa, de 20 en 20. Cada tarjeta muestra la fotografia de la cepa (o un marcador si no tiene), el numero de presentaciones disponibles y el precio desde. Al abrir la tarjeta se selecciona la presentacion mas economica.
+- **Detalle (`/producto/:cepaId/:presentacionId`):** muestra todas las presentaciones activas con stock de la cepa, incluso de distintos lotes. Cada una conserva su ID, SKU, precio, stock y fotografia.
+- **Carrito:** los articulos se identifican por `presentationId` y la cantidad se limita al stock. Los articulos del catalogo anterior se retiran del carrito guardado y se avisa una sola vez. Si el pedido falla por precio o stock, el carrito vuelve a consultar el detalle de cada presentacion y actualiza o marca como no disponibles sus articulos, sin reenviar el pedido.
+- **PQR:** el dialogo de ordenes PQR busca y pagina presentaciones del marketplace, y envia la presentacion seleccionada como `productId`.
 
 ## Tecnologias
 
@@ -252,7 +288,10 @@ DRY_RUN=1 bash scripts/setup-jenkins-config.sh
 ## Estructura principal
 
 - `src/components/`: paginas y componentes de la interfaz
-- `src/services/`: acceso a productos, autenticacion, carrito y favoritos
+- `src/services/`: acceso a productos, marketplace y cepas (`marketplaceService.ts`), autenticacion, carrito y favoritos
+- `src/hooks/useMarketplaceQueries.ts`: consultas de TanStack Query del catalogo, detalle y cepas
+- `src/components/shop/`: catalogo, filtros y detalle del marketplace
+- `src/components/admin/cepas/`: administracion de cepas
 - `src/Interfaces/`: interfaces y transformacion de datos
 - `public/`: recursos estaticos
 - `dockerfile`: imagen de produccion con Nginx

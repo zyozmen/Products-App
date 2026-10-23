@@ -5,6 +5,7 @@ describe('pqrOrderSchema', () => {
   it('accepts a complete PQR order with an integer quantity and valid phone', () => {
     const result = pqrOrderSchema.safeParse({
       username: 'customer',
+      productId: 'presentation-1',
       productName: 'Custom product',
       quantity: 2,
       recipientName: 'Recipient',
@@ -19,6 +20,7 @@ describe('pqrOrderSchema', () => {
   it('rejects non-positive quantities, invalid phone numbers, and blank required fields', () => {
     const result = pqrOrderSchema.safeParse({
       username: ' ',
+      productId: 'presentation-1',
       productName: 'Custom product',
       quantity: 0.5,
       recipientName: 'Recipient',

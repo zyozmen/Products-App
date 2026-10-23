@@ -12,7 +12,6 @@ function ProductDetails({ params }) {
     const productId = String(params?.id ?? '');
     const { data: product, isPending, isError, error } = useProduct(productId);
     const [quantity, setQuantity] = useState(1);
-    const selectedQuantity = Number.isInteger(quantity) && quantity > 0 ? quantity : 1;
 
     if (isPending) {
         return <main className="hu-mx-auto hu-max-w-7xl hu-px-4 hu-py-12 hu-text-center hu-text-slate-600" role="status">{t('loading_products')}</main>;
@@ -23,6 +22,12 @@ function ProductDetails({ params }) {
         </main>;
     }
 
+    return <ProductDetailContent product={product} quantity={quantity} onQuantityChange={setQuantity} />;
+}
+
+export function ProductDetailContent({ product, quantity, onQuantityChange, children }) {
+    const t = useTranslation();
+    const selectedQuantity = Number.isInteger(quantity) && quantity > 0 ? quantity : 1;
     const categories = Array.isArray(product.categories) ? product.categories : [];
     const itemImages = [
         ...(product.foto_principal ? [{ id: 'p', src: product.foto_principal }] : []),
@@ -45,8 +50,8 @@ function ProductDetails({ params }) {
                 </div>
                 <section className="hu-rounded-2xl hu-border hu-border-slate-200 hu-bg-white hu-p-6 sm:hu-p-8">
                     <h1 className="hu-mb-3 hu-mt-0 hu-text-3xl hu-font-bold hu-text-slate-900">{product.name}</h1>
-                    <p className="hu-mb-6 hu-mt-0 hu-text-2xl hu-font-bold hu-text-green-700">{formatCOP((product.price?.current ?? 0) * selectedQuantity)}</p>
-                    <div className="hu-mb-6">
+                    <p className="hu-mb-6 hu-mt-0 hu-text-2xl hu-font-bold hu-text-green-700" aria-live="polite">{formatCOP((product.price?.current ?? 0) * selectedQuantity)}</p>
+                    {children ?? <div className="hu-mb-6">
                         <h2 className="hu-mb-2 hu-mt-0 hu-text-sm hu-font-semibold hu-uppercase hu-tracking-wide hu-text-slate-600">{t('categories_title')}</h2>
                         {categories.length > 0 ? (
                             <ul className="hu-m-0 hu-flex hu-list-none hu-flex-wrap hu-gap-2 hu-p-0">
@@ -57,18 +62,18 @@ function ProductDetails({ params }) {
                                 ))}
                             </ul>
                         ) : <p className="hu-m-0 hu-text-sm hu-text-slate-500">{t('no_categories_available')}</p>}
-                    </div>
-                    <CartControllsComponent product={product} quantity={quantity} onQuantityChange={setQuantity} />
-                    {AuthenticationService.isUserAdmin() && product.id && (
+                    </div>}
+                    <CartControllsComponent product={product} quantity={quantity} onQuantityChange={onQuantityChange} />
+                    {!product.presentationId && AuthenticationService.isUserAdmin() && product.id && (
                         <NavLink className="hu-mt-5 hu-inline-flex hu-items-center hu-gap-2 hu-rounded-lg hu-border hu-border-blue-700 hu-px-4 hu-py-2.5 hu-text-sm hu-font-semibold hu-text-blue-700 hover:hu-bg-blue-50" to={`/editProduct/${product.id}`}>
                             <i className="fa fa-edit" aria-hidden="true" />
                             {t('edit_product_title')}
                         </NavLink>
                     )}
-                    <div className="hu-mt-8 hu-border-t hu-border-slate-200 hu-pt-6">
+                    {(!product.presentationId || product.description) && <div className="hu-mt-8 hu-border-t hu-border-slate-200 hu-pt-6">
                         <h2 className="hu-mb-2 hu-mt-0 hu-text-lg hu-font-bold">{t('product_description')}</h2>
                         <p className="hu-m-0 hu-whitespace-pre-line hu-leading-7 hu-text-slate-700">{product.description}</p>
-                    </div>
+                    </div>}
                 </section>
             </div>
         </main>

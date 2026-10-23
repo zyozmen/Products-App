@@ -42,6 +42,7 @@ import {
   type SupplierFormValues,
 } from '../../../schemas/supplier';
 import { getApiErrorMessage } from '../../../services/supplierService';
+import { useAllCepas } from '../../../hooks/useMarketplaceQueries';
 import SupplierSearch from './SupplierSearch';
 import type { LiquidationEvaluation, LotResponse, SupplierResponse } from '../../../Interfaces/supplier';
 import SupplierPaymentsTable from './SupplierPaymentsTable';
@@ -286,11 +287,13 @@ function ConsultedLot({ lotId, supplierId, supplierPaidOff }: { lotId: string; s
 function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreated: (lot: LotResponse) => void }) {
   const supplierId = supplier.id;
   const createLot = useCreateLot(supplierId);
+  const cepasQuery = useAllCepas();
+  const cepas = cepasQuery.data ?? [];
   const form = useForm<LotFormInput, unknown, LotFormValues>({
     resolver: zodResolver(lotSchema),
     defaultValues: {
       contenedores: [{
-        tipoCepa: '',
+        cepaId: '',
         unidadBase: 'gramo',
         presentacionId: '',
         capacidadUnidadesBase: 1,
@@ -301,6 +304,11 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
   });
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'contenedores' });
   const containerCards = useRef(new Map<string, HTMLDetailsElement>());
+  const [pendingRemoval, setPendingRemoval] = useState<number | null>(null);
+  const confirmRemoval = () => {
+    if (pendingRemoval !== null) remove(pendingRemoval);
+    setPendingRemoval(null);
+  };
   const containers = useWatch({ control: form.control, name: 'contenedores' }) ?? [];
   const initialPayment = useWatch({ control: form.control, name: 'abonoInicial' }) ?? 0;
   const totalCents = calculateLotTotalCents(containers);
@@ -312,7 +320,7 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
       const lot = await createLot.mutateAsync({
         proveedorId: supplierId,
         contenedores: values.contenedores.map((item) => ({
-          tipoCepa: item.tipoCepa.trim(),
+          cepaId: item.cepaId,
           unidadBase: item.unidadBase.trim(),
           presentacionId: item.presentacionId?.trim() || undefined,
           capacidadUnidadesBase: item.capacidadUnidadesBase,
@@ -322,7 +330,7 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
       });
       form.reset({
         contenedores: [{
-          tipoCepa: '',
+          cepaId: '',
           unidadBase: 'gramo',
           presentacionId: '',
           capacidadUnidadesBase: 1,
@@ -354,7 +362,7 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
           <div className="hu-flex hu-items-center hu-justify-between">
             <h3 className="hu-m-0 hu-text-sm hu-font-bold">Contenedores</h3>
             <Button type="button" variant="secondary" className="hu-px-3 hu-py-2 hu-text-xs" onClick={() => append({
-              tipoCepa: '',
+              cepaId: '',
               unidadBase: 'gramo',
               presentacionId: '',
               capacidadUnidadesBase: 1,
@@ -370,7 +378,7 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
                 else containerCards.current.delete(field.id);
               }}>
               <summary className="hu-cursor-pointer hu-rounded hu-text-sm hu-font-semibold focus-visible:hu-outline-none focus-visible:hu-ring-2 focus-visible:hu-ring-green-500">
-                {containers[index]?.tipoCepa?.trim() || `Contenedor ${index + 1}`}
+                {cepas.find((cepa) => cepa.id === containers[index]?.cepaId)?.nombre || `Contenedor ${index + 1}`}
                 {containerSchema.safeParse(containers[index]).success && (
                   <span className="hu-ml-2 hu-inline-flex hu-items-center hu-gap-1 hu-text-green-700">
                     <Check size={17} aria-hidden="true" /> Datos completos
@@ -378,8 +386,13 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
                 )}
               </summary>
               <div className="hu-mt-3 hu-grid hu-items-start hu-gap-3 sm:hu-grid-cols-2">
-              <Field label="Tipo / cepa" error={form.formState.errors.contenedores?.[index]?.tipoCepa?.message}>
-                <Input {...form.register(`contenedores.${index}.tipoCepa`)} placeholder="Sativa Premium" />
+              <Field label="Cepa" error={form.formState.errors.contenedores?.[index]?.cepaId?.message}>
+                <Select {...form.register(`contenedores.${index}.cepaId`)} disabled={cepasQuery.isPending || cepasQuery.isError}>
+                  <option value="">Selecciona una cepa</option>
+                  {cepas.map((cepa) => <option key={cepa.id} value={cepa.id}>{cepa.nombre}</option>)}
+                </Select>
+                {cepasQuery.isError && <ErrorNotice>No se pudieron cargar las cepas: {getApiErrorMessage(cepasQuery.error)}</ErrorNotice>}
+                {!cepasQuery.isPending && !cepasQuery.isError && cepas.length === 0 && <p className="hu-m-0 hu-text-xs hu-text-amber-800">Primero registra una cepa en Administración de cepas.</p>}
               </Field>
               <Field label="Unidad base" error={form.formState.errors.contenedores?.[index]?.unidadBase?.message} hint="Ejemplo: gramo">
                 <Input {...form.register(`contenedores.${index}.unidadBase`)} placeholder="gramo" />
@@ -390,9 +403,6 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
               <Field label="Costo por unidad base" error={form.formState.errors.contenedores?.[index]?.costoBasePorUnidad?.message}>
                 <Input type="number" min="0.01" step="0.01" {...form.register(`contenedores.${index}.costoBasePorUnidad`, { valueAsNumber: true })} />
               </Field>
-              <Field label="ID de presentación (opcional)" error={form.formState.errors.contenedores?.[index]?.presentacionId?.message}>
-                <Input {...form.register(`contenedores.${index}.presentacionId`)} placeholder="ID de presentación" />
-              </Field>
               <div className="hu-flex hu-items-end hu-justify-between hu-gap-3">
                 <p className="hu-mb-2 hu-text-sm hu-text-slate-600">
                   Subtotal: <strong>{formatCop(centsToAmount(calculateContainerSubtotalCents(containers[index] ?? {
@@ -400,7 +410,7 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
                     costoBasePorUnidad: 0,
                   })))}</strong>
                 </p>
-                <Button type="button" variant="ghost" aria-label={`Eliminar contenedor ${index + 1}`} disabled={fields.length === 1} className="hu-mb-1 hu-p-2 hu-text-red-700" onClick={() => remove(index)}>
+                <Button type="button" variant="ghost" aria-label={`Eliminar contenedor ${index + 1}`} disabled={fields.length === 1} className="hu-mb-1 hu-p-2 hu-text-red-700" onClick={() => setPendingRemoval(index)}>
                   <Trash2 size={17} />
                 </Button>
                 </div>
@@ -430,6 +440,28 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
           <PackagePlus size={17} /> {createLot.isPending ? 'Guardando lote…' : 'Guardar lote'}
         </Button>
       </form>
+      {pendingRemoval !== null && (
+        <div className="hu-fixed hu-inset-0 hu-z-50 hu-grid hu-place-items-center hu-bg-slate-950/60 hu-p-4">
+          <section
+            className="hu-w-full hu-max-w-md hu-rounded-2xl hu-bg-white hu-p-6 hu-text-center hu-shadow-2xl"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="remove-container-title"
+            aria-describedby="remove-container-message"
+          >
+            <h2 id="remove-container-title" className="hu-m-0 hu-text-xl hu-font-bold hu-text-slate-900">Eliminar contenedor</h2>
+            <p id="remove-container-message" className="hu-mb-5 hu-mt-3 hu-text-sm hu-leading-6 hu-text-slate-600">
+              ¿Seguro que deseas eliminar «{cepas.find((cepa) => cepa.id === containers[pendingRemoval]?.cepaId)?.nombre || `Contenedor ${pendingRemoval + 1}`}»? Los datos ingresados se perderán.
+            </p>
+            <div className="hu-flex hu-justify-center hu-gap-3">
+              <Button type="button" variant="secondary" onClick={() => setPendingRemoval(null)} autoFocus>Cancelar</Button>
+              <Button type="button" className="hu-bg-red-700 hover:hu-bg-red-800" onClick={confirmRemoval}>
+                <Trash2 size={16} /> Eliminar
+              </Button>
+            </div>
+          </section>
+        </div>
+      )}
     </Card>
   );
 }

@@ -5,6 +5,7 @@ import useTranslation from '../../hooks/useTranslation.js';
 function CategoryFilter({ selectedCategoryIds = [], onCategorySelectionChange }) {
     const t = useTranslation();
     const { data: categories = [], isPending, isError, error } = useCategories();
+    const hasCounts = categories.length > 0 && categories.every((category) => Number.isFinite(category.products_count));
     const totalProductsInCategories = categories.reduce(
         (total, category) => total + (Number(category.products_count) || 0),
         0,
@@ -29,7 +30,7 @@ function CategoryFilter({ selectedCategoryIds = [], onCategorySelectionChange })
                     id="category-all"
                 />
                 <label className="hu-flex-1 hu-cursor-pointer hu-text-sm hu-font-medium hu-text-slate-700" htmlFor="category-all">{t('all_categories')}</label>
-                <span className="hu-rounded-full hu-border hu-border-slate-200 hu-px-2.5 hu-py-1 hu-text-xs hu-text-slate-600">{totalProductsInCategories}</span>
+                {hasCounts && <span className="hu-rounded-full hu-border hu-border-slate-200 hu-px-2.5 hu-py-1 hu-text-xs hu-text-slate-600">{totalProductsInCategories}</span>}
             </div>
             {isPending && <div className="hu-text-sm hu-text-slate-500" role="status">{t('loading_categories')}</div>}
             {isError && <div className="hu-text-sm hu-text-red-700" role="alert">{error?.message || t('could_not_load_categories')}</div>}
@@ -43,7 +44,7 @@ function CategoryFilter({ selectedCategoryIds = [], onCategorySelectionChange })
                         id={`category-${category.category_id}`}
                     />
                     <label className="hu-flex-1 hu-cursor-pointer hu-text-sm hu-text-slate-700" htmlFor={`category-${category.category_id}`}>{category.name}</label>
-                    <span className="hu-rounded-full hu-border hu-border-slate-200 hu-px-2.5 hu-py-1 hu-text-xs hu-text-slate-600">{category.products_count}</span>
+                    {Number.isFinite(category.products_count) && <span className="hu-rounded-full hu-border hu-border-slate-200 hu-px-2.5 hu-py-1 hu-text-xs hu-text-slate-600">{category.products_count}</span>}
                 </div>
             ))}
         </section>

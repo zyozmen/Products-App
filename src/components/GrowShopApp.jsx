@@ -7,6 +7,9 @@ import ErrorComponent from './login/ErrorComponent.jsx';
 import WelcomeComponent from './dashboard/WelcomeComponent.jsx';
 import ShopComponent from './shop/ShopComponent.jsx';
 import ProductDetailComponent from './shop/ProductDetail/ProductDetailComponent.jsx';
+import MarketplaceProductDetail from './shop/MarketplaceProductDetail.jsx';
+import HeaderComponent from './dashboard/HeaderComponent.jsx';
+import FooterComponent from './dashboard/FooterComponent.jsx';
 import CreateProductComponent from './admin/products/CreateProductComponent.jsx';
 import ShoppingCarComponent from './cart/ShoppingCarComponent.jsx';
 import UserAdminComponent from './admin/users/UserAdminComponent.jsx';
@@ -20,6 +23,7 @@ import { AuthProvider } from '../context/AuthContext.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
 import AgeVerificationRouteGate from './auth/AgeVerificationRouteGate.jsx';
 const SupplierManagementPage = React.lazy(() => import('./admin/suppliers/SupplierManagementPage'));
+const CepaManagementPage = React.lazy(() => import('./admin/cepas/CepaManagementPage'));
 
 const ADMIN_ROLES = ['admin'];
 
@@ -34,6 +38,8 @@ const ProfileComponentWithNavigation = navigationComponent(ProfileComponent);
 const OrdersKanbanComponentWithNavigation = navigationComponent(OrdersKanbanComponent);
 const OrdersReportComponentWithNavigation = navigationComponent(OrdersReportComponent);
 const MyOrdersComponentWithNavigation = navigationComponent(MyOrdersComponent);
+const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
+const FooterComponentWithNavigation = navigationComponent(FooterComponent);
 
 function SupplierPageFallback() {
     return (
@@ -110,6 +116,7 @@ function GrowShopApp() {
                             <Route path="/cart" element={<ShoppingCarComponentWithNavigation />} />
                             <Route path="/welcome/:name" element={<ProtectedRoute><WelcomeComponentWithParams /></ProtectedRoute>} />
                             <Route path="/product/:id" element={<ProtectedRoute><ProductDetailComponentWithParams /></ProtectedRoute>} />
+                            <Route path="/producto/:cepaId/:presentacionId" element={<><HeaderComponentWithNavigation /><MarketplaceProductDetail /><FooterComponentWithNavigation /></>} />
                             <Route path="/createProduct" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CreateProductComponentWithNavigation /></ProtectedRoute>} />
                             <Route path="/editProduct/:productId" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CreateProductComponentWithNavigation /></ProtectedRoute>} />
                             <Route path="/admin" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AdminDashboardComponent /></ProtectedRoute>} />
@@ -117,6 +124,7 @@ function GrowShopApp() {
                             <Route path="/admin/proveedores" element={<SupplierRoute />} />
                             <Route path="/admin/categories" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CategoryManagementComponent /></ProtectedRoute>} />
                             <Route path="/admin/proveedores/:id" element={<SupplierRoute />} />
+                            <Route path="/admin/cepas" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><Suspense fallback={<SupplierPageFallback />}><CepaManagementPage /></Suspense></ProtectedRoute>} />
                             <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><OrdersKanbanComponentWithNavigation /></ProtectedRoute>} />
                             <Route path="/admin/orders/report" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><OrdersReportComponentWithNavigation /></ProtectedRoute>} />
                             <Route path="/orders" element={<ProtectedRoute><MyOrdersComponentWithNavigation /></ProtectedRoute>} />

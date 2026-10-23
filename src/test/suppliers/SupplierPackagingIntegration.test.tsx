@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import SupplierManagementPage from '../../components/admin/suppliers/SupplierManagementPage';
 import { supplierService } from '../../services/supplierService';
 import type { LotResponse, SupplierResponse } from '../../Interfaces/supplier';
+import { marketplaceService } from '../../services/marketplaceService';
 
 vi.mock('../../components/dashboard/HeaderComponent.jsx', () => ({ default: () => null }));
 vi.mock('../../components/dashboard/FooterComponent.jsx', () => ({ default: () => null }));
@@ -19,13 +20,17 @@ const lot: LotResponse = {
   costoTotalLote: 5000000, montoPagadoLote: 5000000, saldoPendienteLote: 0,
   estadoPago: 'PAGADO_TOTAL', estado: 'RECIBIDO', fechaIngreso: '2026-10-21T00:00:00Z',
   contenedores: [{
-    id: 'container', codigoContenedor: 'CONT-INTEGRATION', tipoCepa: 'Sativa', unidadBase: 'gramo',
+    id: 'container', cepaId: 'strain-1', codigoContenedor: 'CONT-INTEGRATION', tipoCepa: 'Sativa', unidadBase: 'gramo',
     presentacionId: null, capacidadUnidadesBase: 1000, cantidadDisponible: 1000,
     costoBasePorUnidad: 5000, subtotal: 5000000, estado: 'RECIBIDO',
   }],
 };
 
 function setup(returnedLot = lot, counts: Pick<SupplierResponse, 'lotesPagados' | 'lotesPorPagar'> = { lotesPagados: 3, lotesPorPagar: 2 }) {
+  vi.spyOn(marketplaceService, 'listCepas').mockResolvedValue({
+    cepas: [{ id: 'strain-1', nombre: 'Sativa Premium', version: 0 }],
+    total: 1,
+  });
   vi.spyOn(supplierService, 'getSupplierLots').mockResolvedValue({ lots: [], total: 0 });
   vi.spyOn(supplierService, 'getSupplier').mockResolvedValue({
     id: supplierId, nombre: 'Proveedor Integración', nit: '123', estado: 'ACTIVO', totalDeuda: 5000000,
@@ -68,7 +73,7 @@ describe('supplier lot packaging integration', () => {
     const card = summary.closest('details')!;
     expect(card).toHaveAttribute('open');
     expect(within(card).queryByText('Datos completos')).not.toBeInTheDocument();
-    fireEvent.change(within(card).getByLabelText('Tipo / cepa'), { target: { value: 'Sativa Premium' } });
+    fireEvent.change(within(card).getByLabelText('Cepa'), { target: { value: 'strain-1' } });
     expect(within(summary).getByText('Datos completos')).toBeVisible();
     expect(within(summary).getByText('Datos completos').querySelector('svg')).not.toBeNull();
     fireEvent.click(summary);
@@ -78,7 +83,7 @@ describe('supplier lot packaging integration', () => {
     expect(card).not.toHaveAttribute('open');
     expect(screen.getByText('Contenedor 2').closest('details')).toHaveAttribute('open');
     fireEvent.click(summary);
-    expect(within(card).getByLabelText('Tipo / cepa')).toHaveValue('Sativa Premium');
+    expect(within(card).getByLabelText('Cepa')).toHaveValue('strain-1');
     fireEvent.change(within(card).getByLabelText('Costo por unidad base'), { target: { value: '1.001' } });
     expect(within(summary).queryByText('Datos completos')).not.toBeInTheDocument();
     fireEvent.change(within(card).getByLabelText('Costo por unidad base'), { target: { value: '1.25' } });

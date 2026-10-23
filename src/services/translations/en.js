@@ -122,6 +122,7 @@ const translations = {
                 back_to_home: 'Back to home',
                 manage_users: 'Manage Users',
                 manage_suppliers: 'Manage Suppliers and Balances',
+                manage_strains: 'Manage Strains',
                 manage_orders: 'Manage Orders',
                 created_orders_count: 'Created orders',
                 created_orders_count_error: 'Unable to load the order count',

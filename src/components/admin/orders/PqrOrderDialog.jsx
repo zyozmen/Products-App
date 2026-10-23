@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { pqrOrderSchema } from '../../../schemas/pqrOrder';
+import { useMarketplaceList } from '../../../hooks/useMarketplaceQueries.ts';
 import { Button, Card, ErrorNotice, Input, Field } from '../../ui/shadcn';
 
 const fields = [
     ['username', 'pqr_customer_username', 'text'],
-    ['productName', 'product', 'text'],
     ['quantity', 'quantity', 'number'],
     ['recipientName', 'other_recipient_name', 'text'],
     ['address', 'address', 'text'],
@@ -15,10 +15,14 @@ const fields = [
 
 function PqrOrderDialog({ onCancel, onCreate, t }) {
     const [submitError, setSubmitError] = useState('');
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+    const [search, setSearch] = useState('');
+    const [productPage, setProductPage] = useState(0);
+    const marketplace = useMarketplaceList(search, productPage, 20);
+    const { register, handleSubmit, watch, setValue, setError, clearErrors, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(pqrOrderSchema),
         defaultValues: {
             username: '',
+            productId: '',
             productName: '',
             quantity: 1,
             recipientName: '',
@@ -27,14 +31,28 @@ function PqrOrderDialog({ onCancel, onCreate, t }) {
             notes: '',
         },
     });
+    const productId = watch('productId');
+    useEffect(() => setProductPage(0), [search]);
+    const options = (marketplace.data?.content ?? []).flatMap((strain) =>
+        strain.presentaciones.map((presentation) => ({
+            id: presentation.presentacionId,
+            name: `${strain.nombre} · ${presentation.nombre} · ${presentation.contenidoUnidad} ${presentation.unidadBase} · ${presentation.sku}`,
+            stock: presentation.stockDisponible,
+        })),
+    );
 
     const submit = async (values) => {
         setSubmitError('');
+        const selected = options.find((option) => option.id === values.productId);
+        if (!selected || values.quantity > selected.stock) {
+            setError('quantity', { message: 'La cantidad supera la disponibilidad actual de la presentación.' });
+            return;
+        }
+        clearErrors('quantity');
         try {
             await onCreate({
                 username: values.username.trim(),
-                productName: values.productName.trim(),
-                quantity: values.quantity,
+                items: [{ productId: values.productId, name: values.productName.trim(), quantity: values.quantity }],
                 delivery: {
                     recipientName: values.recipientName.trim(),
                     address: values.address.trim(),
@@ -72,6 +90,42 @@ function PqrOrderDialog({ onCancel, onCreate, t }) {
                         </Field>
                     );
                 })}
+                <Field label={`${t('product')} *`} htmlFor="pqr-product-search" error={errors.productId?.message}>
+                    <Input id="pqr-product-search" value={search} maxLength={100} placeholder="Buscar cepa o presentación" onChange={(event) => {
+                        setSearch(event.target.value);
+                        setValue('productId', '', { shouldValidate: true });
+                        setValue('productName', '', { shouldValidate: true });
+                    }} />
+                </Field>
+                {marketplace.isError && (
+                    <div className="hu-grid hu-gap-2">
+                        <ErrorNotice>No se pudieron cargar presentaciones: {marketplace.error?.message || 'Inténtalo nuevamente.'}</ErrorNotice>
+                        <Button type="button" variant="secondary" onClick={() => void marketplace.refetch()}>Reintentar carga de presentaciones</Button>
+                    </div>
+                )}
+                <Field label="Presentación disponible *" htmlFor="pqr-product-id" error={errors.productName?.message}>
+                    <select
+                        id="pqr-product-id"
+                        className="hu-w-full hu-rounded-lg hu-border hu-border-slate-300 hu-bg-white hu-px-3 hu-py-2.5 hu-text-sm"
+                        value={productId}
+                        disabled={marketplace.isPending || marketplace.isError}
+                        onChange={(event) => {
+                            const selected = options.find((option) => option.id === event.target.value);
+                            setValue('productId', selected?.id ?? '', { shouldValidate: true });
+                            setValue('productName', selected?.name ?? '', { shouldValidate: true });
+                        }}
+                    >
+                        <option value="">Selecciona una presentación</option>
+                        {options.map((option) => <option key={option.id} value={option.id}>{option.name} · Stock: {option.stock}</option>)}
+                    </select>
+                </Field>
+                {(marketplace.data?.totalPages ?? 0) > 1 && (
+                    <div className="hu-mb-3 hu-flex hu-items-center hu-justify-between">
+                        <Button type="button" variant="secondary" disabled={productPage === 0 || marketplace.isFetching} onClick={() => setProductPage((value) => value - 1)}>Anterior</Button>
+                        <span className="hu-text-xs">Página {productPage + 1} de {marketplace.data.totalPages}</span>
+                        <Button type="button" variant="secondary" disabled={productPage + 1 >= marketplace.data.totalPages || marketplace.isFetching} onClick={() => setProductPage((value) => value + 1)}>Siguiente</Button>
+                    </div>
+                )}
                 <Field label={`${t('pqr_notes')} *`} htmlFor="pqr-notes" error={errors.notes?.message}>
                     <textarea
                         id="pqr-notes"

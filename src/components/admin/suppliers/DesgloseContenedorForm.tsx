@@ -128,6 +128,7 @@ export default function DesgloseContenedorForm({ loteId, codigoLote, contenedor 
           <ul className="hu-pl-5 hu-text-sm">
             {contenedor.presentaciones?.map((item) => (
               <li key={item.presentacionId}>{item.sku} · {item.nombre} · {item.unidadesCreadas} creadas · Stock: {item.stockDisponible} · <Badge tone={item.activoMarketplace ? 'green' : 'neutral'}>{item.activoMarketplace ? 'Publicado' : 'Inactivo'}</Badge>
+                {contenedor.cepaId && item.activoMarketplace && <Link className="hu-ml-2 hu-text-green-800" to={`/producto/${encodeURIComponent(contenedor.cepaId)}/${encodeURIComponent(item.presentacionId)}`}>Ver en marketplace</Link>}
                 {item.fotografia && <img src={presentationPhotoSrc(item.fotografia)} alt={item.nombre} className="hu-m-2 hu-h-16 hu-w-16 hu-object-cover" />}
               </li>
             ))}
