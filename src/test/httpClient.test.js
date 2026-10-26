@@ -105,6 +105,73 @@ describe('auth interceptors', () => {
         expect(onSessionExpired).not.toHaveBeenCalled();
     });
 
+    describe('while the token is being renewed', () => {
+        const setupWithRefresh = (onSessionExpired) => {
+            let currentToken = 'old';
+            let finishRefresh;
+            let pending = new Promise((resolve) => { finishRefresh = () => { currentToken = 'new'; pending = null; resolve(); }; });
+            const client = axios.create({ adapter });
+            installAuthInterceptors(client, {
+                getToken: () => currentToken,
+                handlers: { onSessionExpired },
+                waitForRefresh: () => pending,
+            });
+            return { client, finish: () => finishRefresh() };
+        };
+
+        it('holds other requests until the renewal ends and sends them with the new token', async () => {
+            const { client, finish } = setupWithRefresh(vi.fn());
+            const request = client.get('/api/admin/orders');
+            await Promise.resolve();
+            expect(requests).toHaveLength(0);
+
+            finish();
+            await request;
+            expect(requests[0].headers.get('Authorization')).toBe('Bearer new');
+        });
+
+        it('does not send the renewal itself or the logout through the wait', async () => {
+            const { client } = setupWithRefresh(vi.fn());
+            await client.post('/api/auth/refresh');
+            await client.post('/api/auth/logout');
+            expect(requests.map((config) => config.headers.get('Authorization'))).toEqual(['Bearer old', 'Bearer old']);
+        });
+
+        it('does not close the session when the 401 arrives before the renewal response', async () => {
+            const onSessionExpired = vi.fn();
+            let currentToken = 'old';
+            let pending = null;
+            let finish;
+            const client = axios.create({ adapter });
+            installAuthInterceptors(client, {
+                getToken: () => currentToken,
+                handlers: { onSessionExpired },
+                waitForRefresh: () => pending,
+            });
+            // La petición salió con el token anterior; mientras tanto empezó la renovación, que lo revocó.
+            respondWith = () => {
+                pending = new Promise((resolve) => { finish = () => { currentToken = 'new'; pending = null; resolve(); }; });
+                return { status: 401, data: { code: 'SESSION_EXPIRED' } };
+            };
+
+            const sent = client.get('/api/admin/orders').catch(() => {});
+            await vi.waitFor(() => expect(finish).toBeDefined());
+            finish();
+            await sent;
+            expect(onSessionExpired).not.toHaveBeenCalled();
+        });
+
+        it('still closes the session on a real expiration with no renewal in progress', async () => {
+            const onSessionExpired = vi.fn();
+            const client = axios.create({ adapter });
+            installAuthInterceptors(client, { getToken: () => 'old', handlers: { onSessionExpired }, waitForRefresh: () => null });
+            respondWith = () => ({ status: 401, data: { code: 'SESSION_EXPIRED' } });
+
+            await client.get('/api/admin/orders').catch(() => {});
+            expect(onSessionExpired).toHaveBeenCalledTimes(1);
+        });
+    });
+
     it('distinguishes a deactivated user (403 user_inactive) from insufficient role (403)', async () => {
         const onUserInactive = vi.fn();
         const onForbidden = vi.fn();

@@ -24,6 +24,7 @@ import ProtectedRoute from './auth/ProtectedRoute.jsx';
 import AgeVerificationRouteGate from './auth/AgeVerificationRouteGate.jsx';
 const SupplierManagementPage = React.lazy(() => import('./admin/suppliers/SupplierManagementPage'));
 const CepaManagementPage = React.lazy(() => import('./admin/cepas/CepaManagementPage'));
+const DailySettlementPage = React.lazy(() => import('./admin/settlements/DailySettlementPage'));
 
 const ADMIN_ROLES = ['admin'];
 
@@ -125,6 +126,7 @@ function GrowShopApp() {
                             <Route path="/admin/categories" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CategoryManagementComponent /></ProtectedRoute>} />
                             <Route path="/admin/proveedores/:id" element={<SupplierRoute />} />
                             <Route path="/admin/cepas" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><Suspense fallback={<SupplierPageFallback />}><CepaManagementPage /></Suspense></ProtectedRoute>} />
+                            <Route path="/admin/liquidacion" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><Suspense fallback={<SupplierPageFallback />}><DailySettlementPage /></Suspense></ProtectedRoute>} />
                             <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><OrdersKanbanComponentWithNavigation /></ProtectedRoute>} />
                             <Route path="/admin/orders/report" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><OrdersReportComponentWithNavigation /></ProtectedRoute>} />
                             <Route path="/orders" element={<ProtectedRoute><MyOrdersComponentWithNavigation /></ProtectedRoute>} />

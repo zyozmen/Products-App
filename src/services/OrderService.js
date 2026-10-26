@@ -47,16 +47,24 @@ export const getOrderStatus = (order) => {
  * Flujos permitidos:
  *  CREADA -> PAGADA (opcional marca contra entrega) -> EMPACADA -> ENTREGADA
  *  CREADA con marca PQR (valor 0) -> EMPACADA -> ENTREGADA
- * Cualquier orden no finalizada puede cancelarse.
+ * Una venta que ya paso por PAGADA (incluida contra entrega o EMPACADA) no se cancela;
+ * PQR conserva la cancelacion en sus estados no finalizados. El servidor es la autoridad.
  */
+export const wasPaidSale = (order) => {
+    if (order?.pqr) return false;
+    const status = getOrderStatus(order);
+    return Boolean(order?.paidAt) || status === 'PAGADA' || status === 'EMPACADA';
+};
+
 export const getAllowedTransitions = (order) => {
+    const cancel = wasPaidSale(order) ? [] : ['CANCELADA'];
     switch (getOrderStatus(order)) {
         case 'CREADA':
-            return order?.pqr ? ['EMPACADA', 'CANCELADA'] : ['PAGADA', 'CANCELADA'];
+            return order?.pqr ? ['EMPACADA', 'CANCELADA'] : ['PAGADA', ...cancel];
         case 'PAGADA':
-            return ['EMPACADA', 'CANCELADA'];
+            return ['EMPACADA', ...cancel];
         case 'EMPACADA':
-            return ['ENTREGADA', 'CANCELADA'];
+            return ['ENTREGADA', ...cancel];
         default:
             return [];
     }
@@ -71,10 +79,9 @@ const authHeaders = () => {
 
 const toError = (error, fallbackMessage) => {
     console.error(fallbackMessage, error);
-    if (error.response && error.response.data && error.response.data.message) {
-        return new Error(error.response.data.message);
-    }
-    return new Error(fallbackMessage);
+    const message = error?.response?.data?.message || fallbackMessage;
+    // Se conserva el estado HTTP; sin respuesta el resultado es incierto (red o tiempo de espera).
+    return Object.assign(new Error(message), { status: error?.response?.status ?? null, cause: error });
 };
 
 class OrderService {

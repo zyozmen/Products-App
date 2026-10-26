@@ -1,6 +1,6 @@
 import React from 'react';
 import axios from 'axios';
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider, useAuth } from '../context/AuthContext.jsx';
@@ -35,7 +35,7 @@ const LoginStub = () => {
 const renderProvider = () =>
     render(
         <MemoryRouter initialEntries={['/home']}>
-            <AuthProvider inactivityMinutes={15}>
+            <AuthProvider inactivityMinutes={15} sessionRefreshMinutes={55}>
                 <Routes>
                     <Route path="/login" element={<LoginStub />} />
                     <Route path="*" element={<Probe />} />
@@ -77,7 +77,17 @@ describe('AuthProvider session restore', () => {
 });
 
 describe('AuthProvider session lifecycle', () => {
-    it('refreshes the token around 10 minutes of activity and replaces it in sessionStorage', async () => {
+    // Simula un usuario activo: un movimiento por minuto.
+    const workFor = async (minutes) => {
+        for (let minute = 0; minute < minutes; minute += 1) {
+            await act(async () => {
+                window.dispatchEvent(new Event('mousemove'));
+                vi.advanceTimersByTime(MINUTE);
+            });
+        }
+    };
+
+    it('renews the token only once, 55 minutes after it was issued, while the user is active', async () => {
         const first = makeToken();
         seedSession(first);
         const post = vi.spyOn(axios, 'post').mockImplementation(async () => ({
@@ -85,17 +95,21 @@ describe('AuthProvider session lifecycle', () => {
         }));
         renderProvider();
 
-        await act(async () => { vi.advanceTimersByTime(9 * MINUTE); });
+        await workFor(54);
         expect(post).not.toHaveBeenCalled();
+        expect(screen.getByTestId('state')).toHaveTextContent('in');
 
-        await act(async () => { vi.advanceTimersByTime(MINUTE + 100); });
+        await workFor(1);
         expect(post).toHaveBeenCalledTimes(1);
         expect(post.mock.calls[0][0]).toContain('/api/auth/refresh');
         expect(sessionStorage.getItem('token')).not.toBe(first);
+
+        await workFor(10);
+        expect(post).toHaveBeenCalledTimes(1);
         expect(screen.getByTestId('state')).toHaveTextContent('in');
     });
 
-    it('logs out with reason INACTIVITY, ignores the expected 401 and redirects to /login with a notice', async () => {
+    it('shows the warning after 15 idle minutes and closes the session if nobody answers', async () => {
         seedSession(makeToken());
         const post = vi.spyOn(axios, 'post').mockImplementation(async (url) => {
             if (url.includes('/logout')) {
@@ -103,16 +117,59 @@ describe('AuthProvider session lifecycle', () => {
                     response: { status: 401, data: { code: 'SESSION_EXPIRED', message: 'Inactivity limit reached' } },
                 });
             }
-            return { data: { token: makeToken(), user: { username: 'maria', role: 'cliente' } } };
+            return { data: {} };
         });
         renderProvider();
 
-        await act(async () => { vi.advanceTimersByTime(15 * MINUTE); });
+        await act(async () => { vi.advanceTimersByTime(15 * MINUTE - 1000); });
+        expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+
+        await act(async () => { vi.advanceTimersByTime(1000); });
+        expect(screen.getByRole('alertdialog')).toHaveTextContent('60s');
+        expect(screen.getByTestId('state')).toHaveTextContent('in');
+
+        await act(async () => { vi.advanceTimersByTime(MINUTE); });
 
         const logoutCall = post.mock.calls.find(([url]) => url.includes('/api/auth/logout'));
         expect(logoutCall[1]).toEqual({ reason: 'INACTIVITY' });
+        expect(post.mock.calls.some(([url]) => url.includes('/refresh'))).toBe(false);
         expect(sessionStorage.getItem('token')).toBeNull();
         expect(screen.getByTestId('login')).toHaveTextContent('login:session_closed_inactivity');
+    });
+
+    it('closes the session as inactivity when the user accepts the warning', async () => {
+        seedSession(makeToken());
+        const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: {} });
+        renderProvider();
+
+        await act(async () => { vi.advanceTimersByTime(15 * MINUTE); });
+        await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Aceptar' })); });
+
+        expect(post.mock.calls.find(([url]) => url.includes('/api/auth/logout'))[1]).toEqual({ reason: 'INACTIVITY' });
+        expect(screen.getByTestId('login')).toHaveTextContent('login:session_closed_inactivity');
+    });
+
+    it('restarts the inactivity counter on cancel without renewing the token, and ignores movement while warning', async () => {
+        const token = makeToken();
+        seedSession(token);
+        const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: {} });
+        renderProvider();
+
+        await act(async () => { vi.advanceTimersByTime(15 * MINUTE); });
+        await act(async () => {
+            window.dispatchEvent(new Event('mousemove'));
+            vi.advanceTimersByTime(30 * 1000);
+        });
+        expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+
+        await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Cancelar' })); });
+        expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+        expect(post).not.toHaveBeenCalled();
+        expect(sessionStorage.getItem('token')).toBe(token);
+
+        await act(async () => { vi.advanceTimersByTime(15 * MINUTE - 1000); });
+        expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+        expect(screen.getByTestId('state')).toHaveTextContent('in');
     });
 
     it('manual logout sends no reason and clears the session even if the request fails', async () => {

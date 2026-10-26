@@ -18,6 +18,8 @@ function AdminDashboardComponent() {
         { to: '/admin/orders', icon: 'fa-clipboard-list', title: t('manage_orders'), description: t('admin_orders_description') },
         { to: '/admin/users', icon: 'fa-users', title: t('manage_users'), description: t('admin_users_description'), badge: pendingCount },
         { to: '/admin/proveedores', icon: 'fa-truck', title: t('manage_suppliers'), description: t('admin_suppliers_description') },
+        { to: '/admin/liquidacion', icon: 'fa-file-invoice-dollar', title: t('daily_settlement'), description: t('admin_settlement_description') },
+        { to: '/admin/cepas', icon: 'fa-seedling', title: t('manage_strains'), description: t('admin_strains_description') },
         { to: '/admin/categories', icon: 'fa-tags', title: t('manage_categories'), description: t('admin_categories_description') },
         { to: '/admin/orders/report', icon: 'fa-chart-bar', title: t('orders_report'), description: t('admin_report_description') },
         { to: '/createProduct', icon: 'fa-plus-circle', title: t('create_product'), description: t('admin_product_description') },

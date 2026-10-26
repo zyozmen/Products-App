@@ -21,7 +21,7 @@ export const createOrderDeliverySchema = (cashOnDelivery: boolean, total: number
       context.addIssue({ code: 'custom', message: 'payment_detail_required', path: ['root'] });
       return;
     }
-    if (hasDetail && Math.round(cashAmount + cardAmount) !== Math.round(total)) {
+    if (hasDetail && Math.abs(Math.round(cashAmount * 100) + Math.round(cardAmount * 100) - Math.round(total * 100)) > 1) {
       context.addIssue({ code: 'custom', message: 'payment_detail_mismatch', path: ['root'] });
     }
   });

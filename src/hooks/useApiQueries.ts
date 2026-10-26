@@ -4,6 +4,8 @@ import categoryService from '../services/categoryService.js';
 import userService from '../services/UserService.js';
 import orderService from '../services/OrderService.js';
 import AuthenticationService from '../services/AuthenticationService.js';
+import { settlementKeys } from './useSettlementQueries';
+import { marketplaceKeys } from './useMarketplaceQueries';
 
 export interface ProductListFilters {
   searchTerm?: string;
@@ -196,6 +198,12 @@ export function useOrderMutations() {
     queryClient.invalidateQueries({ queryKey: apiQueryKeys.adminOrders }),
     queryClient.invalidateQueries({ queryKey: apiQueryKeys.myOrders }),
   ]);
+  // Una respuesta de error o incierta pudo haber cambiado orden, stock y acumulados en el servidor.
+  const refreshServerState = () => Promise.all([
+    invalidateOrders(),
+    queryClient.invalidateQueries({ queryKey: settlementKeys.all }),
+    queryClient.invalidateQueries({ queryKey: marketplaceKeys.all }),
+  ]);
   return {
     create: useMutation({
       mutationFn: (order: Parameters<typeof orderService.createOrder>[0]) => orderService.createOrder(order),
@@ -203,7 +211,7 @@ export function useOrderMutations() {
     }),
     createPqr: useMutation({
       mutationFn: (order: Parameters<typeof orderService.createPqrOrder>[0]) => orderService.createPqrOrder(order),
-      onSuccess: invalidateOrders,
+      onSettled: refreshServerState,
     }),
     updateStatus: useMutation({
       mutationFn: ({ id, status, extra }: {
@@ -211,7 +219,7 @@ export function useOrderMutations() {
         status: string;
         extra?: Record<string, unknown>;
       }) => orderService.updateOrderStatus(id, status, extra),
-      onSuccess: invalidateOrders,
+      onSettled: refreshServerState,
     }),
   };
 }

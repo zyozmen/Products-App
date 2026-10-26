@@ -38,6 +38,8 @@ La configuracion minima se encuentra en `.env.example`:
 | `VITE_APP_PRODUCTS_API_URL` | Endpoint del backend; Vite usa su origen como destino del proxy local | `http://127.0.0.1:8080/api/productos` |
 | `VITE_APP_NAME` | Nombre de la aplicacion | `GrowShop` |
 | `VITE_WHATSAPP_NUMBER` | Numero de destino de checkout, con codigo de pais y solo digitos | `573124058166` |
+| `VITE_INACTIVITY_MINUTES` | Minutos sin actividad antes del aviso de cierre de sesion | `15` |
+| `VITE_SESSION_REFRESH_MINUTES` | Minutos desde la emision del token hasta su renovacion | `55` |
 
 Usa `.env.local` para la configuracion de desarrollo; este archivo no se publica en Git. Las variables que empiezan por `VITE_` se incluyen en el frontend, asi que no pongas contrasenas, tokens ni credenciales de MongoDB en ellas. El checkout abre WhatsApp con el detalle del carrito y el total. En produccion, las solicitudes `/api/*` se reenvian desde Nginx al backend configurado con `BACKEND_HOST` y `BACKEND_PORT`.
 
@@ -69,6 +71,7 @@ npm run test:coverage    # Ejecuta pruebas y genera cobertura
 - `/admin/orders/report`: reporte de ordenes (solo admin)
 - `/admin/proveedores`: gestion de proveedores, saldos, recepcion de lotes y abonos (solo admin)
 - `/admin/cepas`: nombres, categorias compartidas y fotografia principal de cepas (solo admin)
+- `/admin/liquidacion`: liquidacion diaria por proveedor (HU-04, solo admin)
 - `/createProduct`: alta de productos (solo admin)
 - `/editProduct/:productId`: edicion de productos (solo admin)
 - `/welcome/:name`: bienvenida personalizada
@@ -106,6 +109,45 @@ Para una cepa nueva, marca las categorias en el formulario **Nueva cepa** antes 
 - **Detalle (`/producto/:cepaId/:presentacionId`):** muestra todas las presentaciones activas con stock de la cepa, incluso de distintos lotes. Cada una conserva su ID, SKU, precio, stock y fotografia.
 - **Carrito:** los articulos se identifican por `presentationId` y la cantidad se limita al stock. Los articulos del catalogo anterior se retiran del carrito guardado y se avisa una sola vez. Si el pedido falla por precio o stock, el carrito vuelve a consultar el detalle de cada presentacion y actualiza o marca como no disponibles sus articulos, sin reenviar el pedido.
 - **PQR:** el dialogo de ordenes PQR busca y pagina presentaciones del marketplace, y envia la presentacion seleccionada como `productId`.
+
+## Liquidacion diaria (HU-04)
+
+`/admin/liquidacion` se abre desde la pestana **Liquidacion diaria** de la navegacion de administracion o desde su tarjeta en `/admin`. Consume `GET /api/v1/settlements/daily-summary?page=0&size=20` con el token de la sesion (rol ADMIN). Estado actual: **F4**, resumen real con reconocimiento de ventas normales al pagar, de contra entrega al entregar y de PQR al crearla, con su reversion al cancelarla.
+
+- **Jornada por enlace:** `/admin/liquidacion?date=AAAA-MM-DD` consulta esa jornada (se envia `date` al backend) y ofrece **Ver jornada de hoy**. Una fecha mal formada muestra un aviso y se consulta hoy. El selector de fecha completo llega en F6.
+
+- **Jornada:** se muestra la fecha que devuelve el backend, en hora de Bogota (`America/Bogota`). El navegador no calcula el dia con su propia zona horaria. Aun no hay selector de fecha ni de proveedor (F6).
+- **Columnas:** proveedor, unidades vendidas, unidades PQR, costo de ventas, costo PQR, revertido, acumulado bruto, acumulado neto, pagos vinculados, pendiente del dia, saldo del proveedor, sugerido a pagar y exceso pagado. Las unidades son de presentacion. El costo unitario reconocido se mostrara en el detalle (F6).
+- **Importes:** se leen del JSON como texto y se muestran en COP sin convertirlos a `Number`, sin redondear y sin recalcular; el valor sugerido es el del servidor. Si falta un importe o la respuesta no es valida, se muestra un error, nunca ceros.
+- **Estados:** carga, error con reintento (red, sesion no valida, sin permisos, consulta invalida, respuesta incompleta), y estado vacio real cuando no hay acumulados. Si `activationPending` es `true`, se avisa que ventas y PQR aun no suman al acumulado.
+- **Paginacion:** anterior/siguiente con `page`, `totalPages` y `totalElements` del servidor.
+- **Permisos:** la ruta exige rol ADMIN en el cliente y el servidor responde `403` a otros roles. Un usuario sin permisos ve "Acceso denegado" y no se consulta la API.
+- No hay acciones de pago ni de detalle; llegan en F5 y F6.
+
+### Ventas normales en el tablero de ordenes (F2)
+
+- Pagar una venta desde `/admin/orders` usa el flujo existente `PUT /api/admin/orders/{id}/status` con `{"status":"PAGADA","cashOnDelivery":false}`. El dialogo advierte que se descuenta el stock y que la venta pagada ya no se puede cancelar; sin contra entrega explica que el costo se reconoce al proveedor, y con contra entrega que no se reconoce en ese paso.
+- Tras la respuesta (exito o error) se vuelven a consultar las ordenes y la liquidacion; el acumulado nunca se incrementa en el cliente. Un aviso enlaza a **Ver liquidacion diaria**. Solo aportan las ordenes creadas despues del inicio de la acumulacion (`activatedAt`).
+- Una venta que paso por PAGADA (estado PAGADA o EMPACADA, `paidAt` presente o contra entrega) no ofrece **Cancelada** ni acepta soltarla en esa columna, y muestra "Venta pagada: no se puede cancelar." CREADA y las PQR conservan la cancelacion. El servidor tambien la rechaza con `409`.
+- Errores: un `409` muestra el mensaje del servidor y refresca el tablero con el estado vigente; un `422` (snapshot de costo invalido) muestra el mensaje sin aplicar cambios; sin respuesta se informa que el cambio pudo aplicarse y se pide revisar la orden antes de repetir. No hay reintentos automaticos y el dialogo bloquea el doble envio.
+- El reporte comercial de ordenes no cambia: el costo reconocido al proveedor no es ingreso.
+
+### Contra entrega (F3)
+
+- Pagar con **Contra entrega** marcada envia `{"status":"PAGADA","cashOnDelivery":true}`: descuenta stock pero no reconoce costo. El dialogo, el aviso posterior y la tarjeta (en PAGADA y EMPACADA) indican "stock descontado; el costo se reconoce al proveedor al entregar". Empacar tampoco acumula.
+- Al pasar de EMPACADA a ENTREGADA se piden efectivo y tarjeta y se envia, por ejemplo, `{"status":"ENTREGADA","cashAmount":100000,"cardAmount":16000}`. El cliente valida que la suma iguale el total con la tolerancia del backend (0,01). El dialogo explica que la entrega reconoce el costo en la liquidacion de ese dia y que los importes cobrados no cambian el costo.
+- Errores de cobro del servidor (`400` o `422`) se muestran dentro del dialogo, que sigue abierto para corregir los importes, sin aviso de exito. Un `409` cierra el dialogo y refresca el tablero.
+- Tras una entrega exitosa se recargan desde el servidor las ordenes y la liquidacion; un aviso enlaza a **Ver liquidacion diaria**. El costo se imputa al dia de entrega en hora de Bogota.
+
+### PQR y cancelacion (F4)
+
+- **Crear PQR** (`POST /api/admin/orders/pqr`, contrato sin cambios) con presentacion y cantidad reales. El dialogo explica que no cobra al cliente (valor comercial $0), descuenta stock y reconoce al proveedor el costo de las unidades. El boton se bloquea mientras se envia.
+- Tras crearla, un aviso indica las unidades y enlaza a la liquidacion de su jornada de creacion (`createdAt` en hora de Bogota, no la del navegador). Las tarjetas PQR muestran esa jornada.
+- **Sin respuesta del servidor** no se reenvia el POST: el dialogo se cierra, se refresca el tablero y se pide verificar si la PQR aparece antes de crearla de nuevo, porque cada creacion es una orden distinta. Los errores de validacion mantienen el dialogo abierto.
+- **Cancelar una PQR** solo en CREADA o EMPACADA (ENTREGADA no ofrece la opcion). Pide confirmacion: unidades que vuelven al inventario, reversion del costo en la jornada de creacion (no hoy), costo bruto conservado en "Costo PQR" y reversion visible en "Revertido", y pagos existentes sin cambios (un exceso aparece en "Exceso pagado"). Una PQR anterior al inicio de la acumulacion solo restituye stock.
+- Tras crear, cancelar o cualquier cambio de estado (exito o error) se vuelven a consultar ordenes, liquidacion y stock del marketplace. No se suman, restan ni borran filas en el cliente. Un `409` (por ejemplo, cancelacion repetida o acumulado original inconsistente) se muestra sin aviso de exito.
+
+En desarrollo con frontend y backend en origenes distintos, los rechazos `401`/`403` de Spring Security llegan sin cabeceras CORS. El navegador no puede leer el codigo de estado y la pantalla muestra el error de conexion. Afecta a todos los endpoints ADMIN; con Nginx en el mismo origen no ocurre.
 
 ## Tecnologias
 
@@ -184,6 +226,8 @@ Hemos integrado un completo sistema transaccional de usuarios conectado al backe
 ### 1. Registro e Inicio de Sesión
 - **Registro de Clientes:** Formulario deslizable en `/login` que recopila información básica (Nombre, Apellido, Dirección, Teléfono, Tipo de Identificación, Número de Identificación y Consentimiento de mayoría de edad). Todos los registros se guardan con rol `'cliente'`.
 - **Control de Actividad:** El inicio de sesión valida si el usuario está activo. Las cuentas inactivadas por el administrador tienen el acceso bloqueado de forma inmediata.
+- **Inactividad (15 min):** tras 15 minutos sin mouse, teclado, clic ni scroll en la pestaña aparece un aviso con cuenta regresiva de 60 s, por encima de cualquier dialogo. **Aceptar**, o no responder, cierra la sesion (`/api/auth/logout` con `reason: INACTIVITY`, que revoca el token) y muestra "Su sesion se cerro por inactividad". **Cancelar** reinicia el contador sin renovar el token. Con el aviso visible, mover el mouse no cuenta como actividad.
+- **Renovacion del token (55 min):** el token dura 60 minutos y se renueva una sola vez con `/api/auth/refresh` a los 55 minutos de su emision (no hay renovaciones intermedias). Mientras la renovacion esta en curso las demas peticiones esperan, y un `401 SESSION_EXPIRED` de una peticion enviada con el token que se esta renovando no cierra la sesion. El backend debe aceptar el refresh de tokens vigentes (`SESSION_INACTIVITY_TIMEOUT_MINUTES` >= 60).
 
 ### 2. Administración de Perfil de Usuario (`/profile`)
 - **Edición Transaccional:** Cada usuario logueado puede acceder a su perfil en el dropdown *"Mi Cuenta"* para actualizar sus datos personales o cambiar su contraseña.
@@ -292,6 +336,7 @@ DRY_RUN=1 bash scripts/setup-jenkins-config.sh
 - `src/hooks/useMarketplaceQueries.ts`: consultas de TanStack Query del catalogo, detalle y cepas
 - `src/components/shop/`: catalogo, filtros y detalle del marketplace
 - `src/components/admin/cepas/`: administracion de cepas
+- `src/components/admin/settlements/`, `src/services/settlementService.ts`: liquidacion diaria (HU-04)
 - `src/Interfaces/`: interfaces y transformacion de datos
 - `public/`: recursos estaticos
 - `dockerfile`: imagen de produccion con Nginx

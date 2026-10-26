@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AuthenticationService from '../services/AuthenticationService.js';
 import authService from '../services/authService.js';
 import { authHandlers, resetSessionGuard } from '../services/httpClient.js';
-import { getInactivityMinutes } from '../services/apiConfig.js';
+import { getInactivityMinutes, getSessionRefreshMinutes } from '../services/apiConfig.js';
 import { getTokenTimes } from '../services/tokenUtils.js';
 import useInactivityTimer from '../hooks/useInactivityTimer.js';
 import SessionWarningModal from '../components/auth/SessionWarningModal.jsx';
@@ -18,11 +18,10 @@ export const LOGOUT_NOTICES = {
 };
 
 const MINUTE_MS = 60 * 1000;
-const MAX_REFRESH_AGE_MS = 10 * MINUTE_MS;
-const REFRESH_BEFORE_EXP_MS = 5 * MINUTE_MS;
-const MIN_REFRESH_DELAY_MS = 30 * 1000;
+// Al cumplirse la inactividad se muestra el aviso; si no se cancela en este lapso, se cierra la sesión.
+const WARNING_MS = MINUTE_MS;
+const REFRESH_BEFORE_EXP_MS = MINUTE_MS;
 const REFRESH_RETRY_MS = 30 * 1000;
-const MAX_WARNING_MS = MINUTE_MS;
 
 const EMPTY_SESSION = { authenticated: false, user: null, token: null };
 
@@ -37,14 +36,18 @@ const readSession = () => {
 
 const isTransientError = (error) => !error?.response || error.response.status >= 500;
 
-export function AuthProvider({ children, inactivityMinutes = getInactivityMinutes() }) {
+export function AuthProvider({
+    children,
+    inactivityMinutes = getInactivityMinutes(),
+    sessionRefreshMinutes = getSessionRefreshMinutes(),
+}) {
     const navigate = useNavigate();
     const [session, setSession] = useState(readSession);
     const sessionRef = useRef(session);
     const endingRef = useRef(false);
 
     const inactivityMs = inactivityMinutes * MINUTE_MS;
-    const warningMs = Math.min(MAX_WARNING_MS, inactivityMs / 2);
+    const sessionRefreshMs = sessionRefreshMinutes * MINUTE_MS;
 
     const applySession = useCallback((next) => {
         sessionRef.current = next;
@@ -87,21 +90,19 @@ export function AuthProvider({ children, inactivityMinutes = getInactivityMinute
         return data;
     }, [applySession]);
 
-    const { isWarning, reset, getLastActivity } = useInactivityTimer({
-        timeoutMs: inactivityMs,
-        warningMs,
+    // Contador de inactividad: el aviso aparece al cumplirse `inactivityMs` sin actividad y la sesión
+    // se cierra si en WARNING_MS no se pulsa "Cancelar". Con el aviso visible el movimiento no cuenta.
+    const { isWarning, reset } = useInactivityTimer({
+        timeoutMs: inactivityMs + WARNING_MS,
+        warningMs: WARNING_MS,
         enabled: session.authenticated,
         onTimeout: () => logout('INACTIVITY'),
     });
 
-    const continueSession = useCallback(async () => {
+    // "Cancelar" en el aviso: reinicia el contador de inactividad sin renovar el token.
+    const continueSession = useCallback(() => {
         reset();
-        try {
-            await refreshSession();
-        } catch {
-            // un 401 SESSION_EXPIRED lo gestiona el interceptor de respuesta
-        }
-    }, [reset, refreshSession]);
+    }, [reset]);
 
     useEffect(() => {
         authHandlers.onSessionExpired = () => {
@@ -116,20 +117,17 @@ export function AuthProvider({ children, inactivityMinutes = getInactivityMinute
         };
     }, [logout]);
 
-    // Renovación: el backend rechaza el refresh si el token se emitió hace más del límite de inactividad,
-    // por eso se renueva cuando el token tiene ~10 min (o antes si faltan 5 min para `exp`) y hubo actividad reciente.
+    // Contador de sesión: el token dura 60 min y se renueva una vez, a los `sessionRefreshMs` de su emisión
+    // (55 min por defecto). Mientras la sesión siga abierta el usuario no ha superado el límite de inactividad.
     useEffect(() => {
         if (!session.token) return undefined;
 
         const { iat, exp } = getTokenTimes(session.token);
-        const issuedAt = iat ?? Date.now();
-        let dueAt = issuedAt + Math.min(MAX_REFRESH_AGE_MS, (inactivityMs * 2) / 3);
+        let dueAt = (iat ?? Date.now()) + sessionRefreshMs;
         if (exp) dueAt = Math.min(dueAt, exp - REFRESH_BEFORE_EXP_MS);
 
         let timer;
         const run = async () => {
-            // Sin actividad reciente no se renueva: el temporizador de inactividad cerrará la sesión.
-            if (Date.now() - getLastActivity() >= inactivityMs) return;
             try {
                 await refreshSession();
             } catch (error) {
@@ -139,9 +137,9 @@ export function AuthProvider({ children, inactivityMinutes = getInactivityMinute
             }
         };
 
-        timer = setTimeout(run, Math.max(dueAt - Date.now(), MIN_REFRESH_DELAY_MS));
+        timer = setTimeout(run, Math.max(dueAt - Date.now(), 0));
         return () => clearTimeout(timer);
-    }, [session.token, inactivityMs, refreshSession, getLastActivity]);
+    }, [session.token, sessionRefreshMs, refreshSession]);
 
     const value = useMemo(() => ({
         user: session.user,
@@ -157,9 +155,9 @@ export function AuthProvider({ children, inactivityMinutes = getInactivityMinute
             {children}
             {session.authenticated && isWarning && (
                 <SessionWarningModal
-                    remainingMs={warningMs}
-                    onContinue={continueSession}
-                    onLogout={() => logout('USER')}
+                    remainingMs={WARNING_MS}
+                    onCancel={continueSession}
+                    onAccept={() => logout('INACTIVITY')}
                 />
             )}
         </AuthContext.Provider>

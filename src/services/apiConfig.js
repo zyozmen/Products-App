@@ -1,4 +1,5 @@
 const DEFAULT_INACTIVITY_MINUTES = 15;
+const DEFAULT_SESSION_REFRESH_MINUTES = 55;
 
 const withApiSuffix = (url) => {
     const trimmed = url.replace(/\/+$/, '');
@@ -23,4 +24,10 @@ export const getApiBaseUrl = () => {
 export const getInactivityMinutes = () => {
     const minutes = Number(import.meta.env.VITE_INACTIVITY_MINUTES);
     return Number.isFinite(minutes) && minutes > 0 ? minutes : DEFAULT_INACTIVITY_MINUTES;
+};
+
+// Minutos desde la emisión del token tras los cuales se renueva (el token dura 60 min).
+export const getSessionRefreshMinutes = () => {
+    const minutes = Number(import.meta.env.VITE_SESSION_REFRESH_MINUTES);
+    return Number.isFinite(minutes) && minutes > 0 ? minutes : DEFAULT_SESSION_REFRESH_MINUTES;
 };

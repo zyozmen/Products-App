@@ -24,6 +24,11 @@ const authService = {
         return refreshPromise;
     },
 
+    // Promesa de la renovación en curso (o null): las demás peticiones la esperan.
+    pendingRefresh() {
+        return refreshPromise;
+    },
+
     // Nunca lanza: el 401 SESSION_EXPIRED con reason INACTIVITY es el resultado esperado
     // y cualquier otro fallo no debe impedir limpiar la sesión local.
     async logout(reason = 'USER', token) {

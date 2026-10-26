@@ -31,10 +31,23 @@ describe('week and month pickers', () => {
 describe('order status flow', () => {
     it('follows creada -> pagada -> empacada -> entregada', () => {
         expect(getAllowedTransitions({ status: 'CREADA' })).toEqual(['PAGADA', 'CANCELADA']);
-        expect(getAllowedTransitions({ status: 'PAGADA' })).toEqual(['EMPACADA', 'CANCELADA']);
-        expect(getAllowedTransitions({ status: 'EMPACADA' })).toEqual(['ENTREGADA', 'CANCELADA']);
+        expect(getAllowedTransitions({ status: 'PAGADA' })).toEqual(['EMPACADA']);
+        expect(getAllowedTransitions({ status: 'EMPACADA' })).toEqual(['ENTREGADA']);
         expect(getAllowedTransitions({ status: 'ENTREGADA' })).toEqual([]);
         expect(getAllowedTransitions({ status: 'CANCELADA' })).toEqual([]);
+    });
+
+    it('never offers cancelling a sale that went through PAGADA (HU-04/T2)', () => {
+        expect(canTransition({ status: 'PAGADA', cashOnDelivery: true }, 'CANCELADA')).toBe(false);
+        expect(canTransition({ status: 'EMPACADA', cashOnDelivery: true }, 'CANCELADA')).toBe(false);
+        expect(canTransition({ status: 'DESPACHADA' }, 'CANCELADA')).toBe(false);
+        expect(canTransition({ status: 'CREADA', paidAt: '2026-10-23T20:00:00Z' }, 'CANCELADA')).toBe(false);
+        expect(canTransition({ status: 'CREADA' }, 'CANCELADA')).toBe(true);
+    });
+
+    it('keeps PQR cancellation in its non-final states', () => {
+        expect(getAllowedTransitions({ status: 'CREADA', pqr: true })).toEqual(['EMPACADA', 'CANCELADA']);
+        expect(getAllowedTransitions({ status: 'EMPACADA', pqr: true })).toEqual(['ENTREGADA', 'CANCELADA']);
     });
 
     it('lets PQR orders skip the payment step', () => {

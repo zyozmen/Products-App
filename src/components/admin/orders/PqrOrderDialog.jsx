@@ -13,7 +13,7 @@ const fields = [
     ['contactPhone', 'contact_phone', 'tel'],
 ];
 
-function PqrOrderDialog({ onCancel, onCreate, t }) {
+function PqrOrderDialog({ onCancel, onCreate, t, isSubmitting: isCreating = false }) {
     const [submitError, setSubmitError] = useState('');
     const [search, setSearch] = useState('');
     const [productPage, setProductPage] = useState(0);
@@ -66,14 +66,19 @@ function PqrOrderDialog({ onCancel, onCreate, t }) {
         }
     };
 
+    const busy = isSubmitting || isCreating;
+
     return (
-        <div className="hu-fixed hu-inset-0 hu-z-50 hu-grid hu-place-items-center hu-bg-slate-950/60 hu-p-4" role="dialog" aria-modal="true">
+        <div className="hu-fixed hu-inset-0 hu-z-50 hu-grid hu-place-items-center hu-bg-slate-950/60 hu-p-4" role="dialog" aria-modal="true" aria-labelledby="pqr-order-title">
             <form
                 className="hu-max-h-[90vh] hu-w-full hu-max-w-lg hu-overflow-y-auto"
                 onSubmit={handleSubmit(submit)}
             >
                 <Card className="hu-p-6">
-                <h2 className="hu-mb-4 hu-mt-0 hu-text-xl hu-font-bold">{t('pqr_order_title')}</h2>
+                <h2 id="pqr-order-title" className="hu-mb-4 hu-mt-0 hu-text-xl hu-font-bold">{t('pqr_order_title')}</h2>
+                <p className="hu-mb-4 hu-mt-0 hu-rounded-lg hu-border hu-border-amber-200 hu-bg-amber-50 hu-p-3 hu-text-sm hu-text-amber-900" role="note">
+                    {t('pqr_recognition_info')}
+                </p>
                 {submitError && <div className="hu-mb-4"><ErrorNotice>{submitError}</ErrorNotice></div>}
 
                 {fields.map(([name, label, type]) => {
@@ -137,8 +142,8 @@ function PqrOrderDialog({ onCancel, onCreate, t }) {
                 </Field>
 
                 <div className="hu-mt-5 hu-flex hu-justify-end hu-gap-2">
-                    <Button type="button" variant="secondary" onClick={onCancel} disabled={isSubmitting}>{t('cancel')}</Button>
-                    <Button type="submit" disabled={isSubmitting}>{t('create_pqr_order')}</Button>
+                    <Button type="button" variant="secondary" onClick={onCancel} disabled={busy}>{t('cancel')}</Button>
+                    <Button type="submit" disabled={busy}>{busy ? t('loading') : t('create_pqr_order')}</Button>
                 </div>
                 </Card>
             </form>

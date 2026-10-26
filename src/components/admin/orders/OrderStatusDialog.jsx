@@ -6,7 +6,7 @@ import { createOrderDeliverySchema, orderPaidSchema } from '../../../schemas/ord
 
 const overlayClass = 'hu-fixed hu-inset-0 hu-z-[9999] hu-flex hu-items-center hu-justify-center hu-bg-black/60 hu-p-5';
 
-function OrderStatusDialog({ order, status, onCancel, onConfirm, t }) {
+function OrderStatusDialog({ order, status, onCancel, onConfirm, t, isSubmitting = false, serverError = '' }) {
     const isPaid = status === 'PAGADA';
     const schema = isPaid ? orderPaidSchema : createOrderDeliverySchema(Boolean(order.cashOnDelivery), Number(order.total) || 0);
     const form = useForm({
@@ -28,6 +28,7 @@ function OrderStatusDialog({ order, status, onCancel, onConfirm, t }) {
     });
 
     const paymentError = form.formState.errors.root?.message;
+    const cashOnDelivery = isPaid && Boolean(form.watch('cashOnDelivery'));
     const amountError = (name) => {
         const message = form.formState.errors[name]?.message;
         return message ? t(message) : undefined;
@@ -41,12 +42,19 @@ function OrderStatusDialog({ order, status, onCancel, onConfirm, t }) {
                         #{order.id} · {t('order_status_' + status.toLowerCase())}
                     </h2>
                     {paymentError && <ErrorNotice>{t(paymentError)}</ErrorNotice>}
+                    {serverError && <ErrorNotice>{serverError}</ErrorNotice>}
 
                     {isPaid ? (
-                        <label className="hu-flex hu-cursor-pointer hu-items-center hu-gap-2 hu-text-sm hu-font-medium hu-text-slate-700">
-                            <input type="checkbox" {...form.register('cashOnDelivery')} />
-                            {t('order_flag_cash_on_delivery')}
-                        </label>
+                        <>
+                            <label className="hu-flex hu-cursor-pointer hu-items-center hu-gap-2 hu-text-sm hu-font-medium hu-text-slate-700">
+                                <input type="checkbox" {...form.register('cashOnDelivery')} />
+                                {t('order_flag_cash_on_delivery')}
+                            </label>
+                            <div className="hu-grid hu-gap-1 hu-rounded-lg hu-border hu-border-amber-200 hu-bg-amber-50 hu-p-3 hu-text-sm hu-text-amber-900" role="note">
+                                <p className="hu-m-0 hu-font-semibold">{t('order_paid_irreversible')}</p>
+                                <p className="hu-m-0">{t(cashOnDelivery ? 'order_paid_cod_info' : 'order_paid_recognition_info')}</p>
+                            </div>
+                        </>
                     ) : (
                         <>
                             <p className="hu-m-0 hu-text-sm">
@@ -56,6 +64,11 @@ function OrderStatusDialog({ order, status, onCancel, onConfirm, t }) {
                                 )}
                             </p>
                             <p className="hu-m-0 hu-text-sm hu-text-slate-600">{t('delivery_payment_detail')}</p>
+                            {order.cashOnDelivery && !order.pqr && (
+                                <p className="hu-m-0 hu-rounded-lg hu-border hu-border-amber-200 hu-bg-amber-50 hu-p-3 hu-text-sm hu-text-amber-900" role="note">
+                                    {t('order_delivery_recognition_info')}
+                                </p>
+                            )}
                             <Field label={t('report_cash')} htmlFor="order-cash-amount" error={amountError('cashAmount')}>
                                 <Input
                                     id="order-cash-amount"
@@ -80,8 +93,8 @@ function OrderStatusDialog({ order, status, onCancel, onConfirm, t }) {
                     )}
 
                     <div className="hu-flex hu-justify-end hu-gap-2">
-                        <Button type="button" variant="secondary" onClick={onCancel}>{t('cancel')}</Button>
-                        <Button type="submit">{t('accept')}</Button>
+                        <Button type="button" variant="secondary" onClick={onCancel} disabled={isSubmitting}>{t('cancel')}</Button>
+                        <Button type="submit" disabled={isSubmitting}>{isSubmitting ? t('loading') : t('accept')}</Button>
                     </div>
                 </form>
             </Card>

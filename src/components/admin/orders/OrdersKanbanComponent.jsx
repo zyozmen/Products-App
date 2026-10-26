@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import HeaderComponent from '../../dashboard/HeaderComponent.jsx';
 import AdminNav from '../AdminNav.jsx';
 import FooterComponent from '../../dashboard/FooterComponent.jsx';
@@ -10,11 +11,14 @@ import {
     canTransition,
     getAllowedTransitions,
     getOrderStatus,
+    wasPaidSale,
 } from '../../../services/OrderService.js';
 import { useAdminOrders, useOrderMutations } from '../../../hooks/useApiQueries.ts';
 import useTranslation from '../../../hooks/useTranslation.js';
 import OrderStatusDialog from './OrderStatusDialog.jsx';
 import PqrOrderDialog from './PqrOrderDialog.jsx';
+import PqrCancelDialog from './PqrCancelDialog.jsx';
+import { businessDateOf, settlementLink } from '../../../utils/businessDate';
 import { formatCOP } from '../../../Interfaces/ProductInterface.js';
 import { filterOrders, getPeriodRange, toDateInputValue } from './OrdersReportHelper.js';
 import { Badge, Button, Card, ErrorNotice, Input, Select } from '../../ui/shadcn';
@@ -28,6 +32,14 @@ const STATUS_TONES = {
     CANCELADA: 'red',
 };
 
+const NOTICE_KEYS = {
+    paid: 'order_paid_recognized',
+    paid_cod: 'order_paid_cod_note',
+    delivered_cod: 'order_delivered_recognized',
+};
+
+const unitsOf = (order) => (order?.items || []).reduce((total, item) => total + (Number(item.quantity) || 0), 0);
+
 const formatDateTime = (value, language) => (
     value ? new Date(value).toLocaleString(language === 'EN' ? 'en-US' : 'es-CO') : ''
 );
@@ -38,6 +50,8 @@ function OrdersKanbanComponent({ navigate }) {
     const ordersQuery = useAdminOrders();
     const { updateStatus, createPqr } = useOrderMutations();
     const [error, setError] = useState('');
+    const [notice, setNotice] = useState(null);
+    const [dialogError, setDialogError] = useState('');
     const [dragOverStatus, setDragOverStatus] = useState(null);
     const [pendingChange, setPendingChange] = useState(null);
     const [showPqrDialog, setShowPqrDialog] = useState(false);
@@ -60,13 +74,51 @@ function OrdersKanbanComponent({ navigate }) {
         if (result.isError) setError(result.error?.message || t('orders_load_error'));
     };
 
+    const statusErrorMessage = (mutationError) => {
+        const message = mutationError instanceof Error ? mutationError.message : t('order_status_update_failed');
+        if (mutationError?.status === null || mutationError?.status === undefined) return t('order_status_uncertain');
+        if (mutationError.status === 409) return `${message} ${t('order_status_conflict_refreshed')}`;
+        return message;
+    };
+
+    const todayNotice = (kind, id) => ({
+        message: t(NOTICE_KEYS[kind]).replace('{id}', id),
+        link: kind === 'paid_cod' ? null : settlementLink(null),
+        linkLabel: t('view_daily_settlement'),
+    });
+
+    const journeyNotice = (key, order) => {
+        const date = businessDateOf(order?.createdAt);
+        return {
+            message: t(key).replace('{id}', order?.id).replace('{units}', unitsOf(order)).replace('{date}', date ?? '—'),
+            link: settlementLink(date),
+            linkLabel: date ? t('view_settlement_for_date').replace('{date}', date) : t('view_daily_settlement'),
+        };
+    };
+
     const applyStatusChange = async (order, status, extra = {}) => {
+        if (updateStatus.isPending) return;
+        setNotice(null);
+        setDialogError('');
         try {
-            await updateStatus.mutateAsync({ id: order.id, status, extra });
+            const updated = await updateStatus.mutateAsync({ id: order.id, status, extra });
             setPendingChange(null);
             setError('');
+            if (status === 'PAGADA' && !order.pqr) {
+                const cashOnDelivery = Boolean(updated?.cashOnDelivery ?? extra.cashOnDelivery);
+                setNotice(todayNotice(cashOnDelivery ? 'paid_cod' : 'paid', order.id));
+            } else if (status === 'ENTREGADA' && order.cashOnDelivery && !order.pqr) {
+                setNotice(todayNotice('delivered_cod', order.id));
+            } else if (status === 'CANCELADA' && order.pqr) {
+                setNotice(journeyNotice('pqr_cancelled_reverted', { ...order, ...updated, createdAt: updated?.createdAt ?? order.createdAt }));
+            }
         } catch (mutationError) {
-            setError(mutationError instanceof Error ? mutationError.message : t('order_status_update_failed'));
+            // Validaciones del cobro (400/422): el dialogo sigue abierto para corregir los importes.
+            if (pendingChange && pendingChange.status !== 'CANCELADA' && (mutationError?.status === 400 || mutationError?.status === 422)) {
+                setDialogError(statusErrorMessage(mutationError));
+                return;
+            }
+            setError(statusErrorMessage(mutationError));
             setPendingChange(null);
         }
     };
@@ -77,8 +129,9 @@ function OrdersKanbanComponent({ navigate }) {
             setError(t('transition_not_allowed'));
             return;
         }
-        if (status === 'PAGADA' || (status === 'ENTREGADA' && order.cashOnDelivery)) {
+        if (status === 'PAGADA' || (status === 'ENTREGADA' && order.cashOnDelivery) || (status === 'CANCELADA' && order.pqr)) {
             setPendingChange({ order, status });
+            setDialogError('');
             setError('');
             return;
         }
@@ -86,12 +139,20 @@ function OrdersKanbanComponent({ navigate }) {
     };
 
     const handleCreatePqr = async (data) => {
+        if (createPqr.isPending) return;
+        setNotice(null);
         try {
-            await createPqr.mutateAsync(data);
+            const created = await createPqr.mutateAsync(data);
             setShowPqrDialog(false);
             setError('');
+            setNotice(journeyNotice('pqr_created_recognized', created));
         } catch (mutationError) {
-            setError(mutationError instanceof Error ? mutationError.message : t('pqr_create_failed'));
+            // Sin respuesta la PQR pudo crearse: se cierra el dialogo para no reenviarla y se refresca el tablero.
+            if (mutationError?.status === null || mutationError?.status === undefined) {
+                setShowPqrDialog(false);
+                setError(t('pqr_create_uncertain'));
+                return;
+            }
             throw mutationError;
         }
     };
@@ -125,6 +186,17 @@ function OrdersKanbanComponent({ navigate }) {
                     ))}
                 </ul>
                 <p className="hu-mb-2 hu-mt-0 hu-text-sm hu-font-bold">{t('total')}: {formatCOP(order.total)}</p>
+                {wasPaidSale(order) && currentStatus !== 'ENTREGADA' && (
+                    <p className="hu-mb-2 hu-mt-0 hu-text-xs hu-text-slate-500">{t('order_paid_cannot_cancel')}</p>
+                )}
+                {order.cashOnDelivery && !order.pqr && (currentStatus === 'PAGADA' || currentStatus === 'EMPACADA') && (
+                    <p className="hu-mb-2 hu-mt-0 hu-text-xs hu-text-amber-700">{t('order_cod_cost_pending')}</p>
+                )}
+                {order.pqr && currentStatus !== 'CANCELADA' && (
+                    <p className="hu-mb-2 hu-mt-0 hu-text-xs hu-text-slate-500">
+                        {t('pqr_card_cost_info').replace('{date}', businessDateOf(order.createdAt) ?? '—')}
+                    </p>
+                )}
                 <Select
                     value={currentStatus}
                     onChange={(event) => handleStatusChange(order, event.target.value)}
@@ -191,6 +263,15 @@ function OrdersKanbanComponent({ navigate }) {
                         </Button>
                     </div>
                 </Card>
+                {notice && (
+                    <div className="hu-mb-5 hu-flex hu-flex-wrap hu-items-center hu-gap-3 hu-rounded-lg hu-border hu-border-green-200 hu-bg-green-50 hu-p-4 hu-text-sm hu-text-green-900" role="status">
+                        <span className="hu-min-w-0 hu-flex-1">{notice.message}</span>
+                        {notice.link && (
+                            <Link to={notice.link} className="hu-font-semibold hu-text-green-800">{notice.linkLabel}</Link>
+                        )}
+                        <Button type="button" variant="ghost" className="hu-py-1.5" onClick={() => setNotice(null)}>{t('dismiss_notice')}</Button>
+                    </div>
+                )}
                 {errorMessage && (
                     <div className="hu-mb-5">
                         <ErrorNotice>
@@ -245,19 +326,31 @@ function OrdersKanbanComponent({ navigate }) {
                     </>
                 )}
             </main>
-            {pendingChange && (
+            {pendingChange && pendingChange.status === 'CANCELADA' && (
+                <PqrCancelDialog
+                    order={pendingChange.order}
+                    t={t}
+                    isSubmitting={updateStatus.isPending}
+                    onCancel={() => setPendingChange(null)}
+                    onConfirm={() => void applyStatusChange(pendingChange.order, 'CANCELADA')}
+                />
+            )}
+            {pendingChange && pendingChange.status !== 'CANCELADA' && (
                 <OrderStatusDialog
                     key={`${pendingChange.order.id}-${pendingChange.status}`}
                     order={pendingChange.order}
                     status={pendingChange.status}
                     t={t}
-                    onCancel={() => setPendingChange(null)}
+                    onCancel={() => { setPendingChange(null); setDialogError(''); }}
+                    isSubmitting={updateStatus.isPending}
+                    serverError={dialogError}
                     onConfirm={(extra) => void applyStatusChange(pendingChange.order, pendingChange.status, extra)}
                 />
             )}
             {showPqrDialog && (
                 <PqrOrderDialog
                     t={t}
+                    isSubmitting={createPqr.isPending}
                     onCancel={() => setShowPqrDialog(false)}
                     onCreate={handleCreatePqr}
                 />

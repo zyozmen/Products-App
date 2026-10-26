@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AuthenticationService from './AuthenticationService.js';
+import authService from './authService.js';
 
 export const ACCESS_DENIED_MESSAGE = 'Acceso denegado: no tiene permisos para realizar esta acción.';
 
@@ -12,12 +13,16 @@ export const getErrorCode = (data) =>
 /**
  * Instala los interceptores de autenticación sobre un cliente axios.
  * `handlers` se lee en el momento de cada respuesta, por lo que puede asignarse después.
+ * `waitForRefresh` (opcional) devuelve la promesa de una renovación en curso: las peticiones esperan
+ * a que termine para no salir con un token que el servidor está revocando.
  */
-export function installAuthInterceptors(client, { getToken, handlers = {} }) {
+export function installAuthInterceptors(client, { getToken, handlers = {}, waitForRefresh }) {
     let handled = false;
+    const pendingRefresh = () => Promise.resolve(waitForRefresh?.()).catch(() => undefined);
 
-    const requestId = client.interceptors.request.use((config) => {
+    const requestId = client.interceptors.request.use(async (config) => {
         if (endpointMatches(config.url, ['login', 'register'])) return config;
+        if (waitForRefresh && !endpointMatches(config.url, ['refresh', 'logout'])) await pendingRefresh();
 
         const token = getToken();
         if (token && !config.headers.get('Authorization')) {
@@ -28,13 +33,17 @@ export function installAuthInterceptors(client, { getToken, handlers = {} }) {
 
     const responseId = client.interceptors.response.use(
         (response) => response,
-        (error) => {
+        async (error) => {
             const status = error?.response?.status;
             const code = getErrorCode(error?.response?.data);
             const url = error?.config?.url;
 
             // login/logout/register gestionan sus propios errores (credenciales inválidas, 401 esperado, etc.)
             if (!endpointMatches(url, ['login', 'register', 'logout'])) {
+                // La renovación revoca el token anterior: un 401 de una petición que salió con él no es una sesión vencida.
+                if (status === 401 && code === 'SESSION_EXPIRED' && waitForRefresh && !endpointMatches(url, ['refresh'])) {
+                    await pendingRefresh();
+                }
                 const sent = error?.config?.headers?.get?.('Authorization');
                 const current = getToken();
                 // Una petición enviada con un token ya reemplazado (refresh/relogin) no debe cerrar la sesión vigente.
@@ -82,6 +91,7 @@ export function setupHttpClient() {
         globalControls = installAuthInterceptors(axios, {
             getToken: () => AuthenticationService.getToken(),
             handlers: authHandlers,
+            waitForRefresh: () => authService.pendingRefresh(),
         });
     }
     return globalControls;
