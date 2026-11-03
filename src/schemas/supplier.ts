@@ -29,7 +29,7 @@ export const supplierSchema = z.object({
 });
 
 export const containerSchema = z.object({
-  cepaId: z.string().trim().min(1, 'Selecciona una cepa.'),
+  cepaId: z.string().trim().min(1, 'Selecciona un producto.'),
   unidadBase: z.string().trim().min(1, 'Ingresa la unidad base.'),
   presentacionId: z.string().trim().optional().or(z.literal('')),
   capacidadUnidadesBase: z.number({ error: 'Ingresa una capacidad válida.' })

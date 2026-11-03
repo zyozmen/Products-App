@@ -20,7 +20,7 @@ function MarketplaceProductList({ search = '', filters = {} }) {
 
     const strains = data?.content ?? [];
     return (
-        <section className="hu-grid hu-gap-5" aria-label="Catálogo de cepas">
+        <section className="hu-grid hu-gap-5" aria-label="Catálogo de productos">
             {isPending && <p className="hu-py-8 hu-text-center hu-text-slate-600" role="status">{t('loading_products')}</p>}
             {isError && (
                 <div className="hu-grid hu-justify-items-center hu-gap-3 hu-rounded-lg hu-border hu-border-red-200 hu-bg-red-50 hu-p-4 hu-text-red-800" role="alert">

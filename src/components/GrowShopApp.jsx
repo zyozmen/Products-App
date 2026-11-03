@@ -1,16 +1,14 @@
 import React, { Suspense } from 'react';
 import LoginComponent from './login/LoginComponent.jsx';
-import {BrowserRouter, Route, Routes} from 'react-router-dom';
+import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
 import navigationComponent from './navigation/NavigationComponent.jsx'  
 import paramsComponent from './navigation/NavigationParamsComponent.jsx';
 import ErrorComponent from './login/ErrorComponent.jsx';
 import WelcomeComponent from './dashboard/WelcomeComponent.jsx';
 import ShopComponent from './shop/ShopComponent.jsx';
-import ProductDetailComponent from './shop/ProductDetail/ProductDetailComponent.jsx';
 import MarketplaceProductDetail from './shop/MarketplaceProductDetail.jsx';
 import HeaderComponent from './dashboard/HeaderComponent.jsx';
 import FooterComponent from './dashboard/FooterComponent.jsx';
-import CreateProductComponent from './admin/products/CreateProductComponent.jsx';
 import ShoppingCarComponent from './cart/ShoppingCarComponent.jsx';
 import UserAdminComponent from './admin/users/UserAdminComponent.jsx';
 import ProfileComponent from './profile/ProfileComponent.jsx';
@@ -23,7 +21,7 @@ import { AuthProvider } from '../context/AuthContext.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
 import AgeVerificationRouteGate from './auth/AgeVerificationRouteGate.jsx';
 const SupplierManagementPage = React.lazy(() => import('./admin/suppliers/SupplierManagementPage'));
-const CepaManagementPage = React.lazy(() => import('./admin/cepas/CepaManagementPage'));
+const ProductManagementPage = React.lazy(() => import('./admin/cepas/CepaManagementPage'));
 const DailySettlementPage = React.lazy(() => import('./admin/settlements/DailySettlementPage'));
 
 const ADMIN_ROLES = ['admin'];
@@ -31,8 +29,6 @@ const ADMIN_ROLES = ['admin'];
 const LoginComponentWithNavigation = navigationComponent(LoginComponent);
 const ShopComponentWithNavigation = navigationComponent(ShopComponent);
 const WelcomeComponentWithParams = paramsComponent(WelcomeComponent);
-const ProductDetailComponentWithParams = paramsComponent(ProductDetailComponent);
-const CreateProductComponentWithNavigation = navigationComponent(CreateProductComponent);
 const ShoppingCarComponentWithNavigation = navigationComponent(ShoppingCarComponent);
 const UserAdminComponentWithNavigation = navigationComponent(UserAdminComponent);
 const ProfileComponentWithNavigation = navigationComponent(ProfileComponent);
@@ -116,16 +112,14 @@ function GrowShopApp() {
                             <Route path="/shop" element={<ShopComponentWithNavigation />} />
                             <Route path="/cart" element={<ShoppingCarComponentWithNavigation />} />
                             <Route path="/welcome/:name" element={<ProtectedRoute><WelcomeComponentWithParams /></ProtectedRoute>} />
-                            <Route path="/product/:id" element={<ProtectedRoute><ProductDetailComponentWithParams /></ProtectedRoute>} />
                             <Route path="/producto/:cepaId/:presentacionId" element={<><HeaderComponentWithNavigation /><MarketplaceProductDetail /><FooterComponentWithNavigation /></>} />
-                            <Route path="/createProduct" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CreateProductComponentWithNavigation /></ProtectedRoute>} />
-                            <Route path="/editProduct/:productId" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CreateProductComponentWithNavigation /></ProtectedRoute>} />
                             <Route path="/admin" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AdminDashboardComponent /></ProtectedRoute>} />
                             <Route path="/admin/users" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><UserAdminComponentWithNavigation /></ProtectedRoute>} />
                             <Route path="/admin/proveedores" element={<SupplierRoute />} />
                             <Route path="/admin/categories" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CategoryManagementComponent /></ProtectedRoute>} />
                             <Route path="/admin/proveedores/:id" element={<SupplierRoute />} />
-                            <Route path="/admin/cepas" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><Suspense fallback={<SupplierPageFallback />}><CepaManagementPage /></Suspense></ProtectedRoute>} />
+                            <Route path="/admin/productos" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><Suspense fallback={<SupplierPageFallback />}><ProductManagementPage /></Suspense></ProtectedRoute>} />
+                            <Route path="/admin/cepas" element={<Navigate to="/admin/productos" replace />} />
                             <Route path="/admin/liquidacion" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><Suspense fallback={<SupplierPageFallback />}><DailySettlementPage /></Suspense></ProtectedRoute>} />
                             <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><OrdersKanbanComponentWithNavigation /></ProtectedRoute>} />
                             <Route path="/admin/orders/report" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><OrdersReportComponentWithNavigation /></ProtectedRoute>} />

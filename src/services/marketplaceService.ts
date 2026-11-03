@@ -13,34 +13,35 @@ export const marketplaceService = {
     return data;
   },
 
+  // Los productos (antes cepas) conservan `cepaId` como identificador: `productId` corresponde a `cepaId`.
   async detail(cepaId: string, presentacionId: string): Promise<MarketplaceDetail> {
     const { data } = await axios.get<MarketplaceDetail>(
-      endpoint(`/marketplace/cepas/${encodeURIComponent(cepaId)}/presentaciones/${encodeURIComponent(presentacionId)}`),
+      endpoint(`/marketplace/products/${encodeURIComponent(cepaId)}/presentaciones/${encodeURIComponent(presentacionId)}`),
     );
-    return data;
+    return { ...data, cepaId: data?.cepaId ?? cepaId };
   },
 
   async listCepas(page = 0, size = 20): Promise<CepasPage> {
-    const { data, headers } = await axios.get<Cepa[]>(endpoint('/cepas'), { params: { page, size } });
+    const { data, headers } = await axios.get<Cepa[]>(endpoint('/products'), { params: { page, size } });
     const total = Number(headers['x-total-count']);
     if (!Number.isSafeInteger(total) || total < 0) {
-      throw new Error('No se pudo leer el encabezado X-Total-Count de cepas.');
+      throw new Error('No se pudo leer el encabezado X-Total-Count de productos.');
     }
     return { cepas: data, total };
   },
 
   async getCepa(id: string): Promise<Cepa> {
-    const { data } = await axios.get<Cepa>(endpoint(`/cepas/${encodeURIComponent(id)}`));
+    const { data } = await axios.get<Cepa>(endpoint(`/products/${encodeURIComponent(id)}`));
     return data;
   },
 
   async createCepa(nombre: string, categoryIds: number[] = []): Promise<Cepa> {
-    const { data } = await axios.post<Cepa>(endpoint('/cepas'), { nombre, categoryIds });
+    const { data } = await axios.post<Cepa>(endpoint('/products'), { nombre, categoryIds });
     return data;
   },
 
   async renameCepa(cepa: Cepa, nombre: string, categoryIds?: number[]): Promise<Cepa> {
-    const { data } = await axios.put<Cepa>(endpoint(`/cepas/${encodeURIComponent(cepa.id)}`), {
+    const { data } = await axios.put<Cepa>(endpoint(`/products/${encodeURIComponent(cepa.id)}`), {
       nombre,
       version: cepa.version,
       ...(categoryIds === undefined ? {} : { categoryIds }),
@@ -52,7 +53,7 @@ export const marketplaceService = {
     const form = new FormData();
     form.append('fotoPrincipal', photo);
     await axios.post(
-      endpoint(`/v1/images/${encodeURIComponent(id)}?target=CEPA`),
+      endpoint(`/v1/images/${encodeURIComponent(id)}?target=PRODUCT`),
       form,
     );
   },

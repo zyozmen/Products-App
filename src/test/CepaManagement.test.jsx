@@ -33,18 +33,18 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 describe('strain category administration', () => {
     it('creates a strain with numeric shared category IDs', async () => {
         renderAdmin();
-        await screen.findByLabelText('Nombre de la cepa');
-        fireEvent.change(screen.getByLabelText(/Nueva cepa/), { target: { value: 'Nueva' } });
-        const createCategories = screen.getAllByRole('group', { name: 'Categorías de la cepa' })[0];
+        await screen.findByLabelText('Nombre del producto');
+        fireEvent.change(screen.getByLabelText(/Nuevo producto/), { target: { value: 'Nueva' } });
+        const createCategories = screen.getAllByRole('group', { name: 'Categorías del producto' })[0];
         fireEvent.click(within(createCategories).getByLabelText('Categoria B'));
-        fireEvent.click(screen.getByRole('button', { name: 'Crear cepa' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Crear producto' }));
         await waitFor(() => expect(marketplaceService.createCepa).toHaveBeenCalledWith('Nueva', [8]));
     });
 
     it('saves category changes with the existing ID/version and invalidates the catalog', async () => {
         const invalidate = renderAdmin();
-        await screen.findByLabelText('Nombre de la cepa');
-        const editCategories = screen.getAllByRole('group', { name: 'Categorías de la cepa' })[1];
+        await screen.findByLabelText('Nombre del producto');
+        const editCategories = screen.getAllByRole('group', { name: 'Categorías del producto' })[1];
         expect(within(editCategories).getByLabelText('Categoria A')).toBeChecked();
         fireEvent.click(within(editCategories).getByLabelText('Categoria A'));
         fireEvent.click(within(editCategories).getByLabelText('Categoria B'));
@@ -52,13 +52,13 @@ describe('strain category administration', () => {
         await waitFor(() => expect(marketplaceService.renameCepa).toHaveBeenCalledWith(cepa, 'Tangerine', [8]));
         expect(invalidate).toHaveBeenCalledWith({ queryKey: ['cepas'] });
         expect(invalidate).toHaveBeenCalledWith({ queryKey: ['marketplace'] });
-        expect(await screen.findByText('Cepa actualizada.')).toBeInTheDocument();
+        expect(await screen.findByText('Producto actualizado.')).toBeInTheDocument();
     });
 
     it('sends an explicit empty list when removing all assignments', async () => {
         renderAdmin();
-        await screen.findByLabelText('Nombre de la cepa');
-        const editCategories = screen.getAllByRole('group', { name: 'Categorías de la cepa' })[1];
+        await screen.findByLabelText('Nombre del producto');
+        const editCategories = screen.getAllByRole('group', { name: 'Categorías del producto' })[1];
         fireEvent.click(within(editCategories).getByLabelText('Categoria A'));
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
         await waitFor(() => expect(marketplaceService.renameCepa).toHaveBeenCalledWith(cepa, 'Tangerine', []));
@@ -75,10 +75,10 @@ describe('strain category administration', () => {
     it('rejects IDs that would lose precision instead of submitting the wrong category', async () => {
         categoryService.getCategories.mockResolvedValue([{ category_id: '9007199254740993', name: 'ID fuera de rango' }]);
         renderAdmin();
-        await screen.findByLabelText('Nombre de la cepa');
-        fireEvent.change(screen.getByLabelText(/Nueva cepa/), { target: { value: 'Nueva' } });
+        await screen.findByLabelText('Nombre del producto');
+        fireEvent.change(screen.getByLabelText(/Nuevo producto/), { target: { value: 'Nueva' } });
         fireEvent.click(screen.getAllByLabelText('ID fuera de rango')[0]);
-        fireEvent.click(screen.getByRole('button', { name: 'Crear cepa' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Crear producto' }));
         expect(await screen.findByText(/IDs numéricos válidos/)).toBeInTheDocument();
         expect(marketplaceService.createCepa).not.toHaveBeenCalled();
     });

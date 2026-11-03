@@ -139,18 +139,17 @@ describe('marketplace product detail', () => {
         expect(screen.getByRole('button', { name: 'Aumentar cantidad' })).toBeEnabled();
     });
 
-    it('preserves legacy categories, description and cart payload in the shared product layout', () => {
+    it('renders description and cart payload in the shared product layout', () => {
         const addToCart = vi.spyOn(cartService, 'addToCart');
-        function LegacyDetail() {
+        function SharedDetail() {
             const [quantity, setQuantity] = useState(1);
             return <ProductDetailContent product={{
                 id: 42, name: 'Producto original', price: { current: 2500 },
-                categories: [{ name: 'Categoría original' }], description: 'Descripción original',
+                description: 'Descripción original',
             }} quantity={quantity} onQuantityChange={setQuantity} />;
         }
-        render(<MemoryRouter><LegacyDetail /></MemoryRouter>);
+        render(<MemoryRouter><SharedDetail /></MemoryRouter>);
 
-        expect(screen.getByText('Categoría original')).toBeInTheDocument();
         expect(screen.getByText('Descripción original')).toBeInTheDocument();
         expect(screen.getByRole('spinbutton', { name: 'Cantidad' })).not.toHaveAttribute('max');
         fireEvent.click(screen.getByRole('button', { name: 'Aumentar cantidad' }));

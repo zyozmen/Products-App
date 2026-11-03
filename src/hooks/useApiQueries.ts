@@ -1,22 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import productosService from '../services/ProductosService.js';
 import categoryService from '../services/categoryService.js';
 import userService from '../services/UserService.js';
 import orderService from '../services/OrderService.js';
-import AuthenticationService from '../services/AuthenticationService.js';
 import { settlementKeys } from './useSettlementQueries';
 import { marketplaceKeys } from './useMarketplaceQueries';
-
-export interface ProductListFilters {
-  searchTerm?: string;
-  categoryIds?: string[];
-  sortBy?: string;
-  sortDir?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  minRating?: number;
-  maxRating?: number;
-}
 
 export interface AdminUser {
   username: string;
@@ -32,40 +19,11 @@ export interface AdminUser {
 }
 
 export const apiQueryKeys = {
-  products: ['products'] as const,
-  productList: (page: number, size: number, filters: ProductListFilters) =>
-    ['products', 'list', page, size, filters] as const,
-  product: (id: string) => ['products', 'detail', id] as const,
-  featuredProducts: ['products', 'featured'] as const,
   categories: ['categories'] as const,
   adminUsers: ['adminUsers'] as const,
   myOrders: ['myOrders'] as const,
   adminOrders: ['adminOrders'] as const,
 };
-
-export function useProductList(page: number, size: number, filters: ProductListFilters) {
-  return useQuery({
-    queryKey: [...apiQueryKeys.productList(page, size, filters), AuthenticationService.isUserAdmin()],
-    queryFn: () => productosService.listarProductos(page, size, filters),
-    placeholderData: (previous) => previous,
-  });
-}
-
-export function useProduct(id: string) {
-  return useQuery({
-    queryKey: apiQueryKeys.product(id),
-    queryFn: () => productosService.detalleProducto(id),
-    enabled: Boolean(id),
-  });
-}
-
-export function useFeaturedProducts() {
-  return useQuery({
-    queryKey: apiQueryKeys.featuredProducts,
-    queryFn: () => productosService.listarDestacados(),
-    staleTime: 5 * 60 * 1000,
-  });
-}
 
 export function useCategories() {
   return useQuery({
@@ -90,44 +48,6 @@ export function useCategoryMutations() {
       onSuccess: () => queryClient.invalidateQueries({ queryKey: apiQueryKeys.categories }),
     }),
   };
-}
-export function useProductMutations() {
-  const queryClient = useQueryClient();
-  const invalidateProducts = () =>
-    queryClient.invalidateQueries({ queryKey: apiQueryKeys.products });
-
-  const createProduct = useMutation({
-    mutationFn: (product: Parameters<typeof productosService.crearProducto>[0]) =>
-      productosService.crearProducto(product),
-    onSuccess: invalidateProducts,
-  });
-  const updateProduct = useMutation({
-    mutationFn: ({ id, product }: {
-      id: string;
-      product: Parameters<typeof productosService.actualizarProducto>[1];
-    }) => productosService.actualizarProducto(id, product),
-    onSuccess: (_data, variables) => Promise.all([
-      invalidateProducts(),
-      queryClient.invalidateQueries({ queryKey: apiQueryKeys.product(variables.id) }),
-    ]),
-  });
-  const deleteProduct = useMutation({
-    mutationFn: (id: string) => productosService.eliminarProducto(id),
-    onSuccess: invalidateProducts,
-  });
-  const uploadProductImages = useMutation({
-    mutationFn: ({ id, principal, secondary }: {
-      id: string;
-      principal: File | null;
-      secondary: File[];
-    }) => productosService.subirImagenesProducto(id, principal, secondary),
-    onSuccess: (_data, variables) => Promise.all([
-      invalidateProducts(),
-      queryClient.invalidateQueries({ queryKey: apiQueryKeys.product(variables.id) }),
-    ]),
-  });
-
-  return { createProduct, updateProduct, deleteProduct, uploadProductImages };
 }
 
 export function useAdminUsers(enabled = true) {

@@ -18,7 +18,7 @@ npm run dev
 
 La aplicacion se inicia en [http://localhost:4200](http://localhost:4200). El backend debe estar disponible en el puerto `8080`.
 
-Durante el desarrollo, el frontend solicita `/api/productos` y Vite reenvia las rutas `/api/*` al host definido por `VITE_APP_PRODUCTS_API_URL`. Asi, el navegador usa el mismo origen del frontend y no necesita conectarse directamente al backend. Puedes abrir la aplicacion con `localhost` o `127.0.0.1`.
+Durante el desarrollo, el frontend solicita rutas relativas `/api/*` y Vite las reenvia al host definido por `VITE_APP_PRODUCTS_API_URL`. Asi, el navegador usa el mismo origen del frontend y no necesita conectarse directamente al backend. Puedes abrir la aplicacion con `localhost` o `127.0.0.1`.
 
 Despues de cambiar la URL del backend en `.env.local`, reinicia Vite para que actualice el destino del proxy.
 
@@ -59,52 +59,51 @@ npm run test:coverage    # Ejecuta pruebas y genera cobertura
 ## Funcionalidades y rutas
 
 - `/`: pagina de bienvenida
-- `/shop`: catalogo del marketplace agrupado por cepa, con filtros de nombre, precio y categoria
-- `/product/:id`: detalle de un producto
+- `/shop`: catalogo del marketplace agrupado por producto, con filtros de nombre, precio y categoria
 - `/producto/:cepaId/:presentacionId`: detalle publico de marketplace; conserva el carrusel y los controles originales de cantidad y carrito. Las presentaciones se seleccionan con radio buttons y el precio principal muestra el precio unitario seleccionado multiplicado por la cantidad.
 - `/cart`: carrito de compra (requiere login para compra segura, autocompletado y opcion de tercero receptor)
 - `/login`: inicio de sesion e inicio de registro de clientes con validacion de edad
 - `/profile`: administracion del perfil del usuario (edicion de datos y cambio de contraseña)
 - `/admin/users`: panel de administracion de usuarios (solo admin; activa/inactiva cuentas y restablece claves)
-- `/admin`: dashboard de administracion con acceso a ordenes, usuarios, proveedores, reporte y alta de productos (solo admin; se abre desde el boton "Administracion" del menu de perfil)
+- `/admin`: dashboard de administracion con acceso a ordenes, usuarios, proveedores, productos y reporte (solo admin; se abre desde el boton "Administracion" del menu de perfil)
 - `/admin/orders`: kanban de ordenes (solo admin)
 - `/admin/orders/report`: reporte de ordenes (solo admin)
 - `/admin/proveedores`: gestion de proveedores, saldos, recepcion de lotes y abonos (solo admin)
-- `/admin/cepas`: nombres, categorias compartidas y fotografia principal de cepas (solo admin)
+- `/admin/productos`: nombres, categorias compartidas y fotografia principal de productos (antes cepas; `/admin/cepas` redirige aqui; solo admin)
 - `/admin/liquidacion`: liquidacion diaria por proveedor (HU-04, solo admin)
-- `/createProduct`: alta de productos (solo admin)
-- `/editProduct/:productId`: edicion de productos (solo admin)
 - `/welcome/:name`: bienvenida personalizada
+
+El catalogo anterior (`/api/productos`, `/product/:id`, `/createProduct` y `/editProduct/:productId`) se retiro del frontend: los productos son ahora las antiguas cepas.
 
 ### Filtros del marketplace
 
 `/shop` conserva la barra lateral original de nombre, rangos de precio y seleccion multiple de categorias, con panel desplegable en movil y etiquetas para retirar categorias activas. Los filtros se conservan en la URL (`buscar`, `categoryIds` repetido, `minPrice` y `maxPrice`); los enlaces anteriores con `name`, `category` o `category_id` siguen funcionando. Cambiar un filtro reinicia la pagina y permite volver con la navegacion del navegador.
 
-La consulta usa `GET /api/marketplace/presentaciones` con los filtros combinados y paginacion del servidor, no filtra unicamente la pagina descargada. Una cepa coincide con cualquiera de las categorias seleccionadas y con el precio si alguna presentacion activa con stock cumple ambos limites inclusivos. El resultado mantiene todas sus opciones disponibles y su `precioDesde` original, aunque la opcion mas barata quede fuera del rango.
+La consulta usa `GET /api/marketplace/presentaciones` con los filtros combinados y paginacion del servidor, no filtra unicamente la pagina descargada. Una cepa (producto) coincide con cualquiera de las categorias seleccionadas y con el precio si alguna presentacion activa con stock cumple ambos limites inclusivos. El resultado mantiene todas sus opciones disponibles y su `precioDesde` original, aunque la opcion mas barata quede fuera del rango.
 
-En `/admin/cepas` se asignan categorias existentes al crear o editar la cepa; todas sus presentaciones comparten esa asignacion. Las cepas anteriores sin categorias siguen visibles sin filtro, pero deben categorizarse para aparecer al seleccionar una categoria. Guardar invalida las consultas de cepas y marketplace. Esto requiere desplegar tambien el backend actualizado con soporte para estos parametros y `categoryIds` en cepas.
+En `/admin/productos` se asignan categorias existentes al crear o editar el producto; todas sus presentaciones comparten esa asignacion. Los productos anteriores sin categorias siguen visibles sin filtro, pero deben categorizarse para aparecer al seleccionar una categoria. Guardar invalida las consultas de productos y marketplace. Esto requiere desplegar tambien el backend actualizado con soporte para estos parametros y `categoryIds` en productos.
 
 Los rangos de precio son inclusivos en ambos extremos, por lo que una presentacion de exactamente $100.000 aparece en "$50.000 - $100.000" y en "$100.000 - $150.000". El contador por categoria solo se muestra si el servidor lo envia.
 
-#### Asignar categorias a una cepa
+#### Asignar categorias a un producto
 
-1. Inicia sesion con un usuario `ADMIN` y abre `/admin/cepas`.
-2. En la tarjeta de la cepa, marca las categorias en **Categorias de la cepa**.
-3. Pulsa **Guardar cambios** de esa misma tarjeta. Debe aparecer **Cepa actualizada.**; **Cargar fotografia** no guarda categorias.
+1. Inicia sesion con un usuario `ADMIN` y abre `/admin/productos`.
+2. En la tarjeta del producto, marca las categorias en **Categorias del producto**.
+3. Pulsa **Guardar cambios** de esa misma tarjeta. Debe aparecer **Producto actualizado.**; **Cargar fotografia** no guarda categorias.
 4. Recarga la pagina para confirmar que las casillas siguen marcadas y prueba el filtro en `/shop`.
 
-Para una cepa nueva, marca las categorias en el formulario **Nueva cepa** antes de pulsar **Crear cepa**.
+Para un producto nuevo, marca las categorias en el formulario **Nuevo producto** antes de pulsar **Crear producto**.
 
 #### Solucion de problemas de filtros
 
-- **Una categoria no devuelve resultados:** revisa que la cepa tenga `categoryIds` en `GET /api/cepas/{id}` y presentaciones `ACTIVO` con stock mayor que cero.
-- **Al guardar no aparece ningun mensaje, o la categoria no persiste:** confirma que el backend en ejecucion incluye `categoryIds` en cepas. Un backend anterior ignora ese campo sin error. Reinicia el backend despues de actualizarlo y recarga el frontend con Ctrl+F5.
-- **El filtro de precio no cambia el listado:** verifica en la pestana Red que la peticion incluya `minPrice` y `maxPrice`. Si los incluye, revisa que algun precio disponible de la cepa este dentro del rango.
+- **Una categoria no devuelve resultados:** revisa que el producto tenga `categoryIds` en `GET /api/products/{id}` y presentaciones `ACTIVO` con stock mayor que cero.
+- **Al guardar no aparece ningun mensaje, o la categoria no persiste:** confirma que el backend en ejecucion incluye `categoryIds` en productos. Un backend anterior ignora ese campo sin error. Reinicia el backend despues de actualizarlo y recarga el frontend con Ctrl+F5.
+- **El filtro de precio no cambia el listado:** verifica en la pestana Red que la peticion incluya `minPrice` y `maxPrice`. Si los incluye, revisa que algun precio disponible del producto este dentro del rango.
 
-## Marketplace por cepa (HU-05)
+## Marketplace por producto (HU-05)
 
-- **Administracion de cepas (`/admin/cepas`):** crea, renombra y categoriza cepas, y carga su fotografia principal. El listado usa `GET /api/cepas?page=0&size=20` y lee el total de `X-Total-Count`. Renombrar envia la `version` vigente; si la version esta desactualizada o el nombre normalizado ya existe, se muestra el error 409 para recargar e intentar de nuevo. La fotografia se envia como multipart `fotoPrincipal` a `POST /api/v1/images/{cepaId}?target=CEPA` y acepta PNG, JPG/JPEG o WebP de hasta 2 MiB cuyo MIME coincida con la extension.
-- **Recepcion de lotes:** cada contenedor selecciona una cepa registrada y envia su `cepaId`. Por eso, las cepas deben crearse antes de recibir el lote. Las tarjetas de contenedor muestran el nombre actual de la cepa, y el desglose ofrece **Ver en marketplace** cuando la presentacion esta publicada.
+- **Administracion de productos (`/admin/productos`, antes cepas):** crea, renombra y categoriza productos, y carga su fotografia principal. El listado usa `GET /api/products?page=0&size=20` y lee el total de `X-Total-Count`; crear, consultar y editar usan `POST /api/products`, `GET /api/products/{id}` y `PUT /api/products/{id}` con el mismo cuerpo anterior (`nombre`, `version`, `categoryIds`). Renombrar envia la `version` vigente; si la version esta desactualizada o el nombre normalizado ya existe, se muestra el error 409 para recargar e intentar de nuevo. La fotografia se envia como multipart `fotoPrincipal` a `POST /api/v1/images/{id}?target=PRODUCT` y acepta PNG, JPG/JPEG o WebP de hasta 2 MiB cuyo MIME coincida con la extension.
+- **Recepcion de lotes:** cada contenedor selecciona un producto registrado y envia su ID como `cepaId` (nombre de campo sin cambios en la API). Por eso, los productos deben crearse antes de recibir el lote. Las tarjetas de contenedor muestran el nombre actual del producto, y el desglose ofrece **Ver en marketplace** cuando la presentacion esta publicada.
 - **Catalogo (`/shop`):** `GET /api/marketplace/presentaciones` pagina por cepa, de 20 en 20. Cada tarjeta muestra la fotografia de la cepa (o un marcador si no tiene), el numero de presentaciones disponibles y el precio desde. Al abrir la tarjeta se selecciona la presentacion mas economica.
 - **Detalle (`/producto/:cepaId/:presentacionId`):** muestra todas las presentaciones activas con stock de la cepa, incluso de distintos lotes. Cada una conserva su ID, SKU, precio, stock y fotografia.
 - **Carrito:** los articulos se identifican por `presentationId` y la cantidad se limita al stock. Los articulos del catalogo anterior se retiran del carrito guardado y se avisa una sola vez. Si el pedido falla por precio o stock, el carrito vuelve a consultar el detalle de cada presentacion y actualiza o marca como no disponibles sus articulos, sin reenviar el pedido.
@@ -207,7 +206,7 @@ Recomendaciones segun como se muestra cada imagen en la interfaz. Usar JPG o Web
 |---|---|---|---|---|---|
 | Hero del carrusel | `public/img/hero-home.jpg` (`CarrouselComponent`) | JPG / WebP | 1920 x 780 px (minimo 1600 px de ancho) | ~2.4:1 | `object-cover`, ocupa todo el ancho y ~88vh; mantener el sujeto a la derecha porque el texto va a la izquierda |
 | Tarjetas de oferta (bajo el hero) | `CarrouselComponent` | JPG / WebP | 1200 x 600 px | 2:1 | `object-cover` con opacidad |
-| Producto (listado) | `ProductListComponent` | JPG / WebP | 800 x 800 px | 1:1 | `object-cover` a 280 px de alto; dejar margen alrededor del producto |
+| Producto (listado) | `MarketplaceProductList` | JPG / WebP | 800 x 800 px | 1:1 | `object-cover` a 280 px de alto; dejar margen alrededor del producto |
 | Producto (detalle / galeria) | `ImageCarousel` | JPG / WebP | 1200 x 900 px | 4:3 | `object-contain`, no se recorta; fondo claro uniforme |
 | Miniatura de carrito | `ShoppingCarComponent` | misma imagen del producto | se escala a 56 x 56 px | 1:1 | `object-cover` |
 | Categoria | `public/img/cat-<category_id>.jpg` (`CategoryComponent`) | JPG | 400 x 400 px | 1:1 | `object-cover` a 96 x 96 px |
@@ -216,7 +215,7 @@ Recomendaciones segun como se muestra cada imagen en la interfaz. Usar JPG o Web
 
 Notas:
 - Las imagenes de categoria deben nombrarse `cat-<category_id>.jpg` y ubicarse en `public/img/`.
-- Las imagenes de producto se suben desde `/createProduct` (`accept="image/*"`); deben ser cuadradas para verse bien en el listado.
+- Las imagenes de producto se suben desde `/admin/productos` (PNG, JPG/JPEG o WebP hasta 2 MiB); deben ser cuadradas para verse bien en el listado.
 - Para pantallas de alta densidad se pueden subir al doble de tamaño, sin superar el peso objetivo.
 
 ## Gestión de Usuarios, Perfiles y Preferencias
@@ -332,10 +331,10 @@ DRY_RUN=1 bash scripts/setup-jenkins-config.sh
 ## Estructura principal
 
 - `src/components/`: paginas y componentes de la interfaz
-- `src/services/`: acceso a productos, marketplace y cepas (`marketplaceService.ts`), autenticacion, carrito y favoritos
-- `src/hooks/useMarketplaceQueries.ts`: consultas de TanStack Query del catalogo, detalle y cepas
+- `src/services/`: acceso al marketplace y a productos (`marketplaceService.ts`), autenticacion, carrito y favoritos
+- `src/hooks/useMarketplaceQueries.ts`: consultas de TanStack Query del catalogo, detalle y productos
 - `src/components/shop/`: catalogo, filtros y detalle del marketplace
-- `src/components/admin/cepas/`: administracion de cepas
+- `src/components/admin/cepas/`: administracion de productos (antes cepas)
 - `src/components/admin/settlements/`, `src/services/settlementService.ts`: liquidacion diaria (HU-04)
 - `src/Interfaces/`: interfaces y transformacion de datos
 - `public/`: recursos estaticos

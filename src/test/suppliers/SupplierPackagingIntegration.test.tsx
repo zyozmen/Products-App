@@ -73,7 +73,7 @@ describe('supplier lot packaging integration', () => {
     const card = summary.closest('details')!;
     expect(card).toHaveAttribute('open');
     expect(within(card).queryByText('Datos completos')).not.toBeInTheDocument();
-    fireEvent.change(within(card).getByLabelText('Cepa'), { target: { value: 'strain-1' } });
+    fireEvent.change(within(card).getByLabelText('Producto'), { target: { value: 'strain-1' } });
     expect(within(summary).getByText('Datos completos')).toBeVisible();
     expect(within(summary).getByText('Datos completos').querySelector('svg')).not.toBeNull();
     fireEvent.click(summary);
@@ -83,7 +83,7 @@ describe('supplier lot packaging integration', () => {
     expect(card).not.toHaveAttribute('open');
     expect(screen.getByText('Contenedor 2').closest('details')).toHaveAttribute('open');
     fireEvent.click(summary);
-    expect(within(card).getByLabelText('Cepa')).toHaveValue('strain-1');
+    expect(within(card).getByLabelText('Producto')).toHaveValue('strain-1');
     fireEvent.change(within(card).getByLabelText('Costo por unidad base'), { target: { value: '1.001' } });
     expect(within(summary).queryByText('Datos completos')).not.toBeInTheDocument();
     fireEvent.change(within(card).getByLabelText('Costo por unidad base'), { target: { value: '1.25' } });

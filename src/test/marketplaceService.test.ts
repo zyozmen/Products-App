@@ -38,13 +38,13 @@ describe('marketplaceService', () => {
     const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: cepa });
     const put = vi.spyOn(axios, 'put').mockResolvedValue({ data: cepa });
     await marketplaceService.createCepa('Tangerine', [7, 8]);
-    expect(post).toHaveBeenCalledWith(expect.stringContaining('/cepas'), { nombre: 'Tangerine', categoryIds: [7, 8] });
+    expect(post).toHaveBeenCalledWith(expect.stringMatching(/\/api\/products$/), { nombre: 'Tangerine', categoryIds: [7, 8] });
     await marketplaceService.renameCepa(cepa, 'Nueva', []);
-    expect(put).toHaveBeenCalledWith(expect.stringContaining('/cepas/strain'), {
+    expect(put).toHaveBeenCalledWith(expect.stringMatching(/\/api\/products\/strain$/), {
       nombre: 'Nueva', version: 3, categoryIds: [],
     });
     await marketplaceService.renameCepa(cepa, 'Solo nombre');
-    expect(put).toHaveBeenLastCalledWith(expect.stringContaining('/cepas/strain'), {
+    expect(put).toHaveBeenLastCalledWith(expect.stringMatching(/\/api\/products\/strain$/), {
       nombre: 'Solo nombre', version: 3,
     });
   });
@@ -54,13 +54,34 @@ describe('marketplaceService', () => {
 
     await marketplaceService.detail('strain/id', 'presentation id');
 
-    expect(get).toHaveBeenCalledWith(expect.stringContaining('/marketplace/cepas/strain%2Fid/presentaciones/presentation%20id'));
+    expect(get).toHaveBeenCalledWith(expect.stringContaining('/marketplace/products/strain%2Fid/presentaciones/presentation%20id'));
+  });
+
+  it('keeps the requested product ID when the detail response omits cepaId', async () => {
+    vi.spyOn(axios, 'get').mockResolvedValue({ data: { nombre: 'Tangerine', presentaciones: [] } });
+
+    const detail = await marketplaceService.detail('strain-1', 'presentation-1');
+
+    expect(detail.cepaId).toBe('strain-1');
   });
 
   it('requires the administrative count header', async () => {
     vi.spyOn(axios, 'get').mockResolvedValue({ data: [], headers: {} });
 
     await expect(marketplaceService.listCepas()).rejects.toThrow('X-Total-Count');
+  });
+
+  it('lists products with paging and uploads their photo with the PRODUCT target', async () => {
+    const get = vi.spyOn(axios, 'get').mockResolvedValue({ data: [], headers: { 'x-total-count': '0' } });
+    const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: {} });
+
+    await marketplaceService.listCepas(1, 10);
+    await marketplaceService.getCepa('strain-1');
+    await marketplaceService.uploadCepaPhoto('strain-1', new File(['a'], 'a.webp', { type: 'image/webp' }));
+
+    expect(get).toHaveBeenNthCalledWith(1, expect.stringMatching(/\/api\/products$/), { params: { page: 1, size: 10 } });
+    expect(get).toHaveBeenNthCalledWith(2, expect.stringMatching(/\/api\/products\/strain-1$/));
+    expect(post.mock.calls[0][0]).toMatch(/\/api\/v1\/images\/strain-1\?target=PRODUCT$/);
   });
 
   it('creates PQR orders using selected presentation IDs without client-supplied amounts', async () => {

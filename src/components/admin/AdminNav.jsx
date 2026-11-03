@@ -9,7 +9,7 @@ const ITEMS = [
     { to: '/admin/users', labelKey: 'manage_users' },
     { to: '/admin/proveedores', labelKey: 'manage_suppliers' },
     { to: '/admin/liquidacion', labelKey: 'daily_settlement' },
-    { to: '/admin/cepas', labelKey: 'manage_strains' },
+    { to: '/admin/productos', labelKey: 'manage_products' },
     { to: '/admin/categories', labelKey: 'manage_categories' },
     { to: '/admin/orders/report', labelKey: 'orders_report' },
 ];

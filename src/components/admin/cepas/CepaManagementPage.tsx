@@ -39,7 +39,7 @@ function CategorySelection({ categories, selected, onChange, disabled, tone = 'l
   const dark = tone === 'dark';
   return (
     <fieldset disabled={disabled} className="hu-m-0 hu-min-w-0 hu-border-0 hu-p-0 disabled:hu-opacity-60">
-      <legend className={`hu-mb-2 hu-p-0 hu-text-sm hu-font-semibold ${dark ? 'hu-text-[#dce9d9]' : 'hu-text-slate-700 dark:hu-text-white'}`}>Categorías de la cepa</legend>
+      <legend className={`hu-mb-2 hu-p-0 hu-text-sm hu-font-semibold ${dark ? 'hu-text-[#dce9d9]' : 'hu-text-slate-700 dark:hu-text-white'}`}>Categorías del producto</legend>
       <div className="hu-flex hu-flex-wrap hu-gap-2">
         {categories.map((category) => {
           const checked = selected.includes(category.category_id);
@@ -72,9 +72,9 @@ function cepaErrorMessage(error: unknown): string {
     if (body?.validationErrors?.length) return body.validationErrors.join(' ');
     if (body?.message) return body.message;
     if (status === 401) return 'Tu sesión expiró. Inicia sesión nuevamente.';
-    if (status === 403) return 'No tienes permiso para administrar cepas.';
+    if (status === 403) return 'No tienes permiso para administrar productos.';
   }
-  return error instanceof Error ? error.message : 'No se pudo completar la solicitud de cepas.';
+  return error instanceof Error ? error.message : 'No se pudo completar la solicitud de productos.';
 }
 
 function validatePhoto(file: File): string | null {
@@ -113,9 +113,9 @@ function CepaRow({ cepa, onRename, onUpload, categories, categoriesUnavailable }
     try {
       await onRename(cepa, nombre.trim(), categoryIds);
       setNombre(nombre.trim());
-      setNotice('Cepa actualizada.');
+      setNotice('Producto actualizado.');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'No se pudo renombrar la cepa.');
+      setError(cause instanceof Error ? cause.message : 'No se pudo renombrar el producto.');
     } finally {
       setBusy(false);
     }
@@ -137,7 +137,7 @@ function CepaRow({ cepa, onRename, onUpload, categories, categoriesUnavailable }
       setPhoto(null);
       setFileInputKey((key) => key + 1);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'La cepa existe, pero no se pudo cargar la fotografía. Puedes reintentar.');
+      setError(cause instanceof Error ? cause.message : 'El producto existe, pero no se pudo cargar la fotografía. Puedes reintentar.');
     } finally {
       setBusy(false);
     }
@@ -153,7 +153,7 @@ function CepaRow({ cepa, onRename, onUpload, categories, categoriesUnavailable }
       <div className="hu-grid hu-flex-1 hu-content-start hu-gap-4 hu-p-4">
         <form className="hu-grid hu-gap-4" onSubmit={rename}>
           <label htmlFor={`cepa-name-${cepa.id}`} className="hu-grid hu-gap-1.5 hu-text-sm hu-font-semibold hu-text-[#dce9d9]">
-            Nombre de la cepa
+            Nombre del producto
             <Input id={`cepa-name-${cepa.id}`} value={nombre} maxLength={100} required onChange={(event) => setNombre(event.target.value)} />
           </label>
           <CategorySelection tone="dark" categories={categories} selected={categoryIds} onChange={setCategoryIds} disabled={busy || categoriesUnavailable} />
@@ -237,7 +237,7 @@ export default function CepaManagementPage() {
     try {
       await upload.mutateAsync({ cepa, photo });
     } catch (cause) {
-      throw new Error(`No se pudo cargar la fotografía: ${cepaErrorMessage(cause)} La cepa sigue guardada y puedes reintentar.`);
+      throw new Error(`No se pudo cargar la fotografía: ${cepaErrorMessage(cause)} El producto sigue guardado y puedes reintentar.`);
     }
   };
 
@@ -248,8 +248,8 @@ export default function CepaManagementPage() {
       <AdminNav />
       <main className="hu-mx-auto hu-w-full hu-max-w-[1600px] hu-flex-1 hu-px-4 hu-py-8 md:hu-px-8">
         <div className="hu-mb-6">
-          <h1 className="hu-m-0 hu-font-display hu-text-3xl hu-text-green-800 admin-title">Administración de cepas</h1>
-          <p className="hu-mb-0 hu-mt-1 hu-text-sm hu-text-[#3f4a41] dark:hu-text-white">Crea cepas, asígnalas a categorías y gestiona sus fotografías.</p>
+          <h1 className="hu-m-0 hu-font-display hu-text-3xl hu-text-green-800 admin-title">Administración de productos</h1>
+          <p className="hu-mb-0 hu-mt-1 hu-text-sm hu-text-[#3f4a41] dark:hu-text-white">Crea productos, asígnalos a categorías y gestiona sus fotografías.</p>
         </div>
         {categories.isPending && <p role="status" className="hu-text-slate-600 dark:hu-text-white">Cargando categorías…</p>}
         {categories.isError && <div className="hu-mb-5"><ErrorNotice>
@@ -260,33 +260,33 @@ export default function CepaManagementPage() {
           <Card className="hu-min-w-0 hu-overflow-hidden kanban-board lg:hu-sticky lg:hu-top-4">
             <div className="hu-border-0 hu-border-b hu-border-solid hu-border-slate-100 hu-p-6">
               <span className="hu-mb-4 hu-flex hu-h-11 hu-w-11 hu-items-center hu-justify-center hu-rounded-xl hu-bg-green-100 hu-text-green-800"><Sprout size={21} aria-hidden="true" /></span>
-              <h2 className="hu-mb-1 hu-mt-0 hu-text-lg hu-font-bold dark:hu-text-white">Registrar cepa</h2>
-              <p className="hu-m-0 hu-text-sm hu-text-slate-500 dark:hu-text-slate-300">Registra la cepa antes de recibir lotes. Podrás cargar su fotografía después de crearla.</p>
+              <h2 className="hu-mb-1 hu-mt-0 hu-text-lg hu-font-bold dark:hu-text-white">Registrar producto</h2>
+              <p className="hu-m-0 hu-text-sm hu-text-slate-500 dark:hu-text-slate-300">Registra el producto antes de recibir lotes. Podrás cargar su fotografía después de crearlo.</p>
             </div>
             <form className="hu-grid hu-gap-5 hu-p-6" onSubmit={(event) => void handleCreate(event)}>
-              <Field label="Nueva cepa" htmlFor="new-cepa-name" hint="El nombre normalizado debe ser único.">
+              <Field label="Nuevo producto" htmlFor="new-cepa-name" hint="El nombre normalizado debe ser único.">
                 <Input id="new-cepa-name" value={nombre} maxLength={100} required placeholder="Ej. Tangerine" onChange={(event) => setNombre(event.target.value)} />
               </Field>
               <CategorySelection categories={categories.data ?? []} selected={categoryIds} onChange={setCategoryIds} disabled={create.isPending || categoriesUnavailable} />
-              <button type="submit" className={`${pillPrimary} hu-w-full`} disabled={!nombre.trim() || create.isPending || categoriesUnavailable}>Crear cepa</button>
+              <button type="submit" className={`${pillPrimary} hu-w-full`} disabled={!nombre.trim() || create.isPending || categoriesUnavailable}>Crear producto</button>
               {error && <ErrorNotice>{error}</ErrorNotice>}
             </form>
           </Card>
-          <section className="hu-grid hu-min-w-0 hu-gap-4" aria-label="Cepas registradas">
+          <section className="hu-grid hu-min-w-0 hu-gap-4" aria-label="Productos registrados">
             <div className="hu-flex hu-flex-wrap hu-items-baseline hu-justify-between hu-gap-2">
-              <h2 className="hu-m-0 hu-text-xl hu-font-bold hu-text-green-800 admin-title">Cepas registradas</h2>
+              <h2 className="hu-m-0 hu-text-xl hu-font-bold hu-text-green-800 admin-title">Productos registrados</h2>
               {query.data && <span className="hu-text-sm hu-text-[#3f4a41] dark:hu-text-white">{query.data.total} en total</span>}
             </div>
-            {query.isPending && <p role="status" className="hu-m-0 hu-text-slate-600 dark:hu-text-white">Cargando cepas…</p>}
+            {query.isPending && <p role="status" className="hu-m-0 hu-text-slate-600 dark:hu-text-white">Cargando productos…</p>}
             {query.isError && <Card className="hu-grid hu-gap-3 hu-p-5"><ErrorNotice>{cepaErrorMessage(query.error)}</ErrorNotice><Button className="hu-w-fit" variant="secondary" onClick={() => void query.refetch()}>Reintentar</Button></Card>}
-            {query.data && query.data.cepas.length === 0 && <p className="hu-m-0 hu-text-slate-600 dark:hu-text-white">No hay cepas registradas.</p>}
+            {query.data && query.data.cepas.length === 0 && <p className="hu-m-0 hu-text-slate-600 dark:hu-text-white">No hay productos registrados.</p>}
             <div className="hu-grid hu-gap-5 sm:hu-grid-cols-2 2xl:hu-grid-cols-3">
               {query.data?.cepas.map((cepa) => <CepaRow key={cepa.id} cepa={cepa}
                 onRename={handleRename} onUpload={handleUpload} categories={categories.data ?? []}
                 categoriesUnavailable={categoriesUnavailable} />)}
             </div>
             {totalPages > 1 && (
-              <nav className="hu-flex hu-flex-wrap hu-items-center hu-justify-between hu-gap-3" aria-label="Paginación de cepas">
+              <nav className="hu-flex hu-flex-wrap hu-items-center hu-justify-between hu-gap-3" aria-label="Paginación de productos">
                 <Button type="button" variant="secondary" disabled={page === 0} onClick={() => setPage((value) => value - 1)}>Anterior</Button>
                 <span className="hu-text-sm hu-text-slate-700 dark:hu-text-white">Página {page + 1} de {totalPages}</span>
                 <Button type="button" variant="secondary" disabled={page + 1 >= totalPages} onClick={() => setPage((value) => value + 1)}>Siguiente</Button>

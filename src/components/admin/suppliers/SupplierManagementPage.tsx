@@ -386,13 +386,13 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
                 )}
               </summary>
               <div className="hu-mt-3 hu-grid hu-items-start hu-gap-3 sm:hu-grid-cols-2">
-              <Field label="Cepa" error={form.formState.errors.contenedores?.[index]?.cepaId?.message}>
+              <Field label="Producto" error={form.formState.errors.contenedores?.[index]?.cepaId?.message}>
                 <Select {...form.register(`contenedores.${index}.cepaId`)} disabled={cepasQuery.isPending || cepasQuery.isError}>
-                  <option value="">Selecciona una cepa</option>
+                  <option value="">Selecciona un producto</option>
                   {cepas.map((cepa) => <option key={cepa.id} value={cepa.id}>{cepa.nombre}</option>)}
                 </Select>
-                {cepasQuery.isError && <ErrorNotice>No se pudieron cargar las cepas: {getApiErrorMessage(cepasQuery.error)}</ErrorNotice>}
-                {!cepasQuery.isPending && !cepasQuery.isError && cepas.length === 0 && <p className="hu-m-0 hu-text-xs hu-text-amber-800">Primero registra una cepa en Administración de cepas.</p>}
+                {cepasQuery.isError && <ErrorNotice>No se pudieron cargar los productos: {getApiErrorMessage(cepasQuery.error)}</ErrorNotice>}
+                {!cepasQuery.isPending && !cepasQuery.isError && cepas.length === 0 && <p className="hu-m-0 hu-text-xs hu-text-amber-800">Primero registra un producto en Administración de productos.</p>}
               </Field>
               <Field label="Unidad base" error={form.formState.errors.contenedores?.[index]?.unidadBase?.message} hint="Ejemplo: gramo">
                 <Input {...form.register(`contenedores.${index}.unidadBase`)} placeholder="gramo" />
@@ -635,7 +635,7 @@ function SupplierDetailPage({ supplierId }: { supplierId: string }) {
         <div className="hu-mb-4 hu-flex hu-flex-wrap hu-items-end hu-justify-between hu-gap-2">
           <div>
             <h2 className="hu-m-0 hu-text-xl hu-font-bold">Lotes y tope de liquidación</h2>
-            <p className="hu-mb-0 hu-mt-1 hu-text-sm hu-text-slate-500">Busca los lotes del proveedor por cepa, presentación o SKU y desglosa sus contenedores. Se incluyen lotes saldados e históricos.</p>
+            <p className="hu-mb-0 hu-mt-1 hu-text-sm hu-text-slate-500">Busca los lotes del proveedor por producto, presentación o SKU y desglosa sus contenedores. Se incluyen lotes saldados e históricos.</p>
           </div>
           <Badge tone="blue">Recepción y empaquetado separados</Badge>
         </div>

@@ -96,7 +96,7 @@ function PqrOrderDialog({ onCancel, onCreate, t, isSubmitting: isCreating = fals
                     );
                 })}
                 <Field label={`${t('product')} *`} htmlFor="pqr-product-search" error={errors.productId?.message}>
-                    <Input id="pqr-product-search" value={search} maxLength={100} placeholder="Buscar cepa o presentación" onChange={(event) => {
+                    <Input id="pqr-product-search" value={search} maxLength={100} placeholder="Buscar producto o presentación" onChange={(event) => {
                         setSearch(event.target.value);
                         setValue('productId', '', { shouldValidate: true });
                         setValue('productName', '', { shouldValidate: true });

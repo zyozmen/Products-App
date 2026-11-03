@@ -38,7 +38,7 @@ export default function SupplierLotsList({ supplierId, renderLot }: {
           setPage(0);
         }}>
           <div className="hu-min-w-0 hu-flex-1">
-            <Field label="Buscar lotes" hint="Por cepa, nombre de presentación o SKU. Vacío muestra todos.">
+            <Field label="Buscar lotes" hint="Por producto, nombre de presentación o SKU. Vacío muestra todos.">
               <Input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Sativa, Bolsa o SAT-PREM-5G" />
             </Field>
           </div>
