@@ -19,8 +19,7 @@ const renderCheckout = (props = {}) => {
             <CheckoutForm
                 items={[{ id: '1', presentationId: '1', name: 'Mochila', price: 10, quantity: 1 }]}
                 subtotal={10}
-                taxAmount={1.6}
-                total={11.6}
+                total={10}
                 onOrderConfirmed={vi.fn()}
                 {...props}
             />
@@ -52,9 +51,7 @@ describe('createWhatsAppCheckoutUrl', () => {
         const url = new URL(createWhatsAppCheckoutUrl({
             items: [{ name: 'Mochila & termo', price: 10, quantity: 2 }],
             phoneNumber: '+57 312 405 8166',
-            subtotal: 20,
-            taxAmount: 3.2,
-            total: 23.2,
+            orderId: 123,
             delivery: {
                 recipientName: 'Ana Perez',
                 address: 'Calle 10 # 20-30',
@@ -69,7 +66,8 @@ describe('createWhatsAppCheckoutUrl', () => {
         expect(url.searchParams.get('text')).toContain('Receptor: Ana Perez');
         expect(url.searchParams.get('text')).toContain('Complemento: Casa 34, int. 4, apto. 204');
         expect(url.searchParams.get('text')).toContain('Telefono de contacto: +57 300 123 4567');
-        expect(url.searchParams.get('text')).toContain('Total: $23');
+        expect(url.searchParams.get('text')).toContain('Orden: #123');
+        expect(url.searchParams.get('text')).not.toContain('Total:');
     });
 
     it('saves the order, opens WhatsApp, and confirms checkout', async () => {
@@ -93,14 +91,14 @@ describe('createWhatsAppCheckoutUrl', () => {
                 contactPhone: '3001234567',
             }),
             subtotal: 10,
-            taxAmount: 1.6,
-            total: 11.6,
+            total: 10,
         });
         await waitFor(() => expect(openSpy).toHaveBeenCalledWith(
             expect.stringContaining('https://wa.me/'),
             '_blank',
             'noopener,noreferrer',
         ));
+        expect(new URL(openSpy.mock.calls[0][0]).searchParams.get('text')).toContain('Orden: #1');
         expect(onOrderConfirmed).toHaveBeenCalledOnce();
     });
 

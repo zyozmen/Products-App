@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import HeaderComponent from "../dashboard/HeaderComponent";
 import FooterComponent from "../dashboard/FooterComponent";
 import navigationComponent from "../navigation/NavigationComponent";
-import cartService, { DEFAULT_TAX_RATE } from "../../services/CartService";
+import cartService from "../../services/CartService";
 import { marketplaceService } from '../../services/marketplaceService.ts';
 import translationService from "../../services/TranslationService";
 import AuthenticationService from "../../services/AuthenticationService";
@@ -15,10 +15,10 @@ import { useOrderMutations } from '../../hooks/useApiQueries.ts';
 import { checkoutSchema } from '../../schemas/checkout';
 import { Button, Card, ErrorNotice, Field, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/shadcn';
 
-const whatsappPhoneNumber = String(import.meta.env.VITE_WHATSAPP_NUMBER ?? '573124058166').trim();
+const whatsappPhoneNumber = String(import.meta.env.VITE_WHATSAPP_NUMBER ?? '573134312139').trim();
 const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
 
-export const createWhatsAppCheckoutUrl = ({ items, phoneNumber, subtotal, taxAmount, total, delivery = {} }) => {
+export const createWhatsAppCheckoutUrl = ({ items, phoneNumber, orderId, delivery = {} }) => {
     const orderLines = items.map((item) =>
         `- ${item.name} x${item.quantity}: ${formatCOP(item.price * item.quantity)}`
     );
@@ -32,14 +32,14 @@ export const createWhatsAppCheckoutUrl = ({ items, phoneNumber, subtotal, taxAmo
         delivery.addressComplement ? `Complemento: ${delivery.addressComplement}` : null,
         `Telefono de contacto: ${delivery.contactPhone ?? ''}`,
         '',
-        `Total: ${formatCOP(total)}`,
+        `Orden: #${orderId ?? ''}`,
     ].filter((line) => line !== null).join('\n');
     const normalizedPhoneNumber = String(phoneNumber ?? '').replace(/\D/g, '');
 
     return `https://wa.me/${normalizedPhoneNumber}?text=${encodeURIComponent(message)}`;
 };
 
-export function CheckoutForm({ items, subtotal, taxAmount, total, onOrderConfirmed }) {
+export function CheckoutForm({ items, subtotal, total, onOrderConfirmed }) {
     const t = useTranslation();
     const { create } = useOrderMutations();
     const user = AuthenticationService.getLoggedInUser();
@@ -69,8 +69,9 @@ export function CheckoutForm({ items, subtotal, taxAmount, total, onOrderConfirm
             addressComplement: values.addressComplement,
             contactPhone: values.contactPhone,
         };
+        let createdOrder;
         try {
-            await create.mutateAsync({ items, delivery, subtotal, taxAmount, total });
+            createdOrder = await create.mutateAsync({ items, delivery, subtotal, total });
         } catch (error) {
             const message = error instanceof Error ? error.message : t('checkout_create_error');
             if (/precio|total.*coincide|presentaci|stock|disponible/i.test(message) &&
@@ -113,9 +114,7 @@ export function CheckoutForm({ items, subtotal, taxAmount, total, onOrderConfirm
         const url = createWhatsAppCheckoutUrl({
             items,
             phoneNumber: whatsappPhoneNumber,
-            subtotal,
-            taxAmount,
-            total,
+            orderId: createdOrder?.id,
             delivery,
         });
         window.open(url, '_blank', 'noopener,noreferrer');
@@ -162,10 +161,6 @@ export function CheckoutForm({ items, subtotal, taxAmount, total, onOrderConfirm
                 <div className="hu-flex hu-justify-between hu-text-sm">
                     <span>{t('subtotal')}</span>
                     <strong>{formatCOP(subtotal)}</strong>
-                </div>
-                <div className="hu-flex hu-justify-between hu-text-sm">
-                    <span>{t('tax')} ({(DEFAULT_TAX_RATE * 100).toFixed(0)}%)</span>
-                    <strong>{formatCOP(taxAmount)}</strong>
                 </div>
                 <div className="hu-flex hu-justify-between hu-pt-2 hu-text-base">
                     <strong>{t('total')}</strong>
@@ -249,7 +244,6 @@ class ShoppingCarComponent extends Component {
         const isUserLoggedIn = AuthenticationService.isUserLoggedIn();
         const { items } = this.state;
         const subtotal = cartService.getSubtotal();
-        const taxAmount = cartService.getTaxAmount();
         const total = cartService.getTotal();
         const t = (key) => translationService.t(key);
 
@@ -340,7 +334,6 @@ class ShoppingCarComponent extends Component {
                                     <CheckoutForm
                                         items={items}
                                         subtotal={subtotal}
-                                        taxAmount={taxAmount}
                                         total={total}
                                         onOrderConfirmed={this.handleOrderConfirmed}
                                     />

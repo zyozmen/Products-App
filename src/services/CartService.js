@@ -1,6 +1,5 @@
 const CART_STORAGE_KEY = 'growShopCartItems';
 const CART_MIGRATION_NOTICE_KEY = 'growShopCartMigrationNotified';
-export const DEFAULT_TAX_RATE = 0.16;
 
 export class CartService {
     constructor() {
@@ -153,12 +152,9 @@ export class CartService {
         return this.items.reduce((total, item) => total + item.price * item.quantity, 0);
     }
 
-    getTaxAmount(taxRate = DEFAULT_TAX_RATE) {
-        return this.getSubtotal() * taxRate;
-    }
-
-    getTotal(taxRate = DEFAULT_TAX_RATE) {
-        return this.getSubtotal() + this.getTaxAmount(taxRate);
+    // Sin impuestos: el total del carrito es el subtotal.
+    getTotal() {
+        return this.getSubtotal();
     }
 }
 

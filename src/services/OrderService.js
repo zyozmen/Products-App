@@ -85,7 +85,7 @@ const toError = (error, fallbackMessage) => {
 };
 
 class OrderService {
-    async createOrder({ items, delivery, subtotal, taxAmount, total }) {
+    async createOrder({ items, delivery, subtotal, total }) {
         try {
             const payload = {
                 items: items.map((item) => ({
@@ -97,7 +97,6 @@ class OrderService {
                 })),
                 delivery,
                 subtotal,
-                taxAmount,
                 total,
             };
             const response = await axios.post(`${apiBaseUrl}/orders`, payload, { headers: authHeaders() });
