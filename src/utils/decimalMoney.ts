@@ -39,3 +39,23 @@ export function isPositiveDecimal(value: string): boolean {
   const plain = normalizeDecimal(value);
   return !plain.startsWith('-') && /[1-9]/.test(plain);
 }
+
+/** Centavos exactos de un importe del servidor (2 decimales), para comparar sin errores de coma flotante. */
+export function decimalToCents(value: string): bigint {
+  const plain = normalizeDecimal(value);
+  const negative = plain.startsWith('-');
+  const [integer, fraction = ''] = plain.replace('-', '').split('.');
+  const cents = BigInt(integer) * 100n + BigInt(fraction.padEnd(2, '0').slice(0, 2));
+  return negative ? -cents : cents;
+}
+
+/** Centavos de un monto capturado (maximo 2 decimales, ya validado por el formulario). */
+export function amountToCents(amount: number): bigint {
+  return BigInt(Math.round(amount * 100));
+}
+
+export function centsToDecimal(cents: bigint): string {
+  const negative = cents < 0n;
+  const abs = negative ? -cents : cents;
+  return `${negative ? '-' : ''}${abs / 100n}.${(abs % 100n).toString().padStart(2, '0')}`;
+}

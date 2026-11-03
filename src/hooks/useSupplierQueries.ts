@@ -1,6 +1,7 @@
 import axios from 'axios';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supplierService } from '../services/supplierService';
+import { settlementKeys } from './useSettlementQueries';
 import type { SupplierLotSort, SupplierResponse } from '../Interfaces/supplier';
 
 export const supplierKeys = {
@@ -91,6 +92,20 @@ export function useCreateLot(supplierId: string) {
   });
 }
 
+function invalidatePaymentState(client: QueryClient, supplierId: string, includeSettlement: boolean) {
+  return Promise.all([
+    client.invalidateQueries({ queryKey: supplierKeys.detail(supplierId) }),
+    client.invalidateQueries({ queryKey: supplierKeys.payments(supplierId) }),
+    client.invalidateQueries({ queryKey: supplierKeys.lots }),
+    client.invalidateQueries({ queryKey: supplierKeys.lotLists(supplierId) }),
+    ...(includeSettlement ? [client.invalidateQueries({ queryKey: settlementKeys.all })] : []),
+  ]);
+}
+
+// Un conflicto, un fallo del servidor o la falta de respuesta pueden haber cambiado saldos: se recarga.
+const isUncertainPaymentError = (error: unknown) =>
+  axios.isAxiosError(error) && (!error.response || error.response.status === 409 || error.response.status >= 500);
+
 export function useRegisterPayment(supplierId: string) {
   const client = useQueryClient();
   return useMutation({
@@ -98,22 +113,23 @@ export function useRegisterPayment(supplierId: string) {
       supplierService.registerPayment(supplierId, request),
     onSuccess: (supplier) => {
       client.setQueryData<SupplierResponse>(supplierKeys.detail(supplierId), supplier);
-      return Promise.all([
-        client.invalidateQueries({ queryKey: supplierKeys.detail(supplierId) }),
-        client.invalidateQueries({ queryKey: supplierKeys.payments(supplierId) }),
-        client.invalidateQueries({ queryKey: supplierKeys.lots }),
-        client.invalidateQueries({ queryKey: supplierKeys.lotLists(supplierId) }),
-      ]);
+      return invalidatePaymentState(client, supplierId, false);
     },
     onError: (error) => {
-      if (axios.isAxiosError(error) && error.response?.status === 409) {
-        return Promise.all([
-          client.invalidateQueries({ queryKey: supplierKeys.detail(supplierId) }),
-          client.invalidateQueries({ queryKey: supplierKeys.payments(supplierId) }),
-          client.invalidateQueries({ queryKey: supplierKeys.lots }),
-          client.invalidateQueries({ queryKey: supplierKeys.lotLists(supplierId) }),
-        ]);
-      }
+      if (isUncertainPaymentError(error)) return invalidatePaymentState(client, supplierId, false);
+    },
+  });
+}
+
+/** Pago vinculado a una jornada: ademas del proveedor, recarga pendiente, sugerido y exceso del servidor. */
+export function useRegisterLinkedPayment(supplierId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (request: Parameters<typeof supplierService.registerLinkedPayment>[1]) =>
+      supplierService.registerLinkedPayment(supplierId, request),
+    onSuccess: () => invalidatePaymentState(client, supplierId, true),
+    onError: (error) => {
+      if (isUncertainPaymentError(error)) return invalidatePaymentState(client, supplierId, true);
     },
   });
 }

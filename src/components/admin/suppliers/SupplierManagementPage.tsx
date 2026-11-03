@@ -4,7 +4,6 @@ import {
   BadgeDollarSign,
   Building2,
   Check,
-  CircleDollarSign,
   History,
   PackagePlus,
   Plus,
@@ -15,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import HeaderComponent from '../../dashboard/HeaderComponent.jsx';
 import AdminNav from '../AdminNav.jsx';
 import FooterComponent from '../../dashboard/FooterComponent.jsx';
@@ -24,7 +23,6 @@ import {
   useCreateLot,
   useCreateSupplier,
   useEvaluateLiquidation,
-  useRegisterPayment,
   useSupplier,
   useLot,
 } from '../../../hooks/useSupplierQueries';
@@ -33,12 +31,10 @@ import {
   containerSchema,
   liquidationSchema,
   lotSchema,
-  paymentSchemaForBalance,
   supplierSchema,
   type LiquidationFormValues,
   type LotFormInput,
   type LotFormValues,
-  type PaymentFormValues,
   type SupplierFormValues,
 } from '../../../schemas/supplier';
 import { getApiErrorMessage } from '../../../services/supplierService';
@@ -48,6 +44,7 @@ import type { LiquidationEvaluation, LotResponse, SupplierResponse } from '../..
 import SupplierPaymentsTable from './SupplierPaymentsTable';
 import SupplierLotsList from './SupplierLotsList';
 import DesgloseContenedorForm from './DesgloseContenedorForm';
+import SupplierPaymentForm from './SupplierPaymentForm';
 import { Badge, Button, Card, ErrorNotice, Field, Input, Select } from '../../ui/shadcn';
 
 const cop = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -466,60 +463,6 @@ function LotForm({ supplier, onCreated }: { supplier: SupplierResponse; onCreate
   );
 }
 
-function PaymentForm({ supplier, onPaid }: { supplier: SupplierResponse; onPaid: () => void }) {
-  const registerPayment = useRegisterPayment(supplier.id);
-  const schema = useMemo(() => paymentSchemaForBalance(supplier.saldoPendiente), [supplier.saldoPendiente]);
-  const form = useForm<PaymentFormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { monto: undefined, loteId: '', tipo: 'ABONO', observaciones: '' },
-  });
-  const onSubmit = form.handleSubmit(async (values) => {
-    try {
-      await registerPayment.mutateAsync({
-        monto: values.monto,
-        loteId: values.loteId?.trim() || undefined,
-        tipo: values.tipo,
-        observaciones: values.observaciones?.trim() || undefined,
-      });
-      form.reset({ monto: undefined, loteId: '', tipo: 'ABONO', observaciones: '' });
-      onPaid();
-    } catch {
-      // Mutation errors are shown in the form below.
-    }
-  });
-
-  return (
-    <Card className="hu-overflow-hidden">
-      <div className="hu-border-b hu-border-slate-100 hu-p-5">
-        <h2 className="hu-m-0 hu-flex hu-items-center hu-gap-2 hu-text-lg hu-font-bold"><Wallet size={19} className="hu-text-blue-700" /> Registrar abono</h2>
-        <p className="hu-mb-0 hu-mt-1 hu-text-sm hu-text-slate-500">El saldo pendiente disponible es {formatCop(supplier.saldoPendiente)}.</p>
-      </div>
-      <form className="hu-grid hu-gap-4 hu-p-5" onSubmit={onSubmit} noValidate>
-        <Field label="Monto" error={form.formState.errors.monto?.message}>
-          <Input type="number" min="0.01" max={supplier.saldoPendiente} step="0.01" {...form.register('monto', { valueAsNumber: true })} />
-        </Field>
-        <Field label="ID del lote (opcional)" hint="Si lo omites, el backend asigna el pago a los lotes pendientes más antiguos.">
-          <Input {...form.register('loteId')} placeholder="ID de lote" />
-        </Field>
-        <Field label="Tipo de pago">
-          <Select {...form.register('tipo')}>
-            <option value="ABONO">Abono</option>
-            <option value="PAGO_CORTESIA">Pago de cortesía</option>
-            <option value="AJUSTE_PQR">Ajuste PQR</option>
-          </Select>
-        </Field>
-        <Field label="Observaciones" error={form.formState.errors.observaciones?.message}>
-          <Input {...form.register('observaciones')} maxLength={500} placeholder="Detalle del pago (opcional)" />
-        </Field>
-        {registerPayment.isError && <ErrorNotice>{getApiErrorMessage(registerPayment.error)}</ErrorNotice>}
-        <Button type="submit" disabled={registerPayment.isPending || supplier.saldoPendiente <= 0}>
-          <CircleDollarSign size={17} /> {registerPayment.isPending ? 'Registrando…' : 'Registrar pago'}
-        </Button>
-      </form>
-    </Card>
-  );
-}
-
 function SupplierDetailPage({ supplierId }: { supplierId: string }) {
   const { data: supplier, isPending, isError, error, refetch } = useSupplier(supplierId);
   const [lots, setLots] = useState<LotResponse[]>([]);
@@ -626,7 +569,7 @@ function SupplierDetailPage({ supplierId }: { supplierId: string }) {
         )}
       </section>
       <section id="supplier-section-payment" aria-labelledby="supplier-action-payment" hidden={activeSection !== 'payment'}>
-        <PaymentForm supplier={supplier} onPaid={() => {
+        <SupplierPaymentForm supplier={supplier} onPaid={() => {
           setFeedback('Pago registrado y saldos del proveedor actualizados.');
         }} />
       </section>

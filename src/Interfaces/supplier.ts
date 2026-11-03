@@ -134,6 +134,25 @@ export interface PaymentRequest {
   observaciones?: string | null;
 }
 
+/** Pago vinculado a una jornada de liquidacion (HU-04/T5). */
+export interface LinkedPaymentRequest extends PaymentRequest {
+  /** Jornada `yyyy-MM-dd`; nunca se infiere de la fecha de registro. */
+  fechaLiquidacion: string;
+}
+
+export interface LinkedPaymentAllocation {
+  loteId: string;
+  monto: number;
+}
+
+export interface LinkedPaymentResponse {
+  proveedor: SupplierResponse;
+  correlationId: string;
+  fechaLiquidacion: string;
+  monto: number;
+  asignaciones: LinkedPaymentAllocation[];
+}
+
 export interface LiquidationRequest {
   proveedorId: string;
   loteId: string;

@@ -2,6 +2,8 @@ import axios from 'axios';
 import { getApiBaseUrl } from './apiConfig.js';
 import { serializePresentations } from '../utils/serializePresentations';
 import type {
+  LinkedPaymentRequest,
+  LinkedPaymentResponse,
   LiquidationEvaluation,
   LiquidationRequest,
   LotCreateRequest,
@@ -97,6 +99,15 @@ export const supplierService = {
     return data;
   },
 
+  /** Mismo endpoint con `fechaLiquidacion`: el backend responde el pago con su imputacion por lote. */
+  async registerLinkedPayment(id: string, request: LinkedPaymentRequest) {
+    const { data } = await axios.post<LinkedPaymentResponse>(
+      endpoint(`/proveedores/${encodeURIComponent(id)}/pagos`),
+      request,
+    );
+    return data;
+  },
+
   async evaluateLiquidation(request: LiquidationRequest) {
     const { data } = await axios.post<LiquidationEvaluation>(
       endpoint('/liquidaciones/procesar-evento'),
@@ -120,4 +131,15 @@ export function getApiErrorMessage(error: unknown): string {
     return 'No se pudo completar la solicitud. Inténtalo nuevamente.';
   }
   return error instanceof Error ? error.message : 'Ocurrió un error inesperado.';
+}
+
+/**
+ * Sin respuesta (timeout o red) el pago pudo registrarse en el servidor: no se invita a repetirlo
+ * sin verificar antes el historial de abonos o la liquidacion.
+ */
+export function getPaymentErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error) && !error.response) {
+    return 'No se recibió respuesta del servidor y el pago pudo haberse registrado. Verifica el histórico de abonos y la liquidación antes de repetirlo.';
+  }
+  return getApiErrorMessage(error);
 }

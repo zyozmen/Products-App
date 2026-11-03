@@ -1,16 +1,20 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { Info, ReceiptText, RefreshCw } from 'lucide-react';
+import { Info, ReceiptText, RefreshCw, Wallet, X } from 'lucide-react';
 import HeaderComponent from '../../dashboard/HeaderComponent.jsx';
 import FooterComponent from '../../dashboard/FooterComponent.jsx';
 import AdminNav from '../AdminNav.jsx';
 import navigationComponent from '../../navigation/NavigationComponent.jsx';
 import { useDailySettlementSummary } from '../../../hooks/useSettlementQueries';
+import { useSupplier } from '../../../hooks/useSupplierQueries';
 import { InvalidSettlementResponseError } from '../../../services/settlementService';
+import { getApiErrorMessage } from '../../../services/supplierService';
 import { formatDecimalCOP, isPositiveDecimal } from '../../../utils/decimalMoney';
 import { BUSINESS_TIMEZONE, ISO_DATE } from '../../../utils/businessDate';
 import type { ProviderDailySummary } from '../../../Interfaces/settlement';
+import type { LinkedPaymentResponse } from '../../../Interfaces/supplier';
+import SupplierPaymentForm, { formatSettlementDate } from '../suppliers/SupplierPaymentForm';
 import { Button, Card, ErrorNotice } from '../../ui/shadcn';
 
 const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
@@ -57,7 +61,7 @@ const MONEY_COLUMNS: { key: keyof ProviderDailySummary; label: string; emphasis?
   { key: 'overpaidAmount', label: 'Exceso pagado' },
 ];
 
-function SummaryTable({ rows }: { rows: ProviderDailySummary[] }) {
+function SummaryTable({ rows, onPay }: { rows: ProviderDailySummary[]; onPay: (row: ProviderDailySummary) => void }) {
   const head = 'hu-whitespace-nowrap hu-px-4 hu-py-3 hu-text-xs hu-font-bold hu-uppercase hu-tracking-wide hu-text-slate-600 dark:hu-text-slate-300';
   return (
     <div className="hu-overflow-x-auto" tabIndex={0} role="region" aria-label="Resumen por proveedor (desplazable)">
@@ -71,6 +75,7 @@ function SummaryTable({ rows }: { rows: ProviderDailySummary[] }) {
             {MONEY_COLUMNS.map((column) => (
               <th key={column.key} scope="col" className={`${head} hu-text-right`}>{column.label}</th>
             ))}
+            <th scope="col" className={`${head} hu-text-center`}>Acción</th>
           </tr>
         </thead>
         <tbody>
@@ -92,12 +97,62 @@ function SummaryTable({ rows }: { rows: ProviderDailySummary[] }) {
                   </td>
                 );
               })}
+              <td className="hu-px-4 hu-py-3 hu-text-center">
+                <Button type="button" variant="secondary" className="hu-whitespace-nowrap hu-px-3 hu-py-1.5"
+                  aria-label={`Registrar pago a ${row.providerName ?? row.providerId}`}
+                  disabled={!isPositiveDecimal(row.providerOutstandingBalance)}
+                  title={isPositiveDecimal(row.providerOutstandingBalance) ? undefined : 'El proveedor no tiene saldo pendiente.'}
+                  onClick={() => onPay(row)}>
+                  <Wallet size={15} aria-hidden="true" /> Registrar pago
+                </Button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
   );
+}
+
+function SettlementPaymentPanel({ row, date, onClose, onPaid }: {
+  row: ProviderDailySummary;
+  date: string;
+  onClose: () => void;
+  onPaid: (result: LinkedPaymentResponse) => void;
+}) {
+  const supplier = useSupplier(row.providerId);
+  const name = row.providerName ?? row.providerId;
+  return (
+    <section className="hu-grid hu-gap-3" aria-label={`Pago vinculado a la jornada para ${name}`}>
+      <div className="hu-flex hu-flex-wrap hu-items-center hu-justify-between hu-gap-3">
+        <h2 className="hu-m-0 hu-text-lg hu-font-bold dark:hu-text-white">Pago a {name} · jornada del {formatSettlementDate(date)}</h2>
+        <Button type="button" variant="ghost" onClick={onClose}><X size={16} aria-hidden="true" /> Cerrar</Button>
+      </div>
+      {isPositiveDecimal(row.overpaidAmount) && (
+        <p className="hu-m-0 hu-text-sm hu-text-amber-800 dark:hu-text-amber-300">
+          Esta jornada ya tiene un exceso pagado de {formatDecimalCOP(row.overpaidAmount)}. Es informativo: no es deuda negativa ni genera reembolso.
+        </p>
+      )}
+      {supplier.isPending && <p role="status" className="hu-m-0 hu-text-sm hu-text-slate-600 dark:hu-text-white">Cargando saldos del proveedor…</p>}
+      {supplier.isError && (
+        <Card className="hu-grid hu-gap-3 hu-p-5">
+          <ErrorNotice>{getApiErrorMessage(supplier.error)}</ErrorNotice>
+          <Button type="button" variant="secondary" className="hu-w-fit" onClick={() => void supplier.refetch()}>Reintentar</Button>
+        </Card>
+      )}
+      {supplier.data && (
+        <SupplierPaymentForm supplier={supplier.data}
+          settlement={{ date, suggestedPayableAmount: row.suggestedPayableAmount }}
+          onPaid={(result) => { if (result) onPaid(result); }} />
+      )}
+    </section>
+  );
+}
+
+function paidNotice(name: string, result: LinkedPaymentResponse): string {
+  const amount = (value: number) => formatDecimalCOP(String(value));
+  const allocations = result.asignaciones.map((item) => `lote ${item.loteId}: ${amount(item.monto)}`).join('; ');
+  return `Pago de ${amount(result.monto)} a ${name} vinculado a la jornada del ${formatSettlementDate(result.fechaLiquidacion)}. Imputación: ${allocations || 'sin detalle'}. Los totales se actualizaron desde el servidor.`;
 }
 
 export default function DailySettlementPage() {
@@ -112,6 +167,10 @@ export default function DailySettlementPage() {
   const query = useDailySettlementSummary(page, PAGE_SIZE, date);
   const data = query.data;
   const rows = data?.content ?? [];
+  const [paying, setPaying] = useState<ProviderDailySummary | null>(null);
+  const [paidMessage, setPaidMessage] = useState('');
+  // El formulario se cierra si cambia la jornada consultada.
+  const payingRow = paying && data && paying.date === data.date ? paying : null;
 
   return (
     <div className="hu-flex hu-min-h-screen hu-flex-col admin-page-bg hu-text-slate-900">
@@ -169,6 +228,19 @@ export default function DailySettlementPage() {
               <p className="hu-m-0 hu-text-sm hu-text-slate-600 dark:hu-text-white">Acumulación activa desde {formatInstant(data.activatedAt)} (hora de Bogotá).</p>
             )}
 
+            {paidMessage && (
+              <div className="hu-rounded-lg hu-border hu-border-solid hu-border-green-200 hu-bg-green-50 hu-p-3 hu-text-sm hu-text-green-900" role="status">{paidMessage}</div>
+            )}
+
+            {payingRow && (
+              <SettlementPaymentPanel key={payingRow.providerId} row={payingRow} date={data.date}
+                onClose={() => setPaying(null)}
+                onPaid={(result) => {
+                  setPaying(null);
+                  setPaidMessage(paidNotice(payingRow.providerName ?? payingRow.providerId, result));
+                }} />
+            )}
+
             <Card className="hu-overflow-hidden kanban-board">
               <div className="hu-flex hu-flex-wrap hu-items-baseline hu-justify-between hu-gap-2 hu-border-0 hu-border-b hu-border-solid hu-border-slate-100 hu-p-5 dark:hu-border-white/10">
                 <h2 className="hu-m-0 hu-text-lg hu-font-bold dark:hu-text-white">Resumen por proveedor</h2>
@@ -183,10 +255,11 @@ export default function DailySettlementPage() {
                 </div>
               ) : (
                 <>
-                  <SummaryTable rows={rows} />
+                  <SummaryTable rows={rows} onPay={(row) => { setPaidMessage(''); setPaying(row); }} />
                   <p className="hu-m-0 hu-border-0 hu-border-t hu-border-solid hu-border-slate-100 hu-px-5 hu-py-3 hu-text-xs hu-text-slate-500 dark:hu-border-white/10 dark:hu-text-slate-300">
                     Las unidades corresponden a presentaciones. El saldo del proveedor es su saldo global actual y limita el valor sugerido.
                     Una PQR cancelada se descuenta de "Unidades PQR" y su costo aparece en "Revertido" de la jornada en que se creó; el costo PQR bruto se conserva.
+                    "Exceso pagado" es informativo: no es deuda negativa ni genera reembolsos automáticos, y el abono no se elimina.
                   </p>
                 </>
               )}

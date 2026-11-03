@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import DailySettlementPage from '../components/admin/settlements/DailySettlementPage.tsx';
 import { InvalidSettlementResponseError, settlementService } from '../services/settlementService.ts';
+import { supplierService } from '../services/supplierService.ts';
 
 vi.mock('../components/dashboard/HeaderComponent.jsx', () => ({ default: () => null }));
 vi.mock('../components/dashboard/FooterComponent.jsx', () => ({ default: () => null }));
@@ -107,5 +108,30 @@ describe('daily settlement page', () => {
         renderPage('/admin/liquidacion?date=20-10-2026');
         expect(await screen.findByText(/La fecha de la jornada en el enlace no es válida/)).toBeInTheDocument();
         expect(get).toHaveBeenCalledWith(0, 20, null);
+    });
+
+    it('registers a payment linked to the displayed journey and reloads the summary (HU-04/F5)', async () => {
+        const get = vi.spyOn(settlementService, 'getDailySummary').mockResolvedValue({
+            ...empty, date: '2026-10-17', activationPending: false, activatedAt: '2026-10-01T05:00:00Z',
+            content: [{ ...provider, date: '2026-10-17', suggestedPayableAmount: '110000.00' }], totalElements: 1, totalPages: 1,
+        });
+        vi.spyOn(supplierService, 'getSupplier').mockResolvedValue({
+            id: provider.providerId, nombre: 'Distribuidora Cannabis SAS', nit: '900', estado: 'ACTIVO',
+            totalDeuda: 900000, totalPagado: 400000, saldoPendiente: 500000, fechaCreacion: '', ultimaActualizacion: '',
+        });
+        const pay = vi.spyOn(supplierService, 'registerLinkedPayment').mockResolvedValue({
+            proveedor: {}, correlationId: 'c', fechaLiquidacion: '2026-10-17', monto: 110000,
+            asignaciones: [{ loteId: 'lote-a', monto: 60000 }, { loteId: 'lote-b', monto: 50000 }],
+        });
+        renderPage('/admin/liquidacion?date=2026-10-17');
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Registrar pago a Distribuidora Cannabis SAS' }));
+        expect(await screen.findByLabelText(/^Monto/)).toHaveValue(110000);
+        fireEvent.click(screen.getByRole('button', { name: 'Registrar pago' }));
+        fireEvent.click(await screen.findByRole('button', { name: 'Confirmar pago' }));
+
+        await waitFor(() => expect(pay).toHaveBeenCalledWith(provider.providerId, expect.objectContaining({ monto: 110000, fechaLiquidacion: '2026-10-17' })));
+        expect(await screen.findByText(/vinculado a la jornada del 17 de octubre de 2026/)).toHaveTextContent('lote lote-a: $60.000; lote lote-b: $50.000');
+        await waitFor(() => expect(get.mock.calls.length).toBeGreaterThan(1));
     });
 });
