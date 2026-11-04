@@ -11,11 +11,13 @@ import { useSupplier } from '../../../hooks/useSupplierQueries';
 import { InvalidSettlementResponseError } from '../../../services/settlementService';
 import { getApiErrorMessage } from '../../../services/supplierService';
 import { formatDecimalCOP, isPositiveDecimal } from '../../../utils/decimalMoney';
-import { BUSINESS_TIMEZONE, ISO_DATE } from '../../../utils/businessDate';
+import { BUSINESS_TIMEZONE, isBusinessDate } from '../../../utils/businessDate';
 import type { ProviderDailySummary } from '../../../Interfaces/settlement';
 import type { LinkedPaymentResponse } from '../../../Interfaces/supplier';
 import SupplierPaymentForm, { formatSettlementDate } from '../suppliers/SupplierPaymentForm';
-import { Button, Card, ErrorNotice } from '../../ui/shadcn';
+import { Button, Card, ErrorNotice, Field, Input, Select } from '../../ui/shadcn';
+import SupplierSearch from '../suppliers/SupplierSearch';
+import DailySettlementDetail, { SettlementPagination } from './DailySettlementDetail';
 
 const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
 const PAGE_SIZE = 20;
@@ -61,7 +63,7 @@ const MONEY_COLUMNS: { key: keyof ProviderDailySummary; label: string; emphasis?
   { key: 'overpaidAmount', label: 'Exceso pagado' },
 ];
 
-function SummaryTable({ rows, onPay }: { rows: ProviderDailySummary[]; onPay: (row: ProviderDailySummary) => void }) {
+function SummaryTable({ rows, onPay, onDetail }: { rows: ProviderDailySummary[]; onPay: (row: ProviderDailySummary) => void; onDetail: (row: ProviderDailySummary) => void }) {
   const head = 'hu-whitespace-nowrap hu-px-4 hu-py-3 hu-text-xs hu-font-bold hu-uppercase hu-tracking-wide hu-text-slate-600 dark:hu-text-slate-300';
   return (
     <div className="hu-overflow-x-auto" tabIndex={0} role="region" aria-label="Resumen por proveedor (desplazable)">
@@ -98,6 +100,8 @@ function SummaryTable({ rows, onPay }: { rows: ProviderDailySummary[]; onPay: (r
                 );
               })}
               <td className="hu-px-4 hu-py-3 hu-text-center">
+                <Button type="button" variant="ghost" className="hu-whitespace-nowrap" aria-label={`Ver movimientos de ${row.providerName ?? row.providerId}`}
+                  onClick={() => onDetail(row)}>Ver movimientos</Button>
                 <Button type="button" variant="secondary" className="hu-whitespace-nowrap hu-px-3 hu-py-1.5"
                   aria-label={`Registrar pago a ${row.providerName ?? row.providerId}`}
                   disabled={!isPositiveDecimal(row.providerOutstandingBalance)}
@@ -156,21 +160,49 @@ function paidNotice(name: string, result: LinkedPaymentResponse): string {
 }
 
 export default function DailySettlementPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const rawDate = searchParams.get('date');
-  const invalidDate = rawDate !== null && !ISO_DATE.test(rawDate);
+  const invalidDate = rawDate !== null && !isBusinessDate(rawDate);
   const date = rawDate && !invalidDate ? rawDate : null;
-  const [paging, setPaging] = useState({ date, page: 0 });
-  const page = paging.date === date ? paging.page : 0;
-  const setPage = (next: number | ((value: number) => number)) =>
-    setPaging({ date, page: typeof next === 'function' ? next(page) : next });
-  const query = useDailySettlementSummary(page, PAGE_SIZE, date);
+  const providerId = searchParams.get('providerId');
+  const idPattern = /^[a-f\d]{24}$/i;
+  const invalidProvider = providerId !== null && !idPattern.test(providerId);
+  const rawPage = searchParams.get('page') ?? '0';
+  const rawSize = searchParams.get('size') ?? String(PAGE_SIZE);
+  const page = Number(rawPage);
+  const size = Number(rawSize);
+  const detailProviderId = searchParams.get('detailProviderId');
+  const detailDate = searchParams.get('detailDate') ?? '';
+  const rawDetailPage = searchParams.get('detailPage') ?? '0';
+  const detailPage = Number(rawDetailPage);
+  const validPage = (raw: string) => /^\d+$/.test(raw) && Number.isSafeInteger(Number(raw));
+  const invalidPaging = !validPage(rawPage) || !validPage(rawSize) || size < 1 || size > 100;
+  const invalidDetail = detailProviderId !== null && (!idPattern.test(detailProviderId) || !isBusinessDate(detailDate) || !validPage(rawDetailPage));
+  const invalidQuery = invalidDate || invalidProvider || invalidPaging || invalidDetail;
+  const changeParams = (changes: Record<string, string | null>, filter = false) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(changes).forEach(([key, value]) => value === null ? next.delete(key) : next.set(key, value));
+    if (filter) {
+      next.delete('page');
+      next.delete('detailProviderId');
+      next.delete('detailDate');
+      next.delete('detailPage');
+      setPaying(null);
+      setPaidMessage('');
+    }
+    setSearchParams(next);
+  };
+  const setPage = (next: number) => changeParams({ page: String(next) });
+  const query = useDailySettlementSummary(page, size, date, providerId?.toLowerCase() ?? null, !invalidQuery && detailProviderId === null);
   const data = query.data;
   const rows = data?.content ?? [];
   const [paying, setPaying] = useState<ProviderDailySummary | null>(null);
   const [paidMessage, setPaidMessage] = useState('');
+  const todayParams = new URLSearchParams(searchParams);
+  todayParams.delete('date');
+  todayParams.delete('page');
   // El formulario se cierra si cambia la jornada consultada.
-  const payingRow = paying && data && paying.date === data.date ? paying : null;
+  const payingRow = paying && data && paying.date === data.date && rows.some((row) => row.providerId === paying.providerId) ? paying : null;
 
   return (
     <div className="hu-flex hu-min-h-screen hu-flex-col admin-page-bg hu-text-slate-900">
@@ -184,18 +216,42 @@ export default function DailySettlementPage() {
               Costo reconocido a cada proveedor por las ventas y PQR de la jornada, y valor sugerido a pagar. No corresponde al ingreso comercial.
             </p>
           </div>
-          <Button type="button" variant="secondary" disabled={query.isFetching} onClick={() => void query.refetch()}>
+          {detailProviderId === null && <Button type="button" variant="secondary" disabled={query.isFetching || invalidQuery} onClick={() => void query.refetch()}>
             <RefreshCw size={16} aria-hidden="true" className={query.isFetching ? 'hu-animate-spin' : ''} />
             {query.isFetching ? 'Actualizando…' : 'Actualizar'}
-          </Button>
+          </Button>}
         </div>
 
-        {invalidDate && (
-          <Card className="hu-mb-5 hu-grid hu-gap-3 hu-p-5">
-            <ErrorNotice>La fecha de la jornada en el enlace no es válida (usa AAAA-MM-DD). Se muestra la jornada de hoy.</ErrorNotice>
+        <div style={detailProviderId !== null ? { display: 'none' } : undefined} className="hu-mb-5 hu-grid hu-gap-4">
+          <Card className="hu-grid hu-gap-4 hu-p-5 sm:hu-grid-cols-3">
+            <Field label="Fecha de jornada">
+              <Input type="date" value={date ?? ''} onChange={(event) => changeParams({ date: event.target.value || null }, true)} />
+            </Field>
+            <Field label="Proveedor seleccionado" hint="Busca por nombre/NIT o selecciona un ID de 24 caracteres hexadecimales.">
+              <Input value={providerId ?? ''} onChange={(event) => changeParams({ providerId: event.target.value || null }, true)} />
+            </Field>
+            <Field label="Resultados por página">
+              <Select value={size} onChange={(event) => changeParams({ size: event.target.value }, true)}>
+                {[10, 20, 50, 100, ...(![10, 20, 50, 100].includes(size) && !invalidPaging ? [size] : [])].map((value) => <option key={value} value={value}>{value}</option>)}
+              </Select>
+            </Field>
+            <Button type="button" variant="secondary" onClick={() => changeParams({ providerId: null }, true)}>Todos los proveedores</Button>
           </Card>
-        )}
-
+          <details>
+            <summary className="hu-cursor-pointer hu-text-sm hu-font-semibold">Buscar y seleccionar proveedor</summary>
+            <SupplierSearch onSelect={(id) => changeParams({ providerId: id.toLowerCase() }, true)} />
+          </details>
+        </div>
+        {invalidDate && <ErrorNotice>La fecha de la jornada no es válida. Usa una fecha existente en formato AAAA-MM-DD.</ErrorNotice>}
+        {(invalidProvider || invalidPaging || invalidDetail) && <ErrorNotice>Proveedor o paginación no válidos. Usa un ID hexadecimal de 24 caracteres, página desde cero y tamaño entre 1 y 100; el detalle requiere una jornada válida.</ErrorNotice>}
+        {detailProviderId !== null && invalidQuery && <Button type="button" variant="secondary"
+          onClick={() => changeParams({ detailProviderId: null, detailDate: null, detailPage: null })}>Volver al resumen</Button>}
+        {detailProviderId && !invalidQuery && <DailySettlementDetail
+          date={detailDate} providerId={detailProviderId.toLowerCase()} page={detailPage} size={size}
+          onPage={(value) => changeParams({ detailPage: String(value) })}
+          onBack={() => changeParams({ detailProviderId: null, detailDate: null, detailPage: null })}
+          errorMessage={settlementErrorMessage} formatInstant={formatInstant} />}
+        {detailProviderId === null && !invalidQuery && <>
         {query.isPending && <p role="status" className="hu-text-slate-600 dark:hu-text-white">Cargando liquidación diaria…</p>}
 
         {query.isError && (
@@ -215,7 +271,8 @@ export default function DailySettlementPage() {
                 <p className="hu-m-0 hu-text-xs hu-text-slate-500 dark:hu-text-slate-300">Hora de Bogotá ({data.timezone})</p>
               </div>
               {date && (
-                <Link to="/admin/liquidacion" className="hu-ml-auto hu-text-sm hu-font-semibold hu-text-green-800 dark:hu-text-green-300">Ver jornada de hoy</Link>
+                <Link to={{ pathname: '/admin/liquidacion', search: todayParams.toString() }} onClick={() => { setPaying(null); setPaidMessage(''); }}
+                  className="hu-ml-auto hu-text-sm hu-font-semibold hu-text-green-800 dark:hu-text-green-300">Ver jornada de hoy</Link>
               )}
             </Card>
 
@@ -255,9 +312,11 @@ export default function DailySettlementPage() {
                 </div>
               ) : (
                 <>
-                  <SummaryTable rows={rows} onPay={(row) => { setPaidMessage(''); setPaying(row); }} />
+                  <SummaryTable rows={rows} onPay={(row) => { setPaidMessage(''); setPaying(row); }}
+                    onDetail={(row) => changeParams({ detailProviderId: row.providerId, detailDate: data.date, detailPage: '0' })} />
                   <p className="hu-m-0 hu-border-0 hu-border-t hu-border-solid hu-border-slate-100 hu-px-5 hu-py-3 hu-text-xs hu-text-slate-500 dark:hu-border-white/10 dark:hu-text-slate-300">
                     Las unidades corresponden a presentaciones. El saldo del proveedor es su saldo global actual y limita el valor sugerido.
+                    El sugerido de una jornada anterior también utiliza el saldo global actual, no el saldo histórico de esa fecha.
                     Una PQR cancelada se descuenta de "Unidades PQR" y su costo aparece en "Revertido" de la jornada en que se creó; el costo PQR bruto se conserva.
                     "Exceso pagado" es informativo: no es deuda negativa ni genera reembolsos automáticos, y el abono no se elimina.
                   </p>
@@ -265,15 +324,10 @@ export default function DailySettlementPage() {
               )}
             </Card>
 
-            {data.totalPages > 1 && (
-              <nav className="hu-flex hu-flex-wrap hu-items-center hu-justify-between hu-gap-3" aria-label="Paginación de la liquidación">
-                <Button type="button" variant="secondary" disabled={page === 0 || query.isFetching} onClick={() => setPage((value) => value - 1)}>Anterior</Button>
-                <span className="hu-text-sm hu-text-slate-700 dark:hu-text-white">Página {data.page + 1} de {data.totalPages}</span>
-                <Button type="button" variant="secondary" disabled={page + 1 >= data.totalPages || query.isFetching} onClick={() => setPage((value) => value + 1)}>Siguiente</Button>
-              </nav>
-            )}
+            <SettlementPagination page={data.page} totalPages={data.totalPages} fetching={query.isFetching} onPage={setPage} label="Paginación de la liquidación" />
           </div>
         )}
+        </>}
       </main>
       <FooterComponent />
     </div>

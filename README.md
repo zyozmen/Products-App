@@ -173,12 +173,23 @@ El reporte comercial (`/admin/orders/report`) no cambia: el costo reconocido al 
 
 ## Liquidación diaria (HU-04)
 
-`/admin/liquidacion` consume `GET /api/v1/settlements/daily-summary?page=0&size=20` (rol ADMIN). Estado actual: **F5**.
+`/admin/liquidacion` consume `GET /api/v1/settlements/daily-summary?page=0&size=20` (rol ADMIN). Incluye la navegación y el detalle de **F6**; el cierre integrado T6-F6 requiere verificar contra un backend y datos reales.
 
-- **Jornada:** se muestra la fecha que devuelve el backend, en hora de Bogotá (`America/Bogota`); el navegador no calcula el día. `/admin/liquidacion?date=AAAA-MM-DD` consulta otra jornada y ofrece **Ver jornada de hoy**; una fecha mal formada muestra un aviso y consulta hoy. El selector de fecha y de proveedor llega en F6.
+- **Filtros:** selector de fecha, proveedor por ID o búsqueda paginada por nombre/NIT con `GET /api/proveedores?buscar=...&page=0&size=20`. El resumen admite `providerId` opcional (ObjectId hexadecimal de 24 caracteres, sin distinguir mayúsculas). Cambiar fecha, proveedor o tamaño reinicia la página. Las fechas inexistentes, IDs y páginas inválidos muestran un error sin consultar silenciosamente otra jornada.
+- **Jornada:** se muestra la fecha que devuelve el backend, en hora de Bogotá (`America/Bogota`); el navegador no calcula el día. `/admin/liquidacion?date=AAAA-MM-DD` consulta otra jornada y ofrece **Ver jornada de hoy**. El sugerido de una jornada anterior usa el saldo global **actual**, no el saldo histórico.
 - **Columnas:** proveedor, unidades vendidas, unidades PQR, costo de ventas, costo PQR, revertido, acumulado bruto, acumulado neto, pagos vinculados, pendiente del día, saldo del proveedor, sugerido a pagar, exceso pagado y la acción **Registrar pago**. Las unidades son de presentación.
 - **Importes:** se leen del JSON como texto y se muestran en COP sin convertirlos a `Number`, sin redondear ni recalcular. Si falta un importe o la respuesta no es válida se muestra un error, nunca ceros.
 - **Estados:** carga, error con reintento, estado vacío real y aviso cuando `activationPending` es `true`. Paginación con `page`, `totalPages` y `totalElements` del servidor.
+
+### Detalle auditable (F6)
+
+- **Ver movimientos** abre `GET /api/v1/settlements/daily-detail?date=AAAA-MM-DD&providerId=...&page=0&size=20`, exclusivamente dentro de la ruta ADMIN. Fecha y proveedor son obligatorios; `page` inicia en cero y `size` admite 1 a 100. La respuesta tiene `content`, `page`, `size`, `totalElements` y `totalPages`; conteo, agrupación de pagos y paginación son responsabilidad de MongoDB, nunca de una lista completa en el navegador.
+- Se conserva el orden del backend: `timestamp` ascendente, luego `id` ascendente. Se distinguen `SALE`, `PQR`, `PQR_REVERSAL` y `PAYMENT`.
+- Los reconocimientos muestran `orderId`, `itemIndex` (desde cero), lote, contenedor, producto y presentación, contenido por unidad, cantidad, snapshot `unitCost`, costo base e importe cuando aplican. La reversión muestra `originalMovementId`, `date` de la jornada original y `timestamp` real de cancelación en Bogotá, junto al instante ISO exacto.
+- Un pago se muestra una sola vez por `correlationId`, con `paymentType`, `amount`, observaciones e `allocations[{transactionId,lotId,amount}]`; no se inventan cantidades ni costos unitarios. Los importes del detalle también se leen como texto decimal exacto. Una respuesta inválida o con pagos duplicados en la página genera un error.
+- Los IDs de orden/lote/transacción se muestran como referencias: no existen rutas ADMIN específicas para abrir esos registros. No se enlazan a endpoints públicos ni se exponen costos en ellos.
+- Fecha, proveedor, tamaño y página del resumen quedan en la URL; `detailProviderId`, `detailDate` y `detailPage` conservan el detalle. **Volver al resumen** mantiene los filtros y su página. TanStack Query separa cada consulta por todos sus filtros y cancela consultas obsoletas mediante `AbortSignal`, evitando mezclar respuestas tardías.
+- Backend: entradas inválidas deben devolver `400`, acceso sin ADMIN `401/403`. La validación frontend no sustituye estas garantías del servidor.
 
 ### Pagos generales o vinculados a la jornada (F5)
 
@@ -188,7 +199,7 @@ El reporte comercial (`/admin/orders/report`) no cambia: el costo reconocido al 
 - Antes de registrar, ambos flujos muestran proveedor, importe, jornada vinculada (o "Ninguna") y destino (lote o FIFO), y advierten cuando el pago supera el sugerido.
 - El envío se bloquea mientras hay una petición en curso. Sin respuesta se indica que el pago pudo registrarse y se deshabilita la confirmación hasta verificar el historial y la liquidación.
 - Tras éxito, o ante un error incierto, `409` o `5xx`, se recargan proveedor, abonos, lotes y liquidación. El **exceso pagado** es informativo: no es deuda negativa, no genera reembolso automático y el abono no se elimina.
-- Limitación: el historial `GET /api/proveedores/{id}/abonos` no devuelve `fechaLiquidacion`, por lo que la jornada de un pago solo se refleja en `linkedPaymentsAmount` del resumen.
+- Limitación: el historial `GET /api/proveedores/{id}/abonos` no devuelve `fechaLiquidacion`; la jornada y la imputación del pago se pueden rastrear en el detalle auditable.
 
 ## Proveedores, lotes y empaquetado (HU-01 a HU-03)
 

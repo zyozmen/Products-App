@@ -30,3 +30,51 @@ export interface DailySettlementSummary {
   totalElements: number;
   totalPages: number;
 }
+
+export interface SettlementAllocation {
+  transactionId: string;
+  lotId: string;
+  amount: DecimalAmount;
+}
+
+interface SettlementEvent {
+  id: string;
+  providerId: string;
+  date: string;
+  timestamp: string;
+  amount: DecimalAmount;
+  observations?: string | null;
+}
+
+export interface SettlementRecognition extends SettlementEvent {
+  movementType: 'SALE' | 'PQR' | 'PQR_REVERSAL';
+  orderId?: string | null;
+  itemIndex?: number | null;
+  lotId?: string | null;
+  containerId?: string | null;
+  strainId?: string | null;
+  presentationId?: string | null;
+  quantity?: number | null;
+  contentPerUnit?: number | null;
+  baseUnit?: string | null;
+  baseUnitCost?: DecimalAmount | null;
+  unitCost?: DecimalAmount | null;
+  originalMovementId?: string | null;
+}
+
+export interface SettlementPayment extends SettlementEvent {
+  movementType: 'PAYMENT';
+  correlationId: string;
+  paymentType: string;
+  allocations: SettlementAllocation[];
+}
+
+export type SettlementMovement = SettlementRecognition | SettlementPayment;
+
+export interface DailySettlementDetail {
+  content: SettlementMovement[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}

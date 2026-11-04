@@ -1,6 +1,12 @@
 export const BUSINESS_TIMEZONE = 'America/Bogota';
 export const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+export function isBusinessDate(date: string): boolean {
+  if (!ISO_DATE.test(date)) return false;
+  const value = new Date(`${date}T00:00:00Z`);
+  return !Number.isNaN(value.getTime()) && value.toISOString().slice(0, 10) === date;
+}
+
 /** Jornada (YYYY-MM-DD) de un instante en hora de Bogota, sin depender de la zona del navegador. */
 export function businessDateOf(instant: string | null | undefined): string | null {
   if (!instant) return null;

@@ -8,7 +8,7 @@ import { getApiErrorMessage } from '../../../services/supplierService';
 const pageSize = 20;
 const supplierIdPattern = /^[a-f\d]{24}$/i;
 
-export default function SupplierSearch() {
+export default function SupplierSearch({ onSelect }: { onSelect?: (id: string) => void } = {}) {
   const navigate = useNavigate();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -30,7 +30,10 @@ export default function SupplierSearch() {
   const onLookup = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const id = lookupId.trim();
-    if (supplierIdPattern.test(id)) navigate(`/admin/proveedores/${id}`);
+    if (supplierIdPattern.test(id)) {
+      if (onSelect) onSelect(id);
+      else navigate(`/admin/proveedores/${id}`);
+    }
   };
 
   return (
@@ -40,7 +43,9 @@ export default function SupplierSearch() {
           <Search size={21} aria-hidden="true" />
         </span>
         <h2 className="hu-mb-1 hu-text-lg hu-font-bold">Buscar proveedor</h2>
-        <p className="hu-m-0 hu-text-sm hu-text-slate-500">Busca por nombre o NIT y abre el detalle para consultar saldos, recibir lotes o registrar abonos.</p>
+        <p className="hu-m-0 hu-text-sm hu-text-slate-500">{onSelect
+          ? 'Busca por nombre o NIT y selecciona un proveedor para filtrar la liquidación.'
+          : 'Busca por nombre o NIT y abre el detalle para consultar saldos, recibir lotes o registrar abonos.'}</p>
       </div>
       <div className="hu-grid hu-gap-5 hu-p-6">
         <form className="hu-grid hu-gap-3" onSubmit={onSearch}>
@@ -74,10 +79,12 @@ export default function SupplierSearch() {
                         <p className="hu-mb-2 hu-mt-1 hu-break-words hu-text-sm hu-text-slate-600">NIT: {supplier.nit}</p>
                         <Badge tone={supplier.estado === 'ACTIVO' ? 'green' : 'neutral'}>{supplier.estado === 'ACTIVO' ? 'Activo' : 'Inactivo'}</Badge>
                       </div>
-                      <Link to={`/admin/proveedores/${supplier.id}`} aria-label={`Ver detalle de ${supplier.nombre}`}
+                      {onSelect ? (
+                        <Button type="button" onClick={() => onSelect(supplier.id)} aria-label={`Seleccionar ${supplier.nombre}`}>Seleccionar</Button>
+                      ) : <Link to={`/admin/proveedores/${supplier.id}`} aria-label={`Ver detalle de ${supplier.nombre}`}
                         className="hu-inline-flex hu-rounded-lg hu-bg-green-700 hu-px-4 hu-py-2.5 hu-text-sm hu-font-semibold hu-text-white hu-no-underline hover:hu-bg-green-800">
                         Ver detalle
-                      </Link>
+                      </Link>}
                     </li>
                   ))}
                 </ul>
@@ -105,7 +112,7 @@ export default function SupplierSearch() {
             {lookupId.trim() && !supplierIdPattern.test(lookupId.trim()) && (
               <p className="hu-m-0 hu-text-xs hu-text-red-700" role="alert">El ID debe tener 24 caracteres hexadecimales.</p>
             )}
-            <Button type="submit" disabled={!supplierIdPattern.test(lookupId.trim())} className="hu-w-fit">Consultar saldos</Button>
+            <Button type="submit" disabled={!supplierIdPattern.test(lookupId.trim())} className="hu-w-fit">{onSelect ? 'Seleccionar proveedor' : 'Consultar saldos'}</Button>
           </form>
         </details>
       </div>
