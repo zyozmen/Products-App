@@ -64,7 +64,7 @@ const eventFields = {
 };
 const recognitionFields = {
   ...eventFields,
-  orderId: z.string().nullish(),
+  orderId: z.union([z.string().min(1), z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER)]).nullish(),
   itemIndex: count.nullish(),
   lotId: z.string().nullish(),
   containerId: z.string().nullish(),

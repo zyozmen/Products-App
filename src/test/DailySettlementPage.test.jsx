@@ -169,7 +169,7 @@ describe('daily settlement page', () => {
         });
         const sale = {
             id: 'sale-a', providerId: provider.providerId, date: '2026-10-23', timestamp: '2026-10-23T10:00:00Z',
-            movementType: 'SALE', orderId: 'order-a', itemIndex: 0, lotId: 'lot-a', containerId: 'container-a',
+            movementType: 'SALE', orderId: 12, itemIndex: 0, lotId: 'lot-a', containerId: 'container-a',
             presentationId: 'presentation-5g', quantity: 2, contentPerUnit: 5, baseUnit: 'gramo', unitCost: '10000.00', amount: '20000.00',
         };
         vi.spyOn(settlementService, 'getDailyDetail').mockResolvedValue({
@@ -195,6 +195,7 @@ describe('daily settlement page', () => {
         expect(rows[0]).toHaveTextContent('$20.000');
         expect(rows[0]).toHaveTextContent('$10.000');
         expect(rows[0]).toHaveTextContent('Ítem: 0');
+        expect(rows[0]).toHaveTextContent('Orden: 12');
         expect(rows[1]).toHaveTextContent('presentation-1g');
         expect(rows[1]).toHaveTextContent('$5.000');
         expect(rows[3]).toHaveTextContent('Reversión PQR');

@@ -48,7 +48,7 @@ interface SettlementEvent {
 
 export interface SettlementRecognition extends SettlementEvent {
   movementType: 'SALE' | 'PQR' | 'PQR_REVERSAL';
-  orderId?: string | null;
+  orderId?: string | number | null;
   itemIndex?: number | null;
   lotId?: string | null;
   containerId?: string | null;

@@ -112,6 +112,45 @@ describe('business date', () => {
             expect(item).not.toHaveProperty('quantity');
         });
 
+        it('reads the backend numeric order ID alongside a payment with null recognition fields', async () => {
+            const raw = `{
+                "providerId":"6500000000000000000000ab","date":"2026-10-23",
+                "content":[
+                    {"id":"sale-12","movementType":"SALE","providerId":"6500000000000000000000ab",
+                    "orderId":12,"itemIndex":0,"lotId":"lot-1","containerId":"container-1",
+                    "strainId":"strain-1","presentationId":"presentation-20g","quantity":1,
+                    "contentPerUnit":20,"baseUnit":"GRAMOS","baseUnitCost":1000.00,
+                    "unitCost":20000.00,"amount":20000.00,"timestamp":"2026-10-23T05:23:52.348Z",
+                    "date":"2026-10-23","originalMovementId":null,"correlationId":null,
+                    "paymentType":null,"observations":null,"allocations":[]},
+                    {"id":"payment:correlation-1","movementType":"PAYMENT","providerId":"6500000000000000000000ab",
+                    "orderId":null,"itemIndex":null,"lotId":null,"containerId":null,"strainId":null,
+                    "presentationId":null,"quantity":null,"contentPerUnit":null,"baseUnit":null,
+                    "baseUnitCost":null,"unitCost":null,"amount":20000.00,
+                    "timestamp":"2026-10-23T05:24:10.684Z","date":"2026-10-23",
+                    "originalMovementId":null,"correlationId":"correlation-1","paymentType":"ABONO",
+                    "observations":null,"allocations":[{"transactionId":"transaction-1","lotId":"lot-1","amount":20000.00}]}
+                ],"page":0,"size":20,"totalElements":2,"totalPages":1
+            }`;
+            vi.spyOn(axios, 'get').mockResolvedValue({ data: raw });
+            const result = await settlementService.getDailyDetail(event.date, event.providerId);
+            expect(result.totalElements).toBe(2);
+            expect(result.content[0]).toMatchObject({ orderId: 12, itemIndex: 0, unitCost: '20000.00', amount: '20000.00' });
+            expect(result.content[1]).toMatchObject({
+                movementType: 'PAYMENT', paymentType: 'ABONO', amount: '20000.00',
+                allocations: [{ transactionId: 'transaction-1', lotId: 'lot-1', amount: '20000.00' }],
+            });
+            expect(result.content[1]).not.toHaveProperty('unitCost');
+        });
+
+        it.each([null, undefined, 'order-1', 12])('accepts supported order identifiers: %s', (orderId) => {
+            expect(parseDailyDetail(detail([{ ...event, orderId }])).content[0]).toHaveProperty('orderId', orderId);
+        });
+
+        it.each([-1, 1.5, Number.MAX_SAFE_INTEGER + 1, true, {}, ''])('rejects malformed order identifiers: %s', (orderId) => {
+            expect(() => parseDailyDetail(detail([{ ...event, orderId }]))).toThrow(InvalidSettlementResponseError);
+        });
+
         it.each([
             { content: [{ ...event, movementType: 'UNKNOWN' }] },
             { content: [{ ...event, amount: null }] },
