@@ -20,6 +20,7 @@ import MyOrdersComponent from './orders/MyOrdersComponent.jsx';
 import { AuthProvider } from '../context/AuthContext.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
 import AgeVerificationRouteGate from './auth/AgeVerificationRouteGate.jsx';
+import ScrollToTopOnRouteChange from './navigation/ScrollToTopOnRouteChange.jsx';
 const SupplierManagementPage = React.lazy(() => import('./admin/suppliers/SupplierManagementPage'));
 const ProductManagementPage = React.lazy(() => import('./admin/cepas/CepaManagementPage'));
 const DailySettlementPage = React.lazy(() => import('./admin/settlements/DailySettlementPage'));
@@ -103,6 +104,7 @@ function GrowShopApp() {
     return (
         <div className="App hu-min-h-screen">
             <BrowserRouter>
+                <ScrollToTopOnRouteChange />
                 <AuthProvider>
                     <AgeVerificationRouteGate>
                         <Routes>

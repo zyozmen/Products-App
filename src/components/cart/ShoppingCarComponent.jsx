@@ -237,7 +237,7 @@ class ShoppingCarComponent extends Component {
     }
 
     handleConfirmationAccept() {
-        this.props.navigate('/');
+        this.props.navigate('/orders');
     }
 
     render() {
