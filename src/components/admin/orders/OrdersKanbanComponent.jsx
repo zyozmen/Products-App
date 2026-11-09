@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import HeaderComponent from '../../dashboard/HeaderComponent.jsx';
 import AdminNav from '../AdminNav.jsx';
 import FooterComponent from '../../dashboard/FooterComponent.jsx';
@@ -18,9 +18,9 @@ import useTranslation from '../../../hooks/useTranslation.js';
 import OrderStatusDialog from './OrderStatusDialog.jsx';
 import PqrOrderDialog from './PqrOrderDialog.jsx';
 import PqrCancelDialog from './PqrCancelDialog.jsx';
-import { businessDateOf, settlementLink } from '../../../utils/businessDate';
+import { businessDateOf, ISO_DATE, settlementLink } from '../../../utils/businessDate';
 import { formatCOP } from '../../../Interfaces/ProductInterface.js';
-import { filterOrders, getPeriodRange, toDateInputValue } from './OrdersReportHelper.js';
+import { filterOrders, getPeriodRange, parseReportBarFilter, REPORT_BAR_FILTERS, REPORT_PERIODS, toDateInputValue } from './OrdersReportHelper.js';
 import { Badge, Button, Card, ErrorNotice, Input, Select } from '../../ui/shadcn';
 
 const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
@@ -56,7 +56,13 @@ function OrdersKanbanComponent({ navigate }) {
     const [pendingChange, setPendingChange] = useState(null);
     const [showPqrDialog, setShowPqrDialog] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedDate, setSelectedDate] = useState(() => toDateInputValue(new Date()));
+    const [searchParams] = useSearchParams();
+    const [selectedDate, setSelectedDate] = useState(() => {
+        const fromUrl = searchParams.get('date');
+        return fromUrl && ISO_DATE.test(fromUrl) ? fromUrl : toDateInputValue(new Date());
+    });
+    const [period, setPeriod] = useState(() => (REPORT_PERIODS.includes(searchParams.get('period')) ? searchParams.get('period') : 'day'));
+    const [barFilter, setBarFilter] = useState(() => parseReportBarFilter(searchParams.get('filter')));
     const orders = ordersQuery.data ?? [];
     const getOrderStatusLabel = (status) => {
         const key = `order_status_${String(status).toLowerCase()}`;
@@ -212,13 +218,21 @@ function OrdersKanbanComponent({ navigate }) {
         );
     };
 
-    const dayRange = getPeriodRange(selectedDate, 'day');
-    const dayOrders = orders.filter((order) => {
+    const periodRange = getPeriodRange(selectedDate, period);
+    const periodOrders = orders.filter((order) => {
         const createdAt = new Date(order.createdAt);
-        return createdAt >= dayRange.start && createdAt < dayRange.end;
+        return createdAt >= periodRange.start && createdAt < periodRange.end;
     });
-    const visibleOrders = filterOrders(dayOrders, searchTerm, getOrderStatusLabel);
+    const scopedOrders = barFilter ? periodOrders.filter(REPORT_BAR_FILTERS[barFilter].matches) : periodOrders;
+    const visibleOrders = filterOrders(scopedOrders, searchTerm, getOrderStatusLabel);
     const errorMessage = error || (ordersQuery.isError ? ordersQuery.error?.message || t('orders_load_error') : '');
+    const locale = language === 'EN' ? 'en-US' : 'es-CO';
+    const lastPeriodDay = new Date(periodRange.end.getFullYear(), periodRange.end.getMonth(), periodRange.end.getDate() - 1);
+    const periodLabel = `${periodRange.start.toLocaleDateString(locale)} - ${lastPeriodDay.toLocaleDateString(locale)}`;
+    const clearFilters = () => {
+        setBarFilter(null);
+        setPeriod('day');
+    };
 
     return (
         <div className="hu-flex hu-min-h-screen hu-flex-col hu-overflow-x-hidden admin-page-bg hu-text-slate-900">
@@ -242,7 +256,7 @@ function OrdersKanbanComponent({ navigate }) {
                 <Card className="hu-mb-5 hu-grid hu-grid-cols-[minmax(0,1fr)] hu-gap-4 hu-p-5 md:hu-grid-cols-[minmax(200px,280px)_1fr] md:hu-items-end kanban-board">
                     <label className="hu-grid hu-min-w-0 hu-gap-1.5 hu-text-sm hu-font-medium hu-text-slate-700" htmlFor="orders-day">
                         {t('orders_day')}
-                        <Input id="orders-day" type="date" className="hu-box-border hu-h-11 hu-min-w-0" value={selectedDate} onChange={(event) => event.target.value && setSelectedDate(event.target.value)} />
+                        <Input id="orders-day" type="date" className="hu-box-border hu-h-11 hu-min-w-0" value={selectedDate} onChange={(event) => { if (event.target.value) { setSelectedDate(event.target.value); setPeriod('day'); } }} />
                     </label>
                     <div className="hu-flex hu-min-w-0 hu-flex-wrap hu-items-center hu-gap-3">
                         <Input
@@ -258,11 +272,23 @@ function OrdersKanbanComponent({ navigate }) {
                                 {t('clear_btn')}
                             </Button>
                         )}
-                        <Button type="button" className="hu-h-11" variant="secondary" onClick={() => setSelectedDate(toDateInputValue(new Date()))}>
+                        <Button type="button" className="hu-h-11" variant="secondary" onClick={() => { setSelectedDate(toDateInputValue(new Date())); setPeriod('day'); }}>
                             {t('orders_today')}
                         </Button>
                     </div>
                 </Card>
+                {(barFilter || period !== 'day') && (
+                    <div className="hu-mb-5 hu-flex hu-flex-wrap hu-items-center hu-gap-3 hu-rounded-lg hu-border hu-border-slate-200 hu-bg-white hu-p-3 hu-text-sm" role="status">
+                        <span className="hu-font-medium hu-text-slate-700">{t('orders_active_filter')}:</span>
+                        {period !== 'day' && (
+                            <span className="hu-rounded-full hu-bg-slate-100 hu-px-3 hu-py-1">{`${t(period === 'week' ? 'report_period_week' : 'report_period_month')} · ${periodLabel}`}</span>
+                        )}
+                        {barFilter && (
+                            <span className="hu-rounded-full hu-bg-slate-100 hu-px-3 hu-py-1">{t(REPORT_BAR_FILTERS[barFilter].labelKey)}</span>
+                        )}
+                        <Button type="button" variant="ghost" className="hu-py-1.5" onClick={clearFilters}>{t('clear_btn')}</Button>
+                    </div>
+                )}
                 {notice && (
                     <div className="hu-mb-5 hu-flex hu-flex-wrap hu-items-center hu-gap-3 hu-rounded-lg hu-border hu-border-green-200 hu-bg-green-50 hu-p-4 hu-text-sm hu-text-green-900" role="status">
                         <span className="hu-min-w-0 hu-flex-1">{notice.message}</span>
@@ -290,7 +316,7 @@ function OrdersKanbanComponent({ navigate }) {
                     <>
                         {visibleOrders.length === 0 && !ordersQuery.isError && (
                             <div className="hu-mb-5 hu-rounded-lg hu-border hu-border-green-200 hu-bg-green-50 hu-p-4 hu-text-sm hu-text-green-900" role="status">
-                                {searchTerm && dayOrders.length > 0 ? t('search_orders_no_results') : t('orders_no_orders_day')}
+                                {searchTerm && scopedOrders.length > 0 ? t('search_orders_no_results') : period === 'day' ? t('orders_no_orders_day') : t('orders_no_orders_period')}
                             </div>
                         )}
                         <div className="hu-grid hu-grid-cols-[minmax(0,1fr)] hu-items-start hu-gap-4 xl:hu-grid-cols-5 kanban-board">

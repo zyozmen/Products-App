@@ -167,6 +167,8 @@ const translations = {
                 orders_day: 'Día',
                 orders_today: 'Hoy',
                 orders_no_orders_day: 'No hay órdenes para este día',
+                orders_no_orders_period: 'No hay órdenes para este periodo',
+                orders_active_filter: 'Filtro activo',
                 pqr_create_failed: 'Ocurrió un error al crear la orden PQR.',
                 pqr_create_uncertain: 'No se recibió respuesta del servidor y la PQR pudo haberse creado. Se actualizó el tablero: revisa si aparece antes de volver a crearla, porque cada creación es una orden distinta.',
                 pqr_recognition_info: 'La PQR no cobra al cliente (valor comercial $0). Descuenta stock y reconoce al proveedor el costo de las unidades en la liquidación de hoy.',

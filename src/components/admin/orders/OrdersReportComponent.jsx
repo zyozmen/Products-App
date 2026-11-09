@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import HeaderComponent from '../../dashboard/HeaderComponent.jsx';
 import AdminNav from '../AdminNav.jsx';
 import FooterComponent from '../../dashboard/FooterComponent.jsx';
@@ -33,6 +34,7 @@ const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
 
 function OrdersReportComponent() {
     const t = useTranslation();
+    const navigate = useNavigate();
     const [date, setDate] = useState(() => toDateInputValue(new Date()));
     const [period, setPeriod] = useState('day');
     const ordersQuery = useAdminOrders();
@@ -54,6 +56,10 @@ function OrdersReportComponent() {
         { key: 'cancelled', label: t('report_cancelled_orders'), value: report.cancelled, color: COLORS.cancelled },
         { key: 'pqr', label: t('report_pqr_orders'), value: report.pqr, color: COLORS.pqr },
     ];
+
+    const openOrdersFor = (filter) => {
+        navigate(`/admin/orders?${new URLSearchParams({ date, period, filter }).toString()}`);
+    };
 
     const renderChart = () => {
         const { width, height, top, bottom, left, right } = CHART;
@@ -83,7 +89,20 @@ function OrdersReportComponent() {
                     const x = left + slot * index + (slot - barWidth) / 2;
                     const y = height - bottom - barHeight;
                     return (
-                        <g key={bar.key}>
+                        <g
+                            key={bar.key}
+                            role="link"
+                            tabIndex={0}
+                            aria-label={`${bar.label}: ${bar.value}`}
+                            className="hu-cursor-pointer"
+                            onClick={() => openOrdersFor(bar.key)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault();
+                                    openOrdersFor(bar.key);
+                                }
+                            }}
+                        >
                             <rect x={x} y={y} width={barWidth} height={barHeight} fill={bar.color} rx="3">
                                 <title>{`${bar.label}: ${bar.value}`}</title>
                             </rect>

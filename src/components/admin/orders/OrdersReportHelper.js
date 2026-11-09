@@ -55,6 +55,19 @@ export const getPeriodRange = (dateValue, period) => {
     return { start: new Date(year, month, day), end: new Date(year, month, day + 1) };
 };
 
+// Mismos criterios que buildOrdersReport, para que cada barra enlace a las órdenes que cuenta.
+export const REPORT_BAR_FILTERS = {
+    total: { labelKey: 'report_total_orders', matches: () => true },
+    paid: { labelKey: 'report_paid_orders', matches: (order) => getOrderStatus(order) === 'ENTREGADA' && !order.pqr },
+    toPack: { labelKey: 'report_to_pack', matches: (order) => getOrderStatus(order) === 'PAGADA' },
+    toDeliver: { labelKey: 'report_to_deliver', matches: (order) => getOrderStatus(order) === 'EMPACADA' },
+    cancelled: { labelKey: 'report_cancelled_orders', matches: (order) => getOrderStatus(order) === 'CANCELADA' },
+    pqr: { labelKey: 'report_pqr_orders', matches: (order) => Boolean(order.pqr) },
+};
+
+export const parseReportBarFilter = (value) =>
+    value && Object.hasOwn(REPORT_BAR_FILTERS, value) ? value : null;
+
 const normalizeText = (value) =>
     String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
