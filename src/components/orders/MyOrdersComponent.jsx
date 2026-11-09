@@ -8,6 +8,63 @@ import { formatCOP } from '../../Interfaces/ProductInterface.js';
 import { Badge, Card, ErrorNotice, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button } from '../ui/shadcn';
 
 const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
+const hasAmount = (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+const orderSteps = ['CREADA', 'PAGADA', 'EMPACADA', 'ENTREGADA'];
+
+function OrderThermometer({ status, getLabel }) {
+    const isCancelled = status === 'CANCELADA';
+    const currentIndex = orderSteps.indexOf(status);
+    const initialFillPercent = 15;
+    const stepFillPercent = (100 - initialFillPercent) / (orderSteps.length - 1);
+    const fillPercent = isCancelled
+        ? 100
+        : currentIndex < 0
+            ? 0
+            : initialFillPercent + currentIndex * stepFillPercent;
+    const labelSteps = isCancelled ? ['CREADA', 'CANCELADA'] : orderSteps;
+
+    return (
+        <div
+            role="progressbar"
+            aria-label={getLabel(status)}
+            aria-valuemin={0}
+            aria-valuemax={orderSteps.length - 1}
+            aria-valuenow={isCancelled ? 0 : Math.max(currentIndex, 0)}
+            className="hu-px-5 hu-pt-4"
+        >
+            <div className={`hu-relative hu-h-3 hu-w-full hu-overflow-hidden hu-rounded-full hu-bg-slate-200 ${isCancelled ? 'hu-ring-1 hu-ring-red-200' : ''}`}>
+                <div
+                    className={`hu-h-full hu-rounded-full hu-transition-all hu-duration-500 ${isCancelled ? 'hu-bg-red-500' : 'hu-bg-green-600'}`}
+                    style={{ width: `${fillPercent}%` }}
+                />
+            </div>
+            <div className={`hu-mt-2 hu-grid hu-text-xs hu-text-slate-500 ${isCancelled ? 'hu-grid-cols-2' : 'hu-grid-cols-4'}`}>
+                {labelSteps.map((step, index) => {
+                    const reached = !isCancelled && index <= currentIndex;
+                    const isLast = index === labelSteps.length - 1;
+                    const alignment = index === 0 ? 'hu-text-left' : isLast ? 'hu-text-right' : 'hu-text-center';
+                    const emphasis = isCancelled && isLast
+                        ? 'hu-font-semibold hu-text-red-700'
+                        : reached ? 'hu-font-semibold hu-text-green-800' : '';
+                    return (
+                        <span key={step} className={`${alignment} ${emphasis}`}>
+                            {getLabel(step)}
+                        </span>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+const orderDateFormatter = new Intl.DateTimeFormat('es-CO', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+});
 const statusTones = {
     CREADA: 'blue',
     PAGADA: 'green',
@@ -56,11 +113,14 @@ function MyOrdersComponent() {
                                         <div>
                                             <h2 className="hu-m-0 hu-text-lg hu-font-bold">Orden #{order.id}</h2>
                                             <p className="hu-mb-0 hu-mt-1 hu-text-sm hu-text-slate-500">
-                                                {order.createdAt ? new Date(order.createdAt).toLocaleString() : ''}
+                                                {order.createdAt ? orderDateFormatter.format(new Date(order.createdAt)) : ''}
                                             </p>
                                         </div>
-                                        <Badge tone={statusTones[status] || 'neutral'}>{getOrderStatusLabel(status)}</Badge>
+                                        <div className="hu-flex hu-flex-wrap hu-items-center hu-gap-2">
+                                            {order.cashOnDelivery && <Badge tone="orange">{t('order_flag_cash_on_delivery')}</Badge>}
+                                        </div>
                                     </div>
+                                    <OrderThermometer status={status} getLabel={getOrderStatusLabel} />
                                     <div className="hu-overflow-x-auto hu-p-5">
                                         <Table>
                                             <TableHeader>
@@ -83,6 +143,12 @@ function MyOrdersComponent() {
                                             </TableBody>
                                         </Table>
                                         <p className="hu-mb-0 hu-mt-4 hu-text-right hu-font-bold">{t('total')}: {formatCOP(order.total)}</p>
+                                        {(hasAmount(order.cashAmount) || hasAmount(order.cardAmount)) && (
+                                            <div className="hu-mt-2 hu-flex hu-flex-wrap hu-justify-end hu-gap-4 hu-text-sm hu-text-slate-600">
+                                                {hasAmount(order.cashAmount) && <p className="hu-m-0">{t('report_cash')}: {formatCOP(order.cashAmount)}</p>}
+                                                {hasAmount(order.cardAmount) && <p className="hu-m-0">{t('report_card')}: {formatCOP(order.cardAmount)}</p>}
+                                            </div>
+                                        )}
                                     </div>
                                 </Card>
                             );
