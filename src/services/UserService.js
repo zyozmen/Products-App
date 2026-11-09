@@ -24,7 +24,10 @@ class UserService {
         } catch (error) {
             console.error('Error registering user:', error?.response?.status ?? error?.message);
             if (serverMessage(error)) {
-                throw new Error(serverMessage(error));
+                const registrationError = new Error(serverMessage(error));
+                // El backend responde 400 con "El codigo de referido no es valido" cuando el código no existe.
+                registrationError.referralCodeInvalid = error.response?.status === 400 && /referido/i.test(serverMessage(error));
+                throw registrationError;
             }
             throw new Error('Ocurrió un error en el servidor al registrar el usuario.');
         }

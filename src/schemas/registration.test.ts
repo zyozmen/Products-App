@@ -24,6 +24,7 @@ describe('registrationSchema', () => {
     tipoIdentificacion: 'CC',
     numeroIdentificacion: '123456789',
     mayorDeEdad: true,
+    codigoReferido: 'ab cd2345',
   };
 
   it('accepts all required account and identity fields', () => {

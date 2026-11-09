@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizeReferralCode } from '../utils/referralLink';
 
 export const loginSchema = z.object({
   email: z.string().trim().email('email_invalid'),
@@ -27,6 +28,9 @@ export const registrationSchema = z.object({
   tipoIdentificacion: z.enum(['CC', 'CE', 'Pasaporte', 'NIT']),
   numeroIdentificacion: z.string().trim().min(1, 'registration_required'),
   mayorDeEdad: z.boolean().refine((isAdult) => isAdult, 'register_requires_age'),
+  codigoReferido: z.string()
+    .transform(normalizeReferralCode)
+    .pipe(z.string().min(1, 'referral_code_required')),
 }).refine((registration) =>
   !registration.confirmPassword || registration.password === registration.confirmPassword, {
   message: 'password_mismatch',

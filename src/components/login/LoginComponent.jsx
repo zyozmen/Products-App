@@ -9,6 +9,7 @@ import { getErrorCode } from '../../services/httpClient.js';
 import { sanitizeMessage } from '../../services/messageUtils.js';
 import PasswordFields from '../ui/PasswordFields.jsx';
 import { loginSchema, registrationSchema } from '../../schemas/registration';
+import { normalizeReferralCode } from '../../utils/referralLink';
 import { Button, Card, ErrorNotice, Field, Input, Select } from '../ui/shadcn';
 import './LoginComponent.css';
 
@@ -26,6 +27,7 @@ function LoginComponent(props) {
         resolver: zodResolver(loginSchema),
         defaultValues: { email: '', password: '' },
     });
+    const referralFromUrl = normalizeReferralCode(new URLSearchParams(props.location?.search ?? '').get('ref') ?? '');
     const registrationForm = useForm({
         resolver: zodResolver(registrationSchema),
         defaultValues: {
@@ -40,10 +42,12 @@ function LoginComponent(props) {
             tipoIdentificacion: 'CC',
             numeroIdentificacion: '',
             mayorDeEdad: false,
+            codigoReferido: referralFromUrl,
         },
     });
     const noticeKey = props.location?.state?.notice;
     const notice = allowedNotices.includes(noticeKey) ? t(noticeKey) : '';
+    const referralCodeField = registrationForm.register('codigoReferido');
 
     const register = async (values) => {
         setRegistrationError('');
@@ -60,12 +64,18 @@ function LoginComponent(props) {
                 tipoIdentificacion: values.tipoIdentificacion,
                 numeroIdentificacion: values.numeroIdentificacion,
                 mayorDeEdad: true,
+                codigoReferido: values.codigoReferido,
             });
 
             setRegistrationSuccess(t('register_pending_approval'));
             loginForm.setValue('email', values.email);
-            registrationForm.reset();
+            registrationForm.reset({ ...registrationForm.formState.defaultValues, codigoReferido: '' });
         } catch (error) {
+            if (error?.referralCodeInvalid) {
+                registrationForm.setError('codigoReferido', { type: 'server' });
+                setRegistrationError(t('referral_code_not_found'));
+                return;
+            }
             setRegistrationError(error instanceof Error ? error.message : t('registration_failed'));
         }
     };
@@ -178,6 +188,21 @@ function LoginComponent(props) {
 
                                 <Field label={`${t('identification_number')} *`} htmlFor="register-id-number" error={errorFor(registrationForm, 'numeroIdentificacion')}>
                                     <Input id="register-id-number" aria-invalid={Boolean(registrationForm.formState.errors.numeroIdentificacion)} {...registrationForm.register('numeroIdentificacion')} />
+                                </Field>
+                                <Field label={`${t('referral_code_label')} *`} htmlFor="register-referral-code" error={errorFor(registrationForm, 'codigoReferido')}>
+                                    <Input
+                                        id="register-referral-code"
+                                        autoCapitalize="characters"
+                                        autoComplete="off"
+                                        spellCheck={false}
+                                        className="hu-font-mono hu-tracking-wider"
+                                        aria-invalid={Boolean(registrationForm.formState.errors.codigoReferido)}
+                                        {...referralCodeField}
+                                        onChange={(event) => {
+                                            event.target.value = normalizeReferralCode(event.target.value);
+                                            return referralCodeField.onChange(event);
+                                        }}
+                                    />
                                 </Field>
                             </div>
                             <div className="hu-text-sm hu-font-medium hu-text-slate-700">

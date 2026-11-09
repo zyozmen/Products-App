@@ -198,6 +198,8 @@ const translations = {
                 register_requires_age: 'You must confirm that you are over 18.',
                 registration_required: 'This field is required.',
                 registration_failed: 'The account could not be created.',
+                referral_code_required: 'The referral code is required.',
+                referral_code_not_found: 'The referral code is not valid. Check the code with the person who invited you.',
                 underage_warning: 'This site contains content exclusive to people over 18 years of age.',
                 yes_over_18: 'Yes, I am over 18 years old',
                 no_under_18: 'No, I am under 18 years old',

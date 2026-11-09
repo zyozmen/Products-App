@@ -198,6 +198,8 @@ const translations = {
                 register_requires_age: 'Debes declarar que eres mayor de 18 años.',
                 registration_required: 'Este campo es obligatorio.',
                 registration_failed: 'No se pudo crear la cuenta.',
+                referral_code_required: 'El código de referido es obligatorio.',
+                referral_code_not_found: 'El código de referido no es válido. Verifica el código con quien te invitó.',
                 underage_warning: 'Este sitio contiene contenido exclusivo para mayores de 18 años.',
                 yes_over_18: 'Sí, soy mayor de 18 años',
                 no_under_18: 'No, soy menor de 18 años',
