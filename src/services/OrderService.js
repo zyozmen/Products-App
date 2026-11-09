@@ -109,7 +109,8 @@ class OrderService {
     async getMyOrders() {
         try {
             const response = await axios.get(`${apiBaseUrl}/orders/mine`, { headers: authHeaders() });
-            return response.data || [];
+            if (!Array.isArray(response.data)) throw new Error('La respuesta de órdenes no es válida.');
+            return response.data;
         } catch (error) {
             throw toError(error, translationService.t('my_orders_load_failed'));
         }

@@ -1,3 +1,11 @@
+import type { ContainerResponse } from '../Interfaces/supplier';
+
+export function containerUsedCapacity(container: ContainerResponse): bigint {
+  const recorded = decimalUnits(container.capacidadUnidadesBase) - decimalUnits(container.cantidadDisponible);
+  const created = consumedCapacity(container.presentaciones ?? []);
+  return created > recorded ? created : recorded;
+}
+
 export function decimalUnits(value: string | number, places = 3): bigint {
   const text = String(value).trim();
   if (!/^\d+(\.\d+)?$/.test(text)) return 0n;

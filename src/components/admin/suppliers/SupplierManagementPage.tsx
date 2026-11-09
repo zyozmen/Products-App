@@ -22,17 +22,16 @@ import navigationComponent from '../../navigation/NavigationComponent.jsx';
 import {
   useCreateLot,
   useCreateSupplier,
-  useEvaluateLiquidation,
   useSupplier,
   useLot,
 } from '../../../hooks/useSupplierQueries';
 import { calculateContainerSubtotalCents, calculateLotTotalCents, centsToAmount } from '../../../utils/supplierCalculations';
+import { containerUsedCapacity, decimalText, decimalUnits } from '../../../utils/packagingCalculations';
+import { orderDateFormatter } from '../../../utils/displayDate';
 import {
   containerSchema,
-  liquidationSchema,
   lotSchema,
   supplierSchema,
-  type LiquidationFormValues,
   type LotFormInput,
   type LotFormValues,
   type SupplierFormValues,
@@ -40,7 +39,7 @@ import {
 import { getApiErrorMessage } from '../../../services/supplierService';
 import { useAllCepas } from '../../../hooks/useMarketplaceQueries';
 import SupplierSearch from './SupplierSearch';
-import type { LiquidationEvaluation, LotResponse, SupplierResponse } from '../../../Interfaces/supplier';
+import type { LotResponse, SupplierResponse } from '../../../Interfaces/supplier';
 import SupplierPaymentsTable from './SupplierPaymentsTable';
 import SupplierLotsList from './SupplierLotsList';
 import DesgloseContenedorForm from './DesgloseContenedorForm';
@@ -169,37 +168,25 @@ function SummaryCard({ title, amount, icon, emphasis = 'neutral' }: {
 
 function LotCard({
   lot,
-  supplierId,
   supplierPaidOff,
 }: {
   lot: LotResponse;
-  supplierId: string;
   supplierPaidOff: boolean;
 }) {
-  const evaluate = useEvaluateLiquidation();
-  const [evaluation, setEvaluation] = useState<LiquidationEvaluation | null>(null);
   const [containerId, setContainerId] = useState<string | null>(null);
-  const form = useForm<LiquidationFormValues>({
-    resolver: zodResolver(liquidationSchema),
-    defaultValues: { montoLiquidable: 0 },
-  });
-
-  const onEvaluate = form.handleSubmit(async ({ montoLiquidable }) => {
-    try {
-      setEvaluation(await evaluate.mutateAsync({
-        proveedorId: supplierId,
-        loteId: lot.id,
-        montoLiquidable,
-      }));
-    } catch {
-      setEvaluation(null);
-    }
-  });
   const lotSettled = lot.saldoPendienteLote === 0;
   const isCapped = lotSettled || supplierPaidOff;
+  const containers = (lot.contenedores ?? []).map((container) => {
+    const remaining = decimalUnits(container.capacidadUnidadesBase) - containerUsedCapacity(container);
+    return { container, remaining: remaining > 0n ? remaining : 0n };
+  });
+  const pendingByUnit = new Map<string, bigint>();
+  for (const { container, remaining } of containers) {
+    pendingByUnit.set(container.unidadBase, (pendingByUnit.get(container.unidadBase) ?? 0n) + remaining);
+  }
 
   return (
-    <Card className="hu-p-5">
+    <Card className="hu-overflow-hidden hu-p-5">
       <div className="hu-flex hu-flex-wrap hu-items-start hu-justify-between hu-gap-3">
         <div>
           <div className="hu-mb-2 hu-flex hu-flex-wrap hu-items-center hu-gap-2">
@@ -207,31 +194,50 @@ function LotCard({
             {lot.estado && <Badge tone="blue">{lot.estado}</Badge>}
             <Badge tone={lot.estadoPago === 'PAGADO_TOTAL' ? 'green' : lot.estadoPago === 'PAGO_PARCIAL' ? 'orange' : 'neutral'}>{lot.estadoPago.replaceAll('_', ' ')}</Badge>
           </div>
-          <p className="hu-m-0 hu-text-xs hu-text-slate-500">ID: {lot.id} · Recibido {new Date(lot.fechaIngreso).toLocaleDateString('es-CO')}</p>
+          <p className="hu-m-0 hu-text-sm hu-text-slate-500">Recibido {orderDateFormatter.format(new Date(lot.fechaIngreso))}</p>
         </div>
         <div className="hu-text-right">
           <p className="hu-m-0 hu-text-sm hu-text-slate-500">Saldo del lote</p>
           <p className="hu-m-0 hu-text-lg hu-font-bold">{formatCop(lot.saldoPendienteLote)}</p>
         </div>
       </div>
+      <div className="hu-mt-5 hu-grid hu-gap-4 md:hu-grid-cols-2">
+        <section aria-label="Pendiente por empaquetar" className="hu-rounded-xl hu-border hu-border-orange-200 hu-bg-orange-50 hu-p-5">
+          <h4 className="hu-m-0 hu-text-sm hu-font-semibold hu-text-orange-900">Falta empaquetar</h4>
+          {pendingByUnit.size ? [...pendingByUnit].map(([unit, remaining]) => (
+            <p key={unit} className="hu-mb-0 hu-mt-2 hu-text-2xl hu-font-bold hu-text-orange-900">
+              {decimalText(remaining)} <span className="hu-text-base hu-font-medium">{unit}</span>
+            </p>
+          )) : <p className="hu-mb-0 hu-mt-2 hu-text-sm hu-text-orange-900">Sin detalle de contenedores</p>}
+        </section>
+        <section aria-label="Costo total empaquetado" className="hu-rounded-xl hu-border hu-border-green-200 hu-bg-green-50 hu-p-5">
+          <h4 className="hu-m-0 hu-text-sm hu-font-semibold hu-text-green-900">Costo total empaquetado</h4>
+          <p className="hu-mb-0 hu-mt-2 hu-text-2xl hu-font-bold hu-text-green-900">
+            {lot.costoTotalEmpaquetado !== undefined ? formatCop(lot.costoTotalEmpaquetado) : 'No informado'}
+          </p>
+          <p className="hu-mb-0 hu-mt-2 hu-text-xs hu-text-green-800">El costo de recepción y la deuda no cambian.</p>
+        </section>
+      </div>
       <div className="hu-my-4 hu-grid hu-gap-3 hu-border-y hu-border-slate-100 hu-py-3 sm:hu-grid-cols-3">
         <p className="hu-m-0 hu-text-sm"><span className="hu-block hu-text-xs hu-text-slate-500">Costo total</span>{formatCop(lot.costoTotalLote)}</p>
         <p className="hu-m-0 hu-text-sm"><span className="hu-block hu-text-xs hu-text-slate-500">Abonado</span>{formatCop(lot.montoPagadoLote)}</p>
         <p className="hu-m-0 hu-text-sm"><span className="hu-block hu-text-xs hu-text-slate-500">Contenedores</span>{lot.contenedores?.length ?? 0}</p>
       </div>
-      {lot.costoTotalEmpaquetado !== undefined && <p className="hu-text-sm">Costo total empaquetado: {formatCop(lot.costoTotalEmpaquetado)} · El costo de recepción y la deuda no cambian.</p>}
 
-      {lot.contenedores?.length ? (
-        <div className="hu-mb-4 hu-grid hu-gap-2">
-          {lot.contenedores.map((container) => (
-            <details className="hu-rounded-lg hu-bg-slate-50 hu-p-3 hu-text-sm" key={container.id}>
+      {containers.length ? (
+        <div className="hu-mb-4 hu-grid hu-gap-3">
+          {containers.map(({ container, remaining }, index) => (
+            <details open={index === 0} className="hu-rounded-xl hu-border hu-border-slate-200 hu-bg-slate-50 hu-p-4 hu-text-sm" key={container.id}>
               <summary className="hu-cursor-pointer hu-rounded hu-font-medium focus-visible:hu-outline-none focus-visible:hu-ring-2 focus-visible:hu-ring-green-500">
-                {container.codigoContenedor ?? container.id} · {container.tipoCepa} · {container.capacidadUnidadesBase} {container.unidadBase}
+                <span>{container.codigoContenedor ?? container.id} · {container.tipoCepa} · {container.capacidadUnidadesBase} {container.unidadBase}</span>
+                <span className={`hu-mt-2 hu-block hu-text-base hu-font-bold ${remaining > 0n ? 'hu-text-orange-800' : 'hu-text-green-800'}`}>
+                  {remaining > 0n ? `Falta empaquetar: ${decimalText(remaining)} ${container.unidadBase}` : 'Empaquetado completo'}
+                </span>
               </summary>
               <div className="hu-mt-3 hu-flex hu-flex-wrap hu-items-center hu-justify-between hu-gap-2">
-                <span>{formatCop(container.subtotal)} · Sin empaquetar: {container.cantidadDisponible} {container.unidadBase}</span>
+                <span>Costo de recepción: {formatCop(container.subtotal)}</span>
                 <Button type="button" variant="secondary" onClick={() => setContainerId(containerId === container.id ? null : container.id)}>
-                  {containerId === container.id ? 'Cerrar desglose' : 'Desglosar contenedor'}
+                  {containerId === container.id ? 'Cerrar desglose' : remaining > 0n ? 'Desglosar contenedor' : 'Ver desglose'}
                 </Button>
               </div>
               {containerId === container.id && <DesgloseContenedorForm loteId={lot.id} codigoLote={lot.codigoLote} contenedor={container} />}
@@ -249,23 +255,7 @@ function LotCard({
           <Check size={18} className="hu-mt-0.5 hu-shrink-0" aria-hidden="true" />
           <p className="hu-m-0"><strong>{lotSettled ? 'Lote Saldado:' : 'Proveedor en paz y salvo:'}</strong> Las ventas de este lote no generarán montos en la liquidación diaria{supplierPaidOff && lot.saldoPendienteLote > 0 ? ' porque el proveedor no tiene saldo pendiente.' : '.'}</p>
         </div>
-      ) : (
-        <form className="hu-grid hu-items-end hu-gap-3 sm:hu-grid-cols-[minmax(0,1fr)_auto]" onSubmit={onEvaluate} noValidate>
-          <Field label="Monto de venta/PQR a evaluar" error={form.formState.errors.montoLiquidable?.message}>
-            <Input type="number" min="0" step="0.01" {...form.register('montoLiquidable', { valueAsNumber: true })} />
-          </Field>
-          <Button type="submit" variant="secondary" disabled={evaluate.isPending}>
-            {evaluate.isPending ? 'Evaluando…' : 'Evaluar liquidación'}
-          </Button>
-        </form>
-      )}
-      {evaluate.isError && <div className="hu-mt-3"><ErrorNotice>{getApiErrorMessage(evaluate.error)}</ErrorNotice></div>}
-      {evaluation && (
-        <div className={`hu-mt-3 hu-rounded-lg hu-p-3 hu-text-sm ${evaluation.acumulaLiquidacion ? 'hu-bg-blue-50 hu-text-blue-900' : 'hu-bg-orange-50 hu-text-orange-900'}`} role="status">
-          <p className="hu-m-0"><strong>{evaluation.motivo}</strong></p>
-          <p className="hu-mb-0 hu-mt-1">Monto liquidable: {formatCop(evaluation.montoLiquidable)} · Descontar stock: {evaluation.descontarStock ? 'Sí' : 'No'}</p>
-        </div>
-      )}
+      ) : null}
     </Card>
   );
 }
@@ -277,7 +267,7 @@ function ConsultedLot({ lotId, supplierId, supplierPaidOff }: { lotId: string; s
   if (data.proveedorId !== supplierId) return <ErrorNotice>El lote no pertenece al proveedor consultado.</ErrorNotice>;
   return <div>
     <Button type="button" variant="ghost" disabled={isFetching} onClick={() => void refetch()}>Actualizar lote</Button>
-    <LotCard lot={data} supplierId={supplierId} supplierPaidOff={supplierPaidOff} />
+    <LotCard lot={data} supplierPaidOff={supplierPaidOff} />
   </div>;
 }
 
@@ -583,7 +573,7 @@ function SupplierDetailPage({ supplierId }: { supplierId: string }) {
           <Badge tone="blue">Recepción y empaquetado separados</Badge>
         </div>
         <SupplierLotsList key={supplier.id} supplierId={supplier.id}
-          renderLot={(lot) => <LotCard lot={lot} supplierId={supplier.id} supplierPaidOff={isPaidOff} />} />
+          renderLot={(lot) => <LotCard lot={lot} supplierPaidOff={isPaidOff} />} />
         <details className="hu-mt-5">
           <summary className="hu-cursor-pointer hu-text-sm hu-font-semibold">Consulta directa por ID del lote</summary>
         <form className="hu-mb-4 hu-flex hu-flex-wrap hu-items-end hu-gap-3" onSubmit={(event) => {

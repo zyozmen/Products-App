@@ -7,6 +7,7 @@ import cartService from '../../services/CartService.js';
 import translationService from '../../services/TranslationService.js';
 import useTranslation from '../../hooks/useTranslation.js';
 import { apiQueryKeys, useAdminUsers } from '../../hooks/useApiQueries.ts';
+import useOrderNotifications from '../../hooks/useOrderNotifications.js';
 import DropdownMenu from '../ui/DropdownMenu';
 import CreatedOrdersBadge from '../admin/orders/CreatedOrdersBadge.jsx';
 import './HeaderComponent.css';
@@ -27,6 +28,7 @@ function HeaderComponent({ navigate, auth }) {
     const isLoggedIn = AuthenticationService.isUserLoggedIn();
     const isUserAdmin = AuthenticationService.isUserAdmin();
     const loggedInUser = AuthenticationService.getLoggedInUser();
+    const orderNotifications = useOrderNotifications(isLoggedIn && !isUserAdmin ? loggedInUser?.username : undefined, pathname === '/orders');
     const pendingCount = (pendingUsersQuery.data || []).filter(isPendingUser).length;
 
     useEffect(() => {
@@ -106,12 +108,12 @@ function HeaderComponent({ navigate, auth }) {
                         <i className={theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon'} aria-hidden="true" />
                     </button>
                     <DropdownMenu
-                        ariaLabel={t('user_menu')}
+                        ariaLabel={`${t('user_menu')}${orderNotifications.count > 0 ? ` - ${t('order_status_notifications')}: ${orderNotifications.count}` : ''}${orderNotifications.isError ? ` - ${t('order_notifications_error')}` : ''}`}
                         buttonClassName={iconButtonClass}
                         menuClassName="hu-right-0"
                         showArrow={false}
                         panelClassName={dropdownPanelClass}
-                        label={<i className="far fa-user-circle" aria-hidden="true" />}
+                        label={<><i className="far fa-user-circle" aria-hidden="true" />{(orderNotifications.count > 0 || orderNotifications.isError) && <span className="hu-absolute hu-right-0 hu-top-0 hu-min-w-4 hu-rounded-full hu-bg-red-600 hu-px-1 hu-text-center hu-text-[10px] hu-font-bold hu-leading-4 hu-text-white" aria-hidden="true">{orderNotifications.isError ? '!' : orderNotifications.count}</span>}</>}
                     >
                         <p className="hu-m-0 hu-px-3 hu-py-1 hu-text-xs hu-font-bold hu-uppercase hu-tracking-wider hu-text-[#287844] dark:hu-text-green-400">{isLoggedIn && loggedInUser ? loggedInUser.username : t('sign_in')}</p>
                         {!isLoggedIn && <button className={menuItemClass} type="button" onClick={() => navigate('/login')}>{t('sign_in')}</button>}
@@ -124,7 +126,12 @@ function HeaderComponent({ navigate, auth }) {
                                 {pendingUsersQuery.isError && <span className="hu-ml-2 hu-text-red-400" role="alert" title={pendingUsersQuery.error?.message}>!</span>}
                             </button>
                         )}
-                        {isLoggedIn && !isUserAdmin && <button className={menuItemClass} type="button" onClick={() => navigate('/orders')}>{t('my_orders')}</button>}                        {isLoggedIn && <button className={menuItemClass} type="button" onClick={signOut}>{t('logout')}</button>}
+                        {isLoggedIn && !isUserAdmin && <button className={menuItemClass} type="button" onClick={() => navigate('/orders')}>
+                            {t('my_orders')}
+                            {orderNotifications.count > 0 && <span className="hu-ml-2 hu-rounded-full hu-bg-red-600 hu-px-2 hu-py-0.5 hu-text-xs hu-font-bold hu-text-white" role="status" aria-label={`${t('order_status_notifications')}: ${orderNotifications.count}`}>{orderNotifications.count}</span>}
+                            {orderNotifications.isError && <span className="hu-ml-2 hu-text-red-500" role="alert">{t('order_notifications_error')}</span>}
+                        </button>}
+                        {isLoggedIn && <button className={menuItemClass} type="button" onClick={signOut}>{t('logout')}</button>}
                         <div className="hu-mt-1 hu-flex hu-border-0 hu-border-t hu-border-solid hu-border-[#74a782] dark:hu-border-[#3d6b4c]">
                             {['ES', 'EN'].map((lang) => (
                                 <button

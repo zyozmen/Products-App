@@ -1,11 +1,11 @@
 import { getOrderStatus } from '../../../services/OrderService.js';
+import { normalizeOrderText, toDateInputValue } from '../../../utils/orderFilters.js';
+
+export { toDateInputValue } from '../../../utils/orderFilters.js';
 
 export const REPORT_PERIODS = ['day', 'week', 'month'];
 
 const pad = (value) => String(value).padStart(2, '0');
-
-export const toDateInputValue = (date) =>
-    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
 const parseDateInput = (value) => {
     const [year, month, day] = String(value ?? '').split('-').map(Number);
@@ -68,19 +68,16 @@ export const REPORT_BAR_FILTERS = {
 export const parseReportBarFilter = (value) =>
     value && Object.hasOwn(REPORT_BAR_FILTERS, value) ? value : null;
 
-const normalizeText = (value) =>
-    String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-
 // Busca por # de orden, cliente, productos y estado (etiqueta traducida o código).
 export const filterOrders = (orders, query, getStatusLabel = (s) => s) => {
-    const terms = normalizeText(query).split(/\s+/).filter(Boolean);
+    const terms = normalizeOrderText(query).split(/\s+/).filter(Boolean);
     const list = Array.isArray(orders) ? orders : [];
     if (terms.length === 0) {
         return list;
     }
     return list.filter((order) => {
         const status = getOrderStatus(order);
-        const haystack = normalizeText([
+        const haystack = normalizeOrderText([
             order.id,
             order.username,
             status,

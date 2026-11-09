@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import HeaderComponent from '../dashboard/HeaderComponent.jsx';
 import FooterComponent from '../dashboard/FooterComponent.jsx';
 import navigationComponent from '../navigation/NavigationComponent.jsx';
 import { useMyOrders } from '../../hooks/useApiQueries.ts';
 import useTranslation from '../../hooks/useTranslation.js';
+import AuthenticationService from '../../services/AuthenticationService.js';
 import { formatCOP } from '../../Interfaces/ProductInterface.js';
-import { Badge, Card, ErrorNotice, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button } from '../ui/shadcn';
+import { normalizeOrderText, toDateInputValue } from '../../utils/orderFilters.js';
+import { orderDateFormatter } from '../../utils/displayDate';
+import { Badge, Card, ErrorNotice, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button } from '../ui/shadcn';
 
 const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
 const hasAmount = (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
@@ -56,15 +59,6 @@ function OrderThermometer({ status, getLabel }) {
         </div>
     );
 }
-const orderDateFormatter = new Intl.DateTimeFormat('es-CO', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-});
 const statusTones = {
     CREADA: 'blue',
     PAGADA: 'green',
@@ -75,7 +69,16 @@ const statusTones = {
 
 function MyOrdersComponent() {
     const t = useTranslation();
-    const { data: orders = [], isPending, isError, error, refetch } = useMyOrders();
+    const { data: orders = [], isPending, isError, error, refetch } = useMyOrders(AuthenticationService.getLoggedInUser()?.username);
+    const [date, setDate] = useState('');
+    const [product, setProduct] = useState('');
+    const productQuery = normalizeOrderText(product).trim();
+    const visibleOrders = orders.filter((order) => {
+        const createdAt = order.createdAt ? new Date(order.createdAt) : null;
+        const matchesDate = !date || (createdAt && !Number.isNaN(createdAt.getTime()) && toDateInputValue(createdAt) === date);
+        const matchesProduct = !productQuery || (order.items || []).some((item) => normalizeOrderText(item.name).includes(productQuery));
+        return matchesDate && matchesProduct;
+    });
 
     const getOrderStatusLabel = (status) => {
         const key = `order_status_${String(status).toLowerCase()}`;
@@ -97,13 +100,28 @@ function MyOrdersComponent() {
                         <Button type="button" variant="secondary" className="hu-w-fit" onClick={() => void refetch()}>Reintentar</Button>
                     </div>
                 )}
+                {!isPending && orders.length > 0 && (
+                    <Card className="hu-mb-5 hu-grid hu-gap-4 hu-p-5 md:hu-grid-cols-[minmax(200px,280px)_1fr_auto] md:hu-items-end">
+                        <label htmlFor="my-orders-date" className="hu-grid hu-gap-1.5 hu-text-sm hu-font-medium">
+                            {t('my_orders_date_filter')}
+                            <Input id="my-orders-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+                        </label>
+                        <label htmlFor="my-orders-product" className="hu-grid hu-gap-1.5 hu-text-sm hu-font-medium">
+                            {t('my_orders_product_filter')}
+                            <Input id="my-orders-product" type="search" value={product} onChange={(event) => setProduct(event.target.value)} placeholder={t('my_orders_product_placeholder')} />
+                        </label>
+                        {(date || product) && <Button type="button" variant="secondary" onClick={() => { setDate(''); setProduct(''); }}>{t('clear_btn')}</Button>}
+                    </Card>
+                )}
                 {isPending ? (
                     <p className="hu-py-6 hu-text-sm hu-text-slate-600" role="status">{t('loading')}</p>
                 ) : !orders.length && !isError ? (
                     <Card className="hu-p-8 hu-text-center hu-text-slate-600">{t('orders_empty')}</Card>
+                ) : !isError && visibleOrders.length === 0 && orders.length > 0 ? (
+                    <Card className="hu-p-8 hu-text-center hu-text-slate-600">{t('search_orders_no_results')}</Card>
                 ) : (
                     <div className="hu-grid hu-gap-5">
-                        {orders.map((order) => {
+                        {visibleOrders.map((order) => {
                             const status = String(order.status ?? '').toUpperCase() === 'DESPACHADA'
                                 ? 'EMPACADA'
                                 : String(order.status ?? '').toUpperCase();
@@ -117,6 +135,7 @@ function MyOrdersComponent() {
                                             </p>
                                         </div>
                                         <div className="hu-flex hu-flex-wrap hu-items-center hu-gap-2">
+                                            {order.pqr && <Badge>{t('order_flag_pqr')}</Badge>}
                                             {order.cashOnDelivery && <Badge tone="orange">{t('order_flag_cash_on_delivery')}</Badge>}
                                         </div>
                                     </div>
@@ -134,7 +153,12 @@ function MyOrdersComponent() {
                                             <TableBody>
                                                 {(order.items || []).map((item, index) => (
                                                     <TableRow key={`${order.id}-${item.productId}-${index}`}>
-                                                        <TableCell className="hu-font-medium">{item.name}</TableCell>
+                                                        <TableCell className="hu-font-medium">
+                                                            {item.name}
+                                                            {item.contenidoUnidad != null && item.unidadBase && (
+                                                                <span className="hu-text-xs hu-font-normal hu-text-slate-500">{' '}{item.contenidoUnidad} {item.unidadBase}</span>
+                                                            )}
+                                                        </TableCell>
                                                         <TableCell>{item.quantity}</TableCell>
                                                         <TableCell>{formatCOP(item.unitPrice)}</TableCell>
                                                         <TableCell>{formatCOP(item.unitPrice * item.quantity)}</TableCell>

@@ -121,10 +121,12 @@ export function useUserMutations() {
   };
 }
 
-export function useMyOrders() {
+export function useMyOrders(username?: string, polling = false) {
   return useQuery({
-    queryKey: apiQueryKeys.myOrders,
+    queryKey: [...apiQueryKeys.myOrders, username ?? ''],
     queryFn: () => orderService.getMyOrders(),
+    enabled: Boolean(username),
+    refetchInterval: polling ? 30 * 1000 : false,
   });
 }
 

@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
 import type { ContainerResponse, PresentationCreateRequest } from '../../../Interfaces/supplier';
 import { createPresentacionesSchema, generatePresentationSku, type PresentacionesFormValues } from '../../../schemas/presentaciones';
-import { consumedCapacity, decimalText, decimalUnits, presentationCostCents } from '../../../utils/packagingCalculations';
+import { consumedCapacity, containerUsedCapacity, decimalText, decimalUnits, presentationCostCents } from '../../../utils/packagingCalculations';
 import { presentationPhotoSrc, readPresentationPhoto } from '../../../utils/presentationPhoto';
 import { useDesgloseContenedor } from '../../../hooks/useDesgloseContenedor';
 import { getApiErrorMessage } from '../../../services/supplierService';
@@ -37,10 +37,9 @@ export default function DesgloseContenedorForm({ loteId, codigoLote, contenedor 
   const submitting = useRef(false);
   const baseCost = contenedor.precioBaseUnidad ?? contenedor.costoBasePorUnidad;
   const capacity = decimalUnits(contenedor.capacidadUnidadesBase);
-  const recordedUsage = capacity - decimalUnits(contenedor.cantidadDisponible);
-  const existingUsage = consumedCapacity(contenedor.presentaciones ?? []);
-  const previouslyUsed = existingUsage > recordedUsage ? existingUsage : recordedUsage;
-  const used = previouslyUsed + consumedCapacity(rows);
+  const previouslyUsed = containerUsedCapacity(contenedor);
+  const canAdd = previouslyUsed < capacity;
+  const used = previouslyUsed + (canAdd ? consumedCapacity(rows) : 0n);
   const exceeded = used > capacity;
   const locked = mutation.isPending || readingPhoto || confirmation !== null;
 
@@ -48,7 +47,7 @@ export default function DesgloseContenedorForm({ loteId, codigoLote, contenedor 
     decimalUnits(row.precioVenta, 2) < presentationCostCents(row.contenidoUnidad, baseCost));
 
   async function publish(values: PresentacionesFormValues, confirmed: boolean) {
-    if (submitting.current || exceeded) return;
+    if (submitting.current || exceeded || !canAdd) return;
     submitting.current = true;
     setConfirmation(null);
     setToast(null);
@@ -78,7 +77,7 @@ export default function DesgloseContenedorForm({ loteId, codigoLote, contenedor 
   }
 
   const onSubmit = form.handleSubmit((values) => {
-    if (exceeded) return;
+    if (exceeded || !canAdd) return;
     const existing = contenedor.presentaciones ?? [];
     let duplicates = false;
     values.presentaciones.forEach((row, index) => {
@@ -111,7 +110,9 @@ export default function DesgloseContenedorForm({ loteId, codigoLote, contenedor 
       <header>
         <h3 className="hu-m-0 hu-text-lg hu-font-bold">Desglose: {contenedor.codigoContenedor ?? contenedor.id}</h3>
         <p className="hu-mb-0 hu-mt-2 hu-text-sm">{contenedor.tipoCepa} · Capacidad total: {contenedor.capacidadUnidadesBase} {contenedor.unidadBase} · Costo base/unidad: ${baseCost} COP</p>
-        <p className="hu-mb-0 hu-mt-2 hu-text-xs hu-text-slate-500">Solo se agregan presentaciones nuevas. El stock vendido no libera capacidad. El mínimo sugerido es el costo sin margen, no una política comercial.</p>
+        <p className="hu-mb-0 hu-mt-2 hu-text-xs hu-text-slate-500">{canAdd
+          ? 'Solo se agregan presentaciones nuevas. El stock vendido no libera capacidad. El mínimo sugerido es el costo sin margen, no una política comercial.'
+          : 'Empaquetado completo. Puedes consultar las presentaciones existentes; el stock vendido no libera capacidad.'}</p>
       </header>
       <CapacidadBar utilizada={used} capacidad={capacity} unidad={contenedor.unidadBase} />
       {toast && (
@@ -123,7 +124,7 @@ export default function DesgloseContenedorForm({ loteId, codigoLote, contenedor 
         </div>
       )}
       {Boolean(contenedor.presentaciones?.length) && (
-        <details>
+        <details open={!canAdd}>
           <summary className="hu-cursor-pointer hu-text-sm hu-font-semibold">Presentaciones existentes (solo lectura)</summary>
           <ul className="hu-pl-5 hu-text-sm">
             {contenedor.presentaciones?.map((item) => (
@@ -135,7 +136,8 @@ export default function DesgloseContenedorForm({ loteId, codigoLote, contenedor 
           </ul>
         </details>
       )}
-      <form onSubmit={onSubmit} noValidate>
+      {!canAdd && !contenedor.presentaciones?.length && <p className="hu-m-0 hu-text-sm hu-text-slate-500">No se informó el detalle de las presentaciones.</p>}
+      {canAdd && <form onSubmit={onSubmit} noValidate>
         <fieldset disabled={locked} className="hu-m-0 hu-min-w-0 hu-border-0 hu-p-0">
           <div className="hu-overflow-x-auto">
             <Table aria-label="Nuevas presentaciones">
@@ -206,8 +208,8 @@ export default function DesgloseContenedorForm({ loteId, codigoLote, contenedor 
             </Button>
           </div>
         </fieldset>
-      </form>
-      {confirmation && <MargenNegativoModal
+      </form>}
+      {canAdd && confirmation && <MargenNegativoModal
         warnings={negativeRows(confirmation).map((row) => ({ sku: row.sku, precio: row.precioVenta, costo: decimalText(presentationCostCents(row.contenidoUnidad, baseCost), 2) }))}
         onCancel={() => setConfirmation(null)} onConfirm={() => void publish(confirmation, true)} />}
     </section>

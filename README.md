@@ -145,6 +145,8 @@ Para un producto nuevo, marca las categorías en **Nuevo producto** antes de pul
 
 ## Órdenes
 
+En Mis órdenes, el cliente puede filtrar las órdenes cargadas por fecha de creación (según la zona horaria del navegador) y por nombre de producto, combinando ambos filtros. Junto al producto se muestran `contenidoUnidad` y `unidadBase` cuando la orden los incluye.
+
 ### Tablero (`/admin/orders`)
 
 - Estados: `CREADA`, `PAGADA`, `EMPACADA`, `ENTREGADA` y `CANCELADA`. Las órdenes se obtienen con TanStack Query y cada cambio de estado (`PUT /api/admin/orders/{id}/status`) vuelve a consultar órdenes, liquidación y stock del marketplace; no se mantiene una copia local.
@@ -166,6 +168,10 @@ Para un producto nuevo, marca las categorías en **Nuevo producto** antes de pul
 ### PQR (F4)
 
 - **Crear PQR** (`POST /api/admin/orders/pqr`) con presentación y cantidad reales: valor comercial $0, descuenta stock y reconoce al proveedor el costo de las unidades en la jornada de creación (`createdAt` en hora de Bogotá).
+- El menú de usuario consulta sus órdenes cada 30 segundos y muestra cuántas tienen cambios de estado sin revisar. Entrar en Mis órdenes los marca como vistos. El seguimiento se guarda por cuenta en ese navegador; la primera consulta establece la referencia y no identifica cambios intermedios entre consultas.
+- En Mis órdenes, las órdenes marcadas como PQR muestran una etiqueta identificativa junto a la etiqueta de pago contra entrega cuando corresponda.
+- El campo de producto ofrece sugerencias de presentaciones del marketplace con SKU y stock, mediante búsqueda y paginación del servidor. Se debe seleccionar una sugerencia para enviar su ID.
+- El campo de usuario sugiere cuentas de `GET /api/admin/users` por su nombre de usuario y permite introducirlo manualmente. Al elegir una cuenta se rellenan nombre, dirección y teléfono de entrega con sus datos disponibles; estos campos se pueden editar. Si falla la consulta, se informa y se puede reintentar sin bloquear el formulario.
 - Sin respuesta del servidor no se reenvía el POST: se refresca el tablero y se pide verificar si la PQR aparece antes de crearla de nuevo, porque cada creación es una orden distinta.
 - **Cancelar una PQR** solo en CREADA o EMPACADA. Restituye stock y revierte el costo en la jornada de creación (visible en "Revertido"); los pagos existentes no cambian y un exceso aparece en "Exceso pagado". Una PQR anterior al inicio de la acumulación solo restituye stock.
 
@@ -213,6 +219,8 @@ El reporte comercial (`/admin/orders/report`) no cambia: el costo reconocido al 
 
 - Cada contenedor selecciona un producto registrado (`cepaId`), unidad base, capacidad y costo base; las tarjetas se pueden contraer sin perder datos y marcan **Datos completos** cuando son válidas. Al guardar con errores se expanden las tarjetas afectadas.
 - El listado usa `GET /api/proveedores/{id}/lotes?buscar=...&page=0&size=10&sort=fechaIngreso,desc` con paginación del servidor. Busca por producto, nombre de presentación o SKU; ordena por `fechaIngreso`, `codigoLote`, `costoTotalLote` o `saldoPendienteLote`. Recibir, abonar o empaquetar invalida el listado.
+- Cada lote se muestra en una tarjeta con subtarjetas desplegables de contenedores. Se conserva el código, sin mostrar el ID técnico, y la fecha usa el formato largo con hora de Mis órdenes. Se destacan las cantidades pendientes por unidad base (sin sumar unidades distintas ni descontar stock vendido) y el costo total empaquetado informado por la API; si falta, se indica **No informado**. Se retiró el formulario de evaluación de monto venta/PQR.
+- El primer contenedor de cada lote se abre inicialmente; los demás permanecen contraídos. Un contenedor completamente empaquetado conserva **Ver desglose** para consultar sus presentaciones en solo lectura, pero no muestra el formulario para agregar nuevas.
 - El historial de abonos usa `GET /api/proveedores/{id}/abonos?page=0&size=50`, ordenado por fecha descendente; los abonos FIFO aparecen como una fila por lote.
 
 ### Desglose y publicación de contenedores (HU-03)

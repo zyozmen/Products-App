@@ -26,7 +26,7 @@ const lot: LotResponse = {
   }],
 };
 
-function setup(returnedLot = lot, counts: Pick<SupplierResponse, 'lotesPagados' | 'lotesPorPagar'> = { lotesPagados: 3, lotesPorPagar: 2 }) {
+function setup(returnedLot = lot, counts: Pick<SupplierResponse, 'lotesPagados' | 'lotesPorPagar'> = { lotesPagados: 3, lotesPorPagar: 2 }, balance = 0) {
   vi.spyOn(marketplaceService, 'listCepas').mockResolvedValue({
     cepas: [{ id: 'strain-1', nombre: 'Sativa Premium', version: 0 }],
     total: 1,
@@ -34,7 +34,7 @@ function setup(returnedLot = lot, counts: Pick<SupplierResponse, 'lotesPagados' 
   vi.spyOn(supplierService, 'getSupplierLots').mockResolvedValue({ lots: [], total: 0 });
   vi.spyOn(supplierService, 'getSupplier').mockResolvedValue({
     id: supplierId, nombre: 'Proveedor Integración', nit: '123', estado: 'ACTIVO', totalDeuda: 5000000,
-    totalPagado: 5000000, saldoPendiente: 0, fechaCreacion: '2026-10-21', ultimaActualizacion: '2026-10-21',
+    totalPagado: 5000000 - balance, saldoPendiente: balance, fechaCreacion: '2026-10-21', ultimaActualizacion: '2026-10-21',
     ...counts,
   });
   vi.spyOn(supplierService, 'getPayments').mockResolvedValue({ payments: [], total: 0 });
@@ -48,6 +48,87 @@ function setup(returnedLot = lot, counts: Pick<SupplierResponse, 'lotesPagados' 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe('supplier lot packaging integration', () => {
+  it.each(['list', 'direct'])('highlights pending packaging and packaged cost without technical ID or sale/PQR input in %s', async (source) => {
+    const partiallyPackaged: LotResponse = {
+      ...lot, saldoPendienteLote: 100, estadoPago: 'PAGO_PARCIAL', costoTotalEmpaquetado: 2500000,
+      contenedores: [
+        { ...lot.contenedores[0], cantidadDisponible: 750.125 },
+        { ...lot.contenedores[0], id: 'second', codigoContenedor: 'CONT-SECOND', cantidadDisponible: 100 },
+        { ...lot.contenedores[0], id: 'third', codigoContenedor: 'CONT-THIRD', unidadBase: 'UNIDAD', capacidadUnidadesBase: 10, cantidadDisponible: 2 },
+      ],
+    };
+    setup(partiallyPackaged, { lotesPagados: 0, lotesPorPagar: 1 }, 100);
+    if (source === 'list') {
+      vi.mocked(supplierService.getSupplierLots).mockResolvedValue({ lots: [partiallyPackaged], total: 1 });
+    }
+    await screen.findByRole('heading', { name: 'Proveedor Integración' });
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar un lote' }));
+    if (source === 'direct') {
+      fireEvent.click(screen.getByText('Consulta directa por ID del lote'));
+      fireEvent.change(screen.getByLabelText('ID del lote a consultar'), { target: { value: lotId } });
+      fireEvent.click(screen.getByRole('button', { name: 'Consultar lote' }));
+    }
+    const card = (await screen.findByRole('heading', { name: 'LOT-INTEGRATION' })).closest('section')!;
+    const pending = within(card).getByRole('region', { name: 'Pendiente por empaquetar' });
+    expect(pending).toHaveTextContent('850.125 gramo');
+    expect(pending).toHaveTextContent('2 UNIDAD');
+    expect(within(card).getByRole('region', { name: 'Costo total empaquetado' })).toHaveTextContent('$2.500.000 COP');
+    const expectedDate = new Intl.DateTimeFormat('es-CO', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
+    }).format(new Date(lot.fechaIngreso));
+    expect(within(card).getByText(`Recibido ${expectedDate}`)).toBeInTheDocument();
+    expect(card).not.toHaveTextContent(lotId);
+    expect(within(card).queryByLabelText('Monto de venta/PQR a evaluar')).not.toBeInTheDocument();
+    expect(within(card).queryByRole('button', { name: 'Evaluar liquidación' })).not.toBeInTheDocument();
+    expect(within(card).getByText('Falta empaquetar: 750.125 gramo')).toBeVisible();
+  });
+
+  it('does not count sold stock as pending packaging or invent an unreported cost', async () => {
+    setup();
+    vi.mocked(supplierService.getSupplierLots).mockResolvedValue({
+      lots: [{
+        ...lot,
+        contenedores: [{
+          ...lot.contenedores[0], cantidadDisponible: 1000,
+          presentaciones: [{
+            presentacionId: 'presentation', sku: 'PACK-5', nombre: 'Bolsa', contenidoUnidad: 5,
+            unidadesCreadas: 200, stockDisponible: 0, precioVenta: 45000, costoPresentacionCalculado: 25000,
+            activoMarketplace: true, confirmacionMargenNegativo: false, fotografia: null,
+          }],
+        }],
+      }], total: 1,
+    });
+    await screen.findByRole('heading', { name: 'Proveedor Integración' });
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar un lote' }));
+    await screen.findByRole('heading', { name: 'LOT-INTEGRATION' });
+    expect(screen.getByRole('region', { name: 'Pendiente por empaquetar' })).toHaveTextContent('0 gramo');
+    expect(screen.getByText('Empaquetado completo')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Desglosar contenedor' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver desglose' }));
+    expect(screen.getByRole('heading', { name: 'Desglose: CONT-INTEGRATION' })).toBeVisible();
+    expect(screen.getByText(/PACK-5 · Bolsa · 200 creadas · Stock: 0/)).toBeVisible();
+    expect(screen.queryByLabelText('Nombre 1')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Agregar presentación' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Guardar y Publicar' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar desglose' }));
+    expect(screen.queryByRole('heading', { name: 'Desglose: CONT-INTEGRATION' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver desglose' }));
+    expect(screen.getByText(/PACK-5 · Bolsa/)).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Costo total empaquetado' })).toHaveTextContent('No informado');
+  });
+
+  it('shows zero packaged cost and identifies historical lots without container quantities', async () => {
+    setup();
+    vi.mocked(supplierService.getSupplierLots).mockResolvedValue({
+      lots: [{ ...lot, contenedores: [], costoTotalEmpaquetado: 0 }], total: 1,
+    });
+    await screen.findByRole('heading', { name: 'Proveedor Integración' });
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar un lote' }));
+    await screen.findByRole('heading', { name: 'LOT-INTEGRATION' });
+    expect(screen.getByRole('region', { name: 'Pendiente por empaquetar' })).toHaveTextContent('Sin detalle de contenedores');
+    expect(screen.getByRole('region', { name: 'Costo total empaquetado' })).toHaveTextContent('$0 COP');
+  });
+
   it.each([
     { lotesPagados: 3, lotesPorPagar: 2 },
     { lotesPagados: 0, lotesPorPagar: 0 },
@@ -108,14 +189,14 @@ describe('supplier lot packaging integration', () => {
     fireEvent.change(screen.getByLabelText('ID del lote a consultar'), { target: { value: lotId } });
     fireEvent.click(screen.getByRole('button', { name: 'Consultar lote' }));
     await screen.findByText('LOT-INTEGRATION');
-    fireEvent.click(screen.getByText('CONT-INTEGRATION · Sativa · 1000 gramo'));
+    expect(screen.getByText('CONT-INTEGRATION · Sativa · 1000 gramo').closest('details')).toHaveAttribute('open');
     fireEvent.click(screen.getByRole('button', { name: 'Desglosar contenedor' }));
     expect(await screen.findByRole('heading', { name: 'Desglose: CONT-INTEGRATION' })).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
     expect(supplierService.getLot).toHaveBeenCalledWith(lotId);
   });
 
-  it('starts container cards collapsed and toggles independently without losing packaging inputs', async () => {
+  it('opens only the first container and toggles independently without losing packaging inputs', async () => {
     const secondContainer = { ...lot.contenedores[0], id: 'second', codigoContenedor: 'CONT-SECOND', tipoCepa: 'Indica' };
     setup();
     vi.mocked(supplierService.getSupplierLots).mockResolvedValue({
@@ -125,15 +206,10 @@ describe('supplier lot packaging integration', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Buscar un lote' }));
     const first = await screen.findByText('CONT-INTEGRATION · Sativa · 1000 gramo');
     const second = screen.getByText('CONT-SECOND · Indica · 1000 gramo');
-    expect(first.closest('details')).not.toHaveAttribute('open');
-    expect(second.closest('details')).not.toHaveAttribute('open');
-    for (const button of screen.getAllByRole('button', { name: 'Desglosar contenedor' })) {
-      expect(button).not.toBeVisible();
-    }
-
-    fireEvent.click(first);
     expect(first.closest('details')).toHaveAttribute('open');
     expect(second.closest('details')).not.toHaveAttribute('open');
+    expect(within(first.closest('details')!).getByRole('button', { name: 'Desglosar contenedor' })).toBeVisible();
+    expect(within(second.closest('details')!).getByRole('button', { name: 'Desglosar contenedor' })).not.toBeVisible();
     fireEvent.click(within(first.closest('details')!).getByRole('button', { name: 'Desglosar contenedor' }));
     fireEvent.change(screen.getByLabelText('Nombre 1'), { target: { value: 'Bolsa 5g' } });
     fireEvent.click(second);
@@ -145,6 +221,33 @@ describe('supplier lot packaging integration', () => {
     fireEvent.click(first);
     expect(screen.getByLabelText('Nombre 1')).toHaveValue('Bolsa 5g');
     expect(screen.getByRole('heading', { name: 'Desglose: CONT-INTEGRATION' })).toBeVisible();
+  });
+
+  it('hides an open packaging form after refresh completes the container, keeping pending containers available', async () => {
+    setup();
+    const secondContainer = { ...lot.contenedores[0], id: 'second', codigoContenedor: 'CONT-SECOND' };
+    vi.mocked(supplierService.getSupplierLots).mockResolvedValue({
+      lots: [{ ...lot, contenedores: [...lot.contenedores, secondContainer] }], total: 1,
+    });
+    await screen.findByRole('heading', { name: 'Proveedor Integración' });
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar un lote' }));
+    const first = (await screen.findByText('CONT-INTEGRATION · Sativa · 1000 gramo')).closest('details')!;
+    fireEvent.click(within(first).getByRole('button', { name: 'Desglosar contenedor' }));
+    expect(screen.getByLabelText('Nombre 1')).toBeVisible();
+
+    vi.mocked(supplierService.getSupplierLots).mockResolvedValue({
+      lots: [{ ...lot, contenedores: [{ ...lot.contenedores[0], cantidadDisponible: 0 }, secondContainer] }], total: 1,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar listado' }));
+    await waitFor(() => expect(within(first).getByText('Empaquetado completo')).toBeVisible());
+    expect(within(first).getByRole('button', { name: 'Cerrar desglose' })).toBeVisible();
+    expect(within(first).getByRole('heading', { name: 'Desglose: CONT-INTEGRATION' })).toBeVisible();
+    expect(within(first).getByText('No se informó el detalle de las presentaciones.')).toBeVisible();
+    expect(screen.queryByLabelText('Nombre 1')).not.toBeInTheDocument();
+    expect(within(first).queryByRole('button', { name: 'Guardar y Publicar' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('CONT-SECOND · Sativa · 1000 gramo'));
+    fireEvent.click(screen.getByRole('button', { name: 'Desglosar contenedor' }));
+    expect(screen.getByRole('heading', { name: 'Desglose: CONT-SECOND' })).toBeVisible();
   });
 
   it('does not expose packaging for a lot belonging to a different supplier', async () => {
