@@ -60,7 +60,7 @@ function MarketplaceProductList({ search = '', filters = {} }) {
             {!isPending && !isError && (strains.length > 0 || page > 0) && (
                     <div className="hu-flex hu-flex-wrap hu-items-center hu-justify-between hu-gap-3">
                         <span className="hu-text-sm hu-text-slate-600">
-                            Página {(data?.page ?? page) + 1} de {Math.max(data?.totalPages ?? 0, 1)} · {data?.totalElements ?? 0} cepas
+                            Página {(data?.page ?? page) + 1} de {Math.max(data?.totalPages ?? 0, 1)} · {data?.totalElements ?? 0} productos
                         </span>
                         <div className="hu-flex hu-gap-2">
                             <Button type="button" variant="secondary" disabled={page === 0 || isFetching} onClick={() => setPage((current) => current - 1)}>Anterior</Button>

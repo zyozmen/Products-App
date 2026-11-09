@@ -55,6 +55,20 @@ class UserService {
         }
     }
 
+    // El código de referido solo lo entrega el backend para el usuario autenticado; nunca se genera en el cliente.
+    async getProfile() {
+        try {
+            const response = await axios.get(`${getApiBaseUrl()}/users/profile`);
+            return response.data;
+        } catch (error) {
+            console.error('Error getting profile:', error?.response?.status ?? error?.message);
+            if (serverMessage(error)) {
+                throw new Error(serverMessage(error));
+            }
+            throw new Error('Ocurrió un error al consultar el perfil.');
+        }
+    }
+
     async updateProfile(profileData) {
         try {
             const response = await axios.put(`${getApiBaseUrl()}/users/profile`, profileData);

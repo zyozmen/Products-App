@@ -6,17 +6,24 @@ import FooterComponent from '../dashboard/FooterComponent.jsx';
 import navigationComponent from '../navigation/NavigationComponent.jsx';
 import AuthenticationService from '../../services/AuthenticationService.js';
 import useTranslation from '../../hooks/useTranslation.js';
-import { useUserMutations } from '../../hooks/useApiQueries.ts';
+import { useUserMutations, useUserProfile } from '../../hooks/useApiQueries.ts';
 import { profileSchema } from '../../schemas/profile';
+import { buildReferralLink } from '../../utils/referralLink';
 import PasswordFields from '../ui/PasswordFields.jsx';
 import { Button, Card, ErrorNotice, Field, Input } from '../ui/shadcn';
 
 const HeaderComponentWithNavigation = navigationComponent(HeaderComponent);
+const COPY_FEEDBACK_MS = 2000;
 
 function ProfileComponent({ navigate }) {
     const t = useTranslation();
     const user = AuthenticationService.getLoggedInUser();
     const { updateProfile } = useUserMutations();
+    const referralQuery = useUserProfile(user?.username);
+    const referralCode = referralQuery.data?.codigoReferido?.trim() || '';
+    const referralLink = referralCode ? buildReferralLink(referralCode) : '';
+    const [copiedKey, setCopiedKey] = useState('');
+    const [copyFailed, setCopyFailed] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
     const [submitError, setSubmitError] = useState('');
     const form = useForm({
@@ -34,6 +41,22 @@ function ProfileComponent({ navigate }) {
     useEffect(() => {
         if (!AuthenticationService.isUserLoggedIn()) navigate('/login');
     }, [navigate]);
+
+    useEffect(() => {
+        if (!copiedKey) return undefined;
+        const timer = setTimeout(() => setCopiedKey(''), COPY_FEEDBACK_MS);
+        return () => clearTimeout(timer);
+    }, [copiedKey]);
+
+    const copyToClipboard = async (text, key) => {
+        setCopyFailed(false);
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedKey(key);
+        } catch {
+            setCopyFailed(true);
+        }
+    };
 
     const onSubmit = form.handleSubmit(async (values) => {
         setSuccessMessage('');
@@ -128,6 +151,48 @@ function ProfileComponent({ navigate }) {
                             </Button>
                         </div>
                     </form>
+                </Card>
+
+                <Card className="hu-mt-6 hu-p-5 md:hu-p-7 kanban-board">
+                    <h2 className="hu-m-0 hu-mb-2 hu-text-xl hu-font-bold hu-text-green-800 admin-title">{t('referral_title')}</h2>
+                    <p className="hu-m-0 hu-mb-5 hu-text-sm hu-text-slate-600 dark:hu-text-slate-300">{t('referral_description')}</p>
+
+                    {referralQuery.isPending && (
+                        <p className="hu-m-0 hu-text-sm hu-text-slate-600 dark:hu-text-slate-300" role="status">{t('referral_loading')}</p>
+                    )}
+                    {referralQuery.isError && (
+                        <ErrorNotice>{t('referral_load_error')}</ErrorNotice>
+                    )}
+                    {referralQuery.isSuccess && !referralCode && (
+                        <p className="hu-m-0 hu-text-sm hu-text-slate-600 dark:hu-text-slate-300">{t('referral_unavailable')}</p>
+                    )}
+
+                    {referralCode && (
+                        <div className="hu-grid hu-gap-5">
+                            <Field label={t('referral_code_label')} htmlFor="referral-code">
+                                <div className="hu-flex hu-flex-col hu-gap-2 sm:hu-flex-row">
+                                    <Input id="referral-code" readOnly value={referralCode} className="hu-font-mono hu-tracking-wider" />
+                                    <Button type="button" variant="secondary" onClick={() => copyToClipboard(referralCode, 'code')}>
+                                        {t('referral_copy_code')}
+                                    </Button>
+                                </div>
+                            </Field>
+                            <Field label={t('referral_link_label')} htmlFor="referral-link">
+                                <div className="hu-flex hu-flex-col hu-gap-2 sm:hu-flex-row">
+                                    <Input id="referral-link" readOnly value={referralLink} className="hu-text-sm" />
+                                    <Button type="button" variant="secondary" onClick={() => copyToClipboard(referralLink, 'link')}>
+                                        {t('referral_copy_link')}
+                                    </Button>
+                                </div>
+                            </Field>
+                            {copiedKey && (
+                                <div className="hu-rounded-lg hu-border hu-border-green-200 hu-bg-green-50 hu-p-3 hu-text-sm hu-text-green-800 dark:hu-border-[#3d6b4c] dark:hu-bg-[#18251e] dark:hu-text-green-200" role="status">
+                                    {t('referral_copied')}
+                                </div>
+                            )}
+                            {copyFailed && <ErrorNotice>{t('referral_copy_error')}</ErrorNotice>}
+                        </div>
+                    )}
                 </Card>
             </main>
             <FooterComponent />

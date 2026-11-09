@@ -23,7 +23,32 @@ export const apiQueryKeys = {
   adminUsers: ['adminUsers'] as const,
   myOrders: ['myOrders'] as const,
   adminOrders: ['adminOrders'] as const,
+  // Indexado por usuario para que el código de una cuenta nunca se sirva a otra en la misma caché.
+  userProfile: (username: string) => ['userProfile', username] as const,
 };
+
+export interface UserProfile {
+  username: string;
+  nombre?: string;
+  apellido?: string;
+  email?: string;
+  direccion?: string;
+  telefono?: string;
+  tipoIdentificacion?: string;
+  numeroIdentificacion?: string;
+  role?: string;
+  state?: string;
+  codigoReferido?: string;
+}
+
+export function useUserProfile(username?: string) {
+  return useQuery<UserProfile>({
+    queryKey: apiQueryKeys.userProfile(username ?? ''),
+    queryFn: () => userService.getProfile(),
+    enabled: Boolean(username),
+    staleTime: 5 * 60 * 1000,
+  });
+}
 
 export function useCategories() {
   return useQuery({

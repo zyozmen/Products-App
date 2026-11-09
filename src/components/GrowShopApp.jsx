@@ -107,6 +107,7 @@ function GrowShopApp() {
                     <AgeVerificationRouteGate>
                         <Routes>
                             <Route path="/login" element={<LoginComponentWithNavigation />} />
+                            <Route path="/register" element={<LoginComponentWithNavigation startInRegister />} />
                             <Route path="/" element={<WelcomeComponent />} />
                             <Route path="/welcome" element={<WelcomeComponent />} />
                             <Route path="/shop" element={<ShopComponentWithNavigation />} />

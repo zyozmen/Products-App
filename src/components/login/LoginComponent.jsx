@@ -17,7 +17,7 @@ const allowedNotices = Object.values(LOGOUT_NOTICES);
 function LoginComponent(props) {
     const t = useTranslation();
     const userMutations = useUserMutations();
-    const [isRegistering, setIsRegistering] = useState(false);
+    const [isRegistering, setIsRegistering] = useState(Boolean(props.startInRegister));
     const [loginError, setLoginError] = useState('');
     const [loginErrorTone, setLoginErrorTone] = useState('red');
     const [registrationError, setRegistrationError] = useState('');
