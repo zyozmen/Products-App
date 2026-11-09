@@ -89,6 +89,37 @@ describe('business date', () => {
         };
         const detail = (content: unknown[]) => ({ content, page: 0, size: 20, totalElements: content.length, totalPages: 1 });
 
+        it.each([null, 'Referencia visible'])('preserves nullable reference names and codes: %s', (value) => {
+            const recognition = { ...event, providerName: value, lotCode: value, containerCode: value, productName: value, presentationName: value };
+            const namedPayment = {
+                ...payment, providerName: value,
+                allocations: payment.allocations.map((allocation) => ({ ...allocation, lotCode: value })),
+            };
+            const result = parseDailyDetail(JSON.stringify({
+                ...detail([recognition, namedPayment]), providerName: value,
+            }));
+            expect(result.providerName).toBe(value);
+            expect(result.content).toEqual([recognition, namedPayment]);
+        });
+
+        it.each(['providerName', 'lotCode', 'containerCode', 'productName', 'presentationName'])('rejects invalid reference text: %s', (field) => {
+            expect(() => parseDailyDetail(detail([{ ...event, [field]: 123 }]))).toThrow(InvalidSettlementResponseError);
+        });
+
+        it.each(['SALE', 'PQR', 'PQR_REVERSAL'])('preserves productName for %s movements', (movementType) => {
+            const recognition = {
+                ...event, movementType, productName: 'Producto ejemplo',
+                ...(movementType === 'PQR_REVERSAL' ? { originalMovementId: 'original-1' } : {}),
+            };
+            expect(parseDailyDetail(detail([recognition])).content[0]).toMatchObject({ productName: 'Producto ejemplo' });
+        });
+
+        it('rejects invalid allocation lot codes', () => {
+            expect(() => parseDailyDetail(detail([{
+                ...payment, allocations: [{ ...payment.allocations[0], lotCode: 123 }],
+            }]))).toThrow(InvalidSettlementResponseError);
+        });
+
         it('preserves snapshots, reversal dates and exact raw monetary amounts', () => {
             const raw = JSON.stringify(detail([
                 event,

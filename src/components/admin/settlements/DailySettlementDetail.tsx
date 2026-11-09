@@ -40,7 +40,7 @@ function Movement({ item, formatInstant }: { item: SettlementMovement; formatIns
             {item.allocations.map((allocation) => (
               <li key={allocation.transactionId}>
                 Transacción: {allocation.transactionId}<br />
-                Lote: {allocation.lotId}<br />
+                Lote: {allocation.lotCode ?? allocation.lotId}<br />
                 Imputado: {formatDecimalCOP(allocation.amount)}
               </li>
             ))}
@@ -48,10 +48,10 @@ function Movement({ item, formatInstant }: { item: SettlementMovement; formatIns
         ) : (
           <>
             <p className="hu-m-0">Orden: {item.orderId ?? 'No aplica'} · Ítem: {item.itemIndex ?? 'No aplica'}</p>
-            <p>Lote: {item.lotId ?? 'No aplica'}</p>
-            <p>Contenedor: {item.containerId ?? 'No aplica'}</p>
-            <p>Producto: {item.strainId ?? 'No aplica'}</p>
-            <p>Presentación: {item.presentationId ?? 'No aplica'}</p>
+            <p>Lote: {item.lotCode ?? item.lotId ?? 'No aplica'}</p>
+            <p>Contenedor: {item.containerCode ?? item.containerId ?? 'No aplica'}</p>
+            <p>Producto: {item.productName ?? item.strainId ?? 'No aplica'}</p>
+            <p>Presentación: {item.presentationName ?? item.presentationId ?? 'No aplica'}</p>
             {item.contentPerUnit != null && <p>Contenido por unidad: {item.contentPerUnit} {item.baseUnit}</p>}
           </>
         )}
@@ -75,12 +75,13 @@ export default function DailySettlementDetail({ date, providerId, page, size, on
 }) {
   const query = useDailySettlementDetail(date, providerId, page, size);
   const data = query.data;
+  const providerName = data?.providerName ?? data?.content.find((item) => item.providerName != null)?.providerName;
   return (
     <section className="hu-grid hu-gap-4" aria-label="Detalle auditable">
       <div className="hu-flex hu-flex-wrap hu-justify-between hu-gap-3">
         <div>
           <h2 className="hu-m-0 hu-text-xl hu-font-bold">Detalle auditable</h2>
-          <p className="hu-break-all">Proveedor: {providerId} · Jornada: {date} · Hora de Bogotá</p>
+          <p className="hu-break-all">Proveedor: {providerName ?? providerId} · Jornada: {date} · Hora de Bogotá</p>
         </div>
         <div className="hu-flex hu-items-start hu-gap-3">
           <Button type="button" variant="secondary" disabled={query.isFetching} onClick={() => void query.refetch()}>Actualizar detalle</Button>
@@ -115,7 +116,8 @@ export default function DailySettlementDetail({ date, providerId, page, size, on
         </Card>
         <p className="hu-m-0 hu-text-xs hu-text-slate-600">
           Cada pago se muestra una vez por correlación con sus imputaciones. Las reversiones afectan la jornada original, no la fecha de cancelación.
-          Los IDs permiten rastrear orden, lote y abono; no hay rutas autorizadas específicas para abrir esos registros.
+          Se muestran nombres y códigos cuando están disponibles; si la referencia ya no existe, se conserva su ID.
+          No hay rutas autorizadas específicas para abrir esos registros.
         </p>
         <SettlementPagination page={data.page} totalPages={data.totalPages} fetching={query.isFetching} onPage={onPage} label="Paginación del detalle" />
       </>}

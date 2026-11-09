@@ -34,12 +34,14 @@ export interface DailySettlementSummary {
 export interface SettlementAllocation {
   transactionId: string;
   lotId: string;
+  lotCode?: string | null;
   amount: DecimalAmount;
 }
 
 interface SettlementEvent {
   id: string;
   providerId: string;
+  providerName?: string | null;
   date: string;
   timestamp: string;
   amount: DecimalAmount;
@@ -51,9 +53,13 @@ export interface SettlementRecognition extends SettlementEvent {
   orderId?: string | number | null;
   itemIndex?: number | null;
   lotId?: string | null;
+  lotCode?: string | null;
   containerId?: string | null;
+  containerCode?: string | null;
   strainId?: string | null;
+  productName?: string | null;
   presentationId?: string | null;
+  presentationName?: string | null;
   quantity?: number | null;
   contentPerUnit?: number | null;
   baseUnit?: string | null;
@@ -72,6 +78,7 @@ export interface SettlementPayment extends SettlementEvent {
 export type SettlementMovement = SettlementRecognition | SettlementPayment;
 
 export interface DailySettlementDetail {
+  providerName?: string | null;
   content: SettlementMovement[];
   page: number;
   size: number;

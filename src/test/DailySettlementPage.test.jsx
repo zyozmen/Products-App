@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import DailySettlementPage from '../components/admin/settlements/DailySettlementPage.tsx';
-import { InvalidSettlementResponseError, settlementService } from '../services/settlementService.ts';
+import { InvalidSettlementResponseError, parseDailyDetail, settlementService } from '../services/settlementService.ts';
 import { supplierService } from '../services/supplierService.ts';
 
 vi.mock('../components/dashboard/HeaderComponent.jsx', () => ({ default: () => null }));
@@ -37,6 +37,49 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 beforeEach(() => vi.spyOn(supplierService, 'searchSuppliers').mockResolvedValue({ suppliers: [], total: 0 }));
 
 describe('daily settlement page', () => {
+    it.each(['names', 'null', 'absent'])('shows readable detail references with ID fallback: %s', async (mode) => {
+        const references = mode === 'absent' ? {} : {
+            providerName: mode === 'names' ? provider.providerName : null,
+            lotCode: mode === 'names' ? 'LOTE-2026' : null,
+            containerCode: mode === 'names' ? 'CONT-01' : null,
+            productName: mode === 'names' ? 'Producto ejemplo' : null,
+            presentationName: mode === 'names' ? 'Presentación 20 g' : null,
+        };
+        const event = {
+            id: 'sale-1', movementType: 'SALE', providerId: provider.providerId,
+            date: empty.date, timestamp: '2026-10-23T10:00:00Z', amount: '10000.00',
+            lotId: 'lot-id', containerId: 'container-id', strainId: 'strain-id',
+            presentationId: 'presentation-id', ...references,
+        };
+        const allocation = {
+            transactionId: 'transaction-1', lotId: 'payment-lot-id', amount: '10000.00',
+            ...(mode === 'absent' ? {} : { lotCode: mode === 'names' ? 'LOTE-PAGO' : null }),
+        };
+        vi.spyOn(settlementService, 'getDailyDetail').mockResolvedValue(parseDailyDetail(JSON.stringify({
+            content: [event, {
+                id: 'payment-1', movementType: 'PAYMENT', providerId: provider.providerId,
+                date: empty.date, timestamp: event.timestamp, amount: '10000.00',
+                correlationId: 'correlation-1', paymentType: 'EFECTIVO', allocations: [allocation],
+            }],
+            page: 0, size: 20, totalElements: 2, totalPages: 1,
+        })));
+        renderPage(`/admin/liquidacion?detailProviderId=${provider.providerId}&detailDate=${empty.date}`);
+        const rows = within(await screen.findByRole('table')).getAllByRole('row');
+        expect(rows[1]).toHaveTextContent(`Lote: ${mode === 'names' ? 'LOTE-2026' : 'lot-id'}`);
+        expect(rows[1]).toHaveTextContent(`Contenedor: ${mode === 'names' ? 'CONT-01' : 'container-id'}`);
+        expect(rows[1]).toHaveTextContent(`Presentación: ${mode === 'names' ? 'Presentación 20 g' : 'presentation-id'}`);
+        expect(rows[1]).toHaveTextContent(`Producto: ${mode === 'names' ? 'Producto ejemplo' : 'strain-id'}`);
+        expect(rows[2]).toHaveTextContent(`Lote: ${mode === 'names' ? 'LOTE-PAGO' : 'payment-lot-id'}`);
+        expect(screen.getByText(/^Proveedor:/)).toHaveTextContent(mode === 'names' ? provider.providerName : provider.providerId);
+        if (mode === 'names') {
+            expect(rows[1]).not.toHaveTextContent('lot-id');
+            expect(rows[1]).not.toHaveTextContent('container-id');
+            expect(rows[1]).not.toHaveTextContent('strain-id');
+            expect(rows[1]).not.toHaveTextContent('presentation-id');
+            expect(rows[2]).not.toHaveTextContent('payment-lot-id');
+        }
+    });
+
     it('shows the backend business date and a real empty state while activation is pending', async () => {
         vi.spyOn(settlementService, 'getDailySummary').mockResolvedValue(empty);
         renderPage();
